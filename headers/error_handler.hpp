@@ -17,7 +17,7 @@ public:
 		std::string fullMessage = (
 			"\n\nCaught Error on Tokenizing: " + this->__message + "\n > "
 			+ this->__file + ":" + std::to_string(this->__row) + ":"
-			+ std::to_string(this->__col) + "\n\t -> " + this->__lastTok + " " + this->__currTok
+			+ std::to_string(this->__col) + "\n    " + this->__lastTok + " " + this->__currTok
 			+ "\n\n"
 		);
         return fullMessage.c_str();
@@ -28,6 +28,12 @@ private:
 	std::string __message;
 	size_t __row, __col;
 	J_TOKENS __lastTok, __currTok;
+};
+
+class UnterminatedCases : public JDMTokenizingHandler {
+public:
+	UnterminatedCases(J_CFILENR filename, J_CTOKENSR lastToken, J_CTOKENSR currToken, size_t row, size_t col)
+		: JDMTokenizingHandler(filename, "Unterminated Cases", lastToken, currToken, row, col) {}
 };
 
 class UnterminatedString : public JDMTokenizingHandler {

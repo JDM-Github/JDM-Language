@@ -22,7 +22,17 @@ const std::string getScriptOnFile(const std::string &filename) {
 }
 
 int main() {
-    const char *filename = "script.jdm";
-	std::unique_ptr<Tokenizer> newTokenizer = std::make_unique<Tokenizer>(filename, getScriptOnFile(filename));
-	newTokenizer->printAllTokens(true, true);
+    std::string filename;
+    while (true) {
+        std::cout << " > ";
+        std::cin >> filename;
+        // try {
+            Tokenizer newTokenizer = Tokenizer(filename, getScriptOnFile("scripts/"+filename));
+            newTokenizer.printAllTokens(true, true);
+        // } catch (const FileNotExistError &error1) {
+        //     std::cout << error1.what() << std::endl;
+        // } catch (const JDMTokenizingHandler& error2) {
+        //     std::cout << error2.what() << std::endl;
+        // }
+    }
 }

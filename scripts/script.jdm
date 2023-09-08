@@ -1,3 +1,26 @@
 
-jint tetssassad = 34.34;
-jint sdasd == 45; |-> tetstststs <| jint test = 34<-| jstring test = 76.6;
+jint    testInteger         = 34   ;
+jdouble testDecimal         = 78.78;
+jint    testIntegerNegative = -34   ;
+jdouble testDecimalNegative = -78.78;
+jstring testStringSingle    = ('"tedsd^46467756824/l./!===?st"');
+jstring testStringDouble    = (("test"));
+
+|-> Comment Block
+
+jlist   testList            = [
+	1, 2, 3, 4, 5, 6
+];
+
+jmap    testMap             = [
+	"string"  -> "haha",
+	"number"  -> 34,
+	"decimal" -> 34.213,
+];
+
+<-|
+jfunc testFunction((jstring stringParam) -> {
+	jint test = 34;
+});
+
+jint test = 34;
