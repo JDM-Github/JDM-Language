@@ -521,7 +521,6 @@ private:
 					}
 				}
 			} else {
-
 				// If not, then it must be whitespace or any ignored character
 				if (this->__input_buffer[i] == '\n') {
 					this->__is_comment_line = false;
