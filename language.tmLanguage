@@ -1,0 +1,15 @@
+{
+    "name": "jdm",
+    "scopeName": "source.jdm",
+    "patterns": [
+        {
+            "match": "\\b(jint|jboolean|jdouble|jstring)\\b",
+            "name": "entity.name.type.jdm", // Customize the scope name
+            "settings": {
+                "foreground": "#FF5733" // Replace with your desired color
+            }
+        }
+    ]
+}
+
+
