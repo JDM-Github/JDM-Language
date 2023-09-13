@@ -1,0 +1,236 @@
+{
+  [
+    {
+      token: jint,
+      tokenType: DATA_TYPE,
+      row: 2,
+      col: 1
+    },
+    {
+      token: testInteger,
+      tokenType: VARIABLE,
+      row: 2,
+      col: 9
+    },
+    {
+      token: =,
+      tokenType: ASSIGNMENT_OPERATOR,
+      row: 2,
+      col: 29
+    },
+    {
+      token: (,
+      tokenType: OPEN_CASES,
+      row: 2,
+      col: 31,
+      child: {
+        [
+          {
+            token: 34,
+            tokenType: INTEGER,
+            row: 2,
+            col: 32
+          },
+          {
+            token: +,
+            tokenType: ARITHMETIC_OPERATOR,
+            row: 2,
+            col: 35
+          },
+          {
+            token: 78,
+            tokenType: INTEGER,
+            row: 2,
+            col: 37
+          },
+        ],
+      }
+    },
+    {
+      token: ),
+      tokenType: CLOSE_CASES,
+      row: 2,
+      col: 37
+    },
+  ],
+  [
+    {
+      token: jdouble,
+      tokenType: DATA_TYPE,
+      row: 3,
+      col: 1
+    },
+    {
+      token: testDecimal,
+      tokenType: VARIABLE,
+      row: 3,
+      col: 9
+    },
+    {
+      token: =,
+      tokenType: ASSIGNMENT_OPERATOR,
+      row: 3,
+      col: 29
+    },
+    {
+      token: 78.78,
+      tokenType: DECIMAL,
+      row: 3,
+      col: 31
+    },
+  ],
+  [
+    {
+      token: jstring,
+      tokenType: DATA_TYPE,
+      row: 4,
+      col: 1
+    },
+    {
+      token: oneQoute,
+      tokenType: VARIABLE,
+      row: 4,
+      col: 9
+    },
+    {
+      token: =,
+      tokenType: ASSIGNMENT_OPERATOR,
+      row: 4,
+      col: 18
+    },
+    {
+      token: test,
+      tokenType: STRING,
+      row: 4,
+      col: 20
+    },
+  ],
+  [
+    {
+      token: jstring,
+      tokenType: DATA_TYPE,
+      row: 5,
+      col: 1
+    },
+    {
+      token: doubleQoute,
+      tokenType: VARIABLE,
+      row: 5,
+      col: 9
+    },
+    {
+      token: =,
+      tokenType: ASSIGNMENT_OPERATOR,
+      row: 5,
+      col: 21
+    },
+    {
+      token: test,
+      tokenType: STRING,
+      row: 5,
+      col: 23
+    },
+  ],
+  [
+    {
+      token: jfunc,
+      tokenType: CONTROL_FLOW,
+      row: 7,
+      col: 1
+    },
+    {
+      token: testFunction,
+      tokenType: VARIABLE,
+      row: 7,
+      col: 7
+    },
+    {
+      token: (,
+      tokenType: OPEN_CASES,
+      row: 7,
+      col: 7,
+      child: {
+        [
+          {
+            token: jstring,
+            tokenType: DATA_TYPE,
+            row: 7,
+            col: 20
+          },
+          {
+            token: stringParam,
+            tokenType: VARIABLE,
+            row: 7,
+            col: 28
+          },
+        ],
+      }
+    },
+    {
+      token: ),
+      tokenType: CLOSE_CASES,
+      row: 7,
+      col: 28
+    },
+    {
+      token: ->,
+      tokenType: ARROW_OPERATOR,
+      row: 7,
+      col: 41
+    },
+    {
+      token: {,
+      tokenType: OPEN_CASES,
+      row: 7,
+      col: 44,
+      child: {
+        [
+          {
+            token: jint,
+            tokenType: DATA_TYPE,
+            row: 8,
+            col: 2
+          },
+          {
+            token: test,
+            tokenType: VARIABLE,
+            row: 8,
+            col: 7
+          },
+          {
+            token: =,
+            tokenType: ASSIGNMENT_OPERATOR,
+            row: 8,
+            col: 12
+          },
+          {
+            token: 56,
+            tokenType: INTEGER,
+            row: 8,
+            col: 14
+          },
+        ],
+        [
+          {
+            token: jreturn,
+            tokenType: CONTROL_FLOW,
+            row: 9,
+            col: 2
+          },
+          {
+            token: true,
+            tokenType: CUSTOM_KEYWORD,
+            row: 9,
+            col: 10
+          },
+        ],
+      }
+    },
+    {
+      token: },
+      tokenType: CLOSE_CASES,
+      row: 10,
+      col: 1
+    },
+  ],
+}
