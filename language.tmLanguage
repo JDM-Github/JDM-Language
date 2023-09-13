@@ -1,15 +1,24 @@
-{
-    "name": "jdm",
-    "scopeName": "source.jdm",
-    "patterns": [
-        {
-            "match": "\\b(jint|jboolean|jdouble|jstring)\\b",
-            "name": "entity.name.type.jdm", // Customize the scope name
-            "settings": {
-                "foreground": "#FF5733" // Replace with your desired color
-            }
-        }
-    ]
-}
-
-
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>name</key>
+    <string>jdm</string>
+    <key>scopeName</key>
+    <string>source.jdm</string>
+    <key>patterns</key>
+    <array>
+        <dict>
+            <key>match</key>
+            <string>\b(jboolean)\b</string>
+            <key>name</key>
+            <string>entity.name.type.jdm</string>
+            <key>settings</key>
+            <dict>
+                <key>foreground</key>
+                <string>#FF5733</string>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>

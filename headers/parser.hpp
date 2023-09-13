@@ -131,22 +131,36 @@ private:
 		const std::vector<std::shared_ptr<TokenStruct>>& tokenS) {
 		/**
 		 * Make it available on Type Casting, if possible
-		 * 
 		 */
-
 		std::shared_ptr<VariableObjects> newVar = std::make_shared<VariableObjects>(varName);
 
 		if (tokenS.empty()) {	
-			block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar ));
+			block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, nullptr ));
 			return;
 		}
 		if (std::get<1>(tokenS[0]->token) != TokenType::ASSIGNMENT_OPERATOR)
 			throw std::runtime_error("SYNTAX ERROR: Expecting '='");
 
-		std::shared_ptr<Expression> newExpression = this->_createExpression(
-			this->_transformTokenStruct({tokenS.begin() + 1, tokenS.end()}))[0]->expression;
+		std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokenS.begin() + 1, tokenS.end()};
+		if (JDM::dataTypeMap.at(std::get<0>(dataType->token)) == DataTypeEnum::DATA_LIST
+		    || (JDM::dataTypeMap.at(std::get<0>(dataType->token)) == DataTypeEnum::DATA_ANY
+		        && std::get<0>(remainingToken[0]->token) == "[")) {
 
-		block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newExpression ));
+			std::vector<std::shared_ptr<Expression>> arguments;
+			if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES
+			 	&& std::get<0>(remainingToken[0]->token) == "[")
+				this->_setArguments(arguments, remainingToken[0]->child[0]->child);
+			else this->_setArguments(arguments, remainingToken);
+
+			auto newDeclaration = std::make_shared<Declaration>( dataType, newVar, nullptr );
+			newDeclaration->value = arguments;
+			block->instruction.push_back(newDeclaration);
+
+		} else {
+			std::shared_ptr<Expression> newExpression = this->_createExpression(
+				this->_transformTokenStruct(remainingToken))[0]->expression;
+			block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newExpression ));
+		}
 	}
 
 	inline const void _manageVariable(
@@ -159,17 +173,30 @@ private:
 		 * -> Make it available on '.' or function call
 		 * 
 		 */
-
 		if (tokenS.empty()) return;
 		std::shared_ptr<VariableObjects> newVar = std::make_shared<VariableObjects>(varName);
 
 		if (std::get<1>(tokenS[0]->token) != TokenType::ASSIGNMENT_OPERATOR)
 			throw std::runtime_error("SYNTAX ERROR: Expecting '='");
 
-		std::shared_ptr<Expression> newExpression = this->_createExpression(
-			this->_transformTokenStruct({tokenS.begin() + 1, tokenS.end()}))[0]->expression;
+		std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokenS.begin() + 1, tokenS.end()};
 
-		block->instruction.push_back(std::make_shared<Assignment>( newVar, newExpression ));
+		if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES
+			 	&& std::get<0>(remainingToken[0]->token) == "[") {
+
+			std::vector<std::shared_ptr<Expression>> arguments;
+			this->_setArguments(arguments, remainingToken[0]->child[0]->child);
+
+			auto newAssignment = std::make_shared<Assignment>( newVar, nullptr, nullptr );
+			newAssignment->value = arguments;
+			block->instruction.push_back(newAssignment);
+
+		} else {
+			std::shared_ptr<Expression> newExpression = this->_createExpression(
+				this->_transformTokenStruct(remainingToken))[0]->expression;
+
+			block->instruction.push_back(std::make_shared<Assignment>( newVar, newExpression ));
+		}
 	}
 
 	inline const void _manageIfStatement(
@@ -260,7 +287,6 @@ private:
 		 * -> Make it available on function call
 		 *
 		 */
-
 		if (vec.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
 
 		else if (vec.size() == 1) {
@@ -383,7 +409,6 @@ private:
 		// if operator exist then thier is 100% a second value or expression
 		if (expr->opWillUse) {
 			std::cout << space << "  Operator: " << std::get<0>(expr->opWillUse->token) << '\n';
-
 			if (expr->secondValue) {
 				std::cout << space << "  Value: ";
 				JDM::checkAndCallReturnStringValue(expr->secondValue);

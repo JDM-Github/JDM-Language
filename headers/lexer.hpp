@@ -36,6 +36,8 @@ protected:
 	inline Tokens() {
 		// Data Type
 		this->__dataTypeVector.push_back   ("jany"    );
+		this->__dataTypeVector.push_back   ("jlist"   );
+		this->__dataTypeVector.push_back   ("jmap"    );
 		this->__dataTypeVector.push_back   ("jstring" );
 		this->__dataTypeVector.push_back   ("jdouble" );
 		this->__dataTypeVector.push_back   ("jint"    );

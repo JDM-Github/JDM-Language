@@ -18,7 +18,6 @@ enum TokenType {
 	CUSTOM_KEYWORD,
 	CUSTOM_FUNCTIONS,
 	FUNCTIONS,
-	STRING,
 	OPEN_CASES,
 	CLOSE_CASES,
 	DOT_OPERATOR,
@@ -29,6 +28,7 @@ enum TokenType {
 	ARITHMETIC_OPERATOR,
 	RELATIONAL_OPERATOR,
 	BITWISE_OPERATOR,
+	STRING,
 	INTEGER,
 	DECIMAL,
 	VARIABLE
@@ -36,6 +36,7 @@ enum TokenType {
 
 enum DataTypeEnum {
 	DATA_ANY,
+	DATA_LIST,
 	DATA_STRING,
 	DATA_DOUBLE,
 	DATA_INTEGER,
@@ -95,6 +96,7 @@ namespace JDM {
 
     const std::map<std::string, DataTypeEnum> dataTypeMap = {
         {"jany",     DataTypeEnum::DATA_ANY},
+        {"jlist",    DataTypeEnum::DATA_LIST},
         {"jstring",  DataTypeEnum::DATA_STRING},
         {"jdouble",  DataTypeEnum::DATA_DOUBLE},
         {"jint",     DataTypeEnum::DATA_INTEGER},

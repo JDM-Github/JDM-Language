@@ -16,9 +16,8 @@ struct Expression {
 	std::shared_ptr<Expression > secondExpression;
 };
 
-struct Parameters {
-	std::shared_ptr<Variable> variable;
-
+struct List {
+	
 };
 
 enum InstructionType {
@@ -55,9 +54,10 @@ public:
 
 class Declaration : public Instruction {
 public:
-	std::shared_ptr<TokenStruct    > dataType;
-	std::shared_ptr<VariableObjects> varName;
-	std::shared_ptr<Expression     > expression;
+	std::shared_ptr<TokenStruct            > dataType;
+	std::shared_ptr<VariableObjects        > varName;
+	std::shared_ptr<Expression             > expression;
+	std::vector<std::shared_ptr<Expression>> value;
 
 public:
 	Declaration(
@@ -73,9 +73,10 @@ public:
 
 class Assignment : public Instruction {
 public:
-	std::shared_ptr<VariableObjects> varName;
-	std::shared_ptr<TokenStruct    > operation;
-	std::shared_ptr<Expression     > expression;
+	std::shared_ptr<VariableObjects        > varName;
+	std::shared_ptr<TokenStruct            > operation;
+	std::shared_ptr<Expression             > expression;
+	std::vector<std::shared_ptr<Expression>> value;
 
 public:
 	Assignment(

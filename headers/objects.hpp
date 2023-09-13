@@ -20,6 +20,24 @@ public:
 	}
 };
 
+// class ListObject : public VarObjects {
+// public:
+// 	const char *name;
+// 	std::vector<std::shared_ptr<VarObjects>> value;
+
+// public:
+// 	ListObject(const std::shared_ptr<TokenStruct> &tok)
+// 		: VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
+// 		name(std::get<0>(tok->token).c_str()) {
+// 	}
+// 	inline const char *returnStringValue(const std::string &space = "") {
+// 		std::ostringstream oss;
+// 		for (const auto &var : this->value)
+// 			oss << space << JDM::checkAndCallReturnStringValue(var) << '\n';
+// 		return oss.c_str();
+// 	}
+// };
+
 class FunctionObjects : public VarObjects {
 public:
 	const char *name;
@@ -34,17 +52,17 @@ public:
 
 class VariableObjects : public VarObjects {
 public:
-	bool isString   = false;
-	bool isInteger  = false;
-	bool isDecimal  = false;
-	bool isBoolean  = false;
-	bool isFunction = false;
+	// bool isString   = false;
+	// bool isInteger  = false;
+	// bool isDecimal  = false;
+	// bool isBoolean  = false;
+	// bool isFunction = false;
 
 	const char      *name;
-	std::string      str_value;
-	int64_t          int_value;
-	long double      double_value;
-	FunctionObjects *function = nullptr;
+	// std::string      str_value;
+	// int64_t          int_value;
+	// long double      double_value;
+	// FunctionObjects *function = nullptr;
 
 public:
 	VariableObjects(const std::shared_ptr<TokenStruct> &tok)
