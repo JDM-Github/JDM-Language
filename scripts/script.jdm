@@ -1,26 +1,172 @@
 
-jint    testInteger         = 34   ;
-jdouble testDecimal         = 78.78;
-jint    testIntegerNegative = -34   ;
-jdouble testDecimalNegative = -78.78;
-jstring testStringSingle    = ('"tedsd^46467756824/l./!===?st"');
-jstring testStringDouble    = (("test"));
 
-|-> Comment Block
+jboolean test = 1;
+jfor i => 0 => {
+	jfor j => 0, 5, 1 => {
+		jif test => {
+		}
+	}
+}
 
-jlist   testList            = [
-	1, 2, 3, 4, 5, 6
-];
 
-jmap    testMap             = [
-	"string"  -> "haha",
-	"number"  -> 34,
-	"decimal" -> 34.213,
-];
+|->
+
+jint test1 = {45 + 90 - 5; 45 + 34}; |> DECLARATION
+
+jif (test + 45) => jint test = 90; |> 1 LINE IF
+
+test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
+
+
+jforeach i => list => {
+}
+
+jforeach key, val => map => {
+}
+
+// TODO
+// If control flow is if, elseif, else, for, while, switch
+// then do this
+// Find the arrow operator, if it not exist, throw error, as this if statement is wrong
+Example:
+// Tokenization will work but not parser
+jif () + 3434 + { } => 34;
+
+// after you find it
+Example:
+jif will be the first token
+
+() => 
+index = 2
+use this
+
+auto it = std::find()
+{vec.begin(), it};
+() will only get
+
+and then, the remaining
+will be the block that will be executed after expression
+will create block and run predictInstruction
+jif () + 3434 + () => { }
+
+if last is not a OPEN_CASES or not a block
+jif () + 3434 + () => 34;
+just create a new block and called that 1 expression of line on predictInstruction
+
+the 34 will be executed
+<-|
+
+|> jdouble testDecimal         = .78;
+|> jstring oneQoute            = 'test';
+|> jstring doubleQoute         = "test";
+
+|> is a comment line
+|->
+|> Function Test
+jfunc funcTest(() -> {
+	jreturn "TRUE";
+}).then((jstring test) -> {
+	$log -> "It RUN succesfully and it return ${test}";
+	jreturn 45; |> new return if you want
+});
+
+FunctionInstruction:
+	Function (name="funcTest"):
+	  -> Parameter:
+	  -> Block {
+	  	CustomFunction (name="log")
+	  	  -> Arguments
+	  	    -> "EHHSHHSH"
+	  }
+	Then:
+	  -> Parameter:
+	    -> String (name="test")
+	  -> Block {
+	  }
+
+-> Then will only run if function run without problem and the then it has is accepting the right Arguments
+-> If not, then it will not got to then
+
+Sample:
+jfunc funcTest(() -> {
+	jreturn "TRUE";
+}).then((jint test) -> {
+|> another then if you want
+}).then(() -> {
+
+});
+-> The then keywords or function will not run if return type is not same on args.
+-> Also the then can be many times as you want
+-> Will print : It RUN succesfully it return TRUE
 
 <-|
+
+
+
+|-> Switch statement
+
+jwhile (condition) -> {
+};
+
+jfor (i -> 45) -> {
+};
+|> or this
+jfor (jint i -> 45) -> {
+};
+|> second args need to be unsigned or not negative
+|> start at 5 stop until it reach 45 with step 3
+jfor (i -> 5, 45, 3) -> {
+};
+
+|> start at 5 stop until it reach -19 with step 2 reverse
+jfor (jint i -> 5, -10, 2 -> reverse) -> {
+};
+
+jforeach (key, val -> map) -> {
+};
+
+jforeach (v -> vec) -> {
+};
+
+jswitch (test) -> {
+	jcase '23' -> {
+		$log -> "23";
+	};
+};
+
+jinline jstatic jfunc verse(() -> {
+	|> Will not show, so long
+}).then.goto -> jonlyif (_checkVerse(jstring args) -> {jreturn args -> ($sameas -> "success"); } ) ->
+(() -> { jreturn _testing._melodiatic -> (5 || 6) -> @__digits__ -> ($transpose -> @__semi__.automatically());
+}).then.traverse(jstring __contextual) -> {
+	|> I will not show, it so long
+}.execute() => verse() -> with.Speed("1s");
+
+
+
+jint    testInteger         = (test-45);
+jdouble testDecimal         = .78;
+jstring oneQoute            = 'test';
+jstring doubleQoute         = "test";
+
+jfunc testFunction(jstring stringParam) -> {
+	jint test = 56;
+	jreturn true;
+};
+
 jfunc testFunction((jstring stringParam) -> {
 	jint test = 34;
+});then(() -> {
+
+});
+
+jfunc testFunction((jstring stringParam) -> {
+	jint test = 34;
+}).then(() -> {
+	$log -> "TTSTTST";
 });
 
 jint test = 34;
+
+
+<-|

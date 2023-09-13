@@ -1,6 +1,7 @@
 #pragma once
 #include <exception>
 #include <string>
+#include <stdexcept>
 
 #define J_CTOKENSR const std::string&
 #define J_CFILENR  const std::string&
@@ -8,13 +9,35 @@
 #define J_FILE     std::string
 #define J_MESSAGE  std::string
 
+class JDMParserHandler : public std::exception {
+
+	// JDMTokenizingHandler(J_CFILENR filename, J_MESSAGE message, J_CTOKENSR lastToken, J_CTOKENSR currToken, size_t row, size_t col)
+	// 	: __file(filename), __message(message), __lastTok(lastToken), __currTok(currToken), __row(row), __col(col) {}
+
+	// const char* what() const noexcept override {
+	// 	const std::string fullMessage = (
+	// 		"\n\nCaught Error on Tokenizing: " + this->__message + "\n > "
+	// 		+ this->__file + ":" + std::to_string(this->__row) + ":"
+	// 		+ std::to_string(this->__col) + "\n    " + this->__lastTok + " " + this->__currTok
+	// 		+ "\n\n"
+	// 	);
+    //     return fullMessage.c_str();
+	// }
+
+	// private:
+	// 	std::string __file;
+	// 	std::string __message;
+	// 	size_t __row, __col;
+	// 	J_TOKENS __lastTok, __currTok;
+};
+
 class JDMTokenizingHandler : public std::exception {
 public:
 	JDMTokenizingHandler(J_CFILENR filename, J_MESSAGE message, J_CTOKENSR lastToken, J_CTOKENSR currToken, size_t row, size_t col)
 		: __file(filename), __message(message), __lastTok(lastToken), __currTok(currToken), __row(row), __col(col) {}
 
 	const char* what() const noexcept override {
-		std::string fullMessage = (
+		const std::string fullMessage = (
 			"\n\nCaught Error on Tokenizing: " + this->__message + "\n > "
 			+ this->__file + ":" + std::to_string(this->__row) + ":"
 			+ std::to_string(this->__col) + "\n    " + this->__lastTok + " " + this->__currTok
@@ -33,7 +56,7 @@ private:
 class UnterminatedCases : public JDMTokenizingHandler {
 public:
 	UnterminatedCases(J_CFILENR filename, J_CTOKENSR lastToken, J_CTOKENSR currToken, size_t row, size_t col)
-		: JDMTokenizingHandler(filename, "Unterminated Cases", lastToken, currToken, row, col) {}
+		: JDMTokenizingHandler(filename, "Unterminated String", lastToken, currToken, row, col) {}
 };
 
 class UnterminatedString : public JDMTokenizingHandler {
