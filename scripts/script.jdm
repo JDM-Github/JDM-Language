@@ -1,70 +1,99 @@
 
+|->
+TODO:
+
+jany test = [89, 45];
 jlist list = [
 	1, 2, 3, 4, '5', 6.4
 ];
 
+jmap map = {
+	"34" => 34,
+	"34" => 34,
+	"34" => 34,
+	"34" => 34,
+};
+
+<-|
+
 
 |->
-
-jint test1 = {45 + 90 - 5; 45 + 34}; |> DECLARATION
-
-jif (test + 45) => jint test = 90; |> 1 LINE IF
-
+WORKING
+jif (test + 45) => jint test = 90;   |> 1 LINE IF
+jelseif (test) => {
+	jif (test) => {
+		|> Nested
+	}
+}
 test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
+jwhile (condition) => { ... };
 
+|> 1 = Start, 45 = Stop, 1 = Step
+jfor i => [1, 45, 1] => { ... }
+|> 1 = Start, 45 = Stop
+jfor i => 1, 45 => { ... }
+|> 45 = Stop
+jfor i => 45 => { ... }
+
+<-|
+
+
+
+
+
+jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
+	jfor j => [1, 3, 4] => {
+		jstring testString = "test" + 'test2';
+		jif (testString == 'testtest2') => {
+			jmap map = {
+				'1'        => 1,
+				2          => '2',
+				testString => 2.0,
+			};
+			jforeach key, val => map => {
+			}
+		}
+	}
+}
+
+|->
+TODO:
+
+lambda on parameters
+
+lambda(() => {}) + 34
+
+Function call on parameters
+func() + 45
+
+List on parameters
+
+Either variable or
+[] = automatically means list
+{} = automatically means map
+
+|> jforeach i    => jreverse => list => {  };
+|> jforeach i, j => jreverse => map  => {  };
+
+jfunc test() {
+	jfor i => [1, 45, 1] => {
+		$log => "TEST";
+		jif (something) => {
+			jtrue;
+			jbreak;
+		}
+	}
+}.then() => {
+	$log => "Success";
+}
 
 jforeach i => list => {
 }
 
 jforeach key, val => map => {
 }
-
-// TODO
-// If control flow is if, elseif, else, for, while, switch
-// then do this
-// Find the arrow operator, if it not exist, throw error, as this if statement is wrong
-Example:
-// Tokenization will work but not parser
-jif () + 3434 + { } => 34;
-
-// after you find it
-Example:
-jif will be the first token
-
-() => 
-index = 2
-use this
-
-auto it = std::find()
-{vec.begin(), it};
-() will only get
-
-and then, the remaining
-will be the block that will be executed after expression
-will create block and run predictInstruction
-jif () + 3434 + () => { }
-
-if last is not a OPEN_CASES or not a block
-jif () + 3434 + () => 34;
-just create a new block and called that 1 expression of line on predictInstruction
-
-the 34 will be executed
 <-|
-
-|> jdouble testDecimal         = .78;
-|> jstring oneQoute            = 'test';
-|> jstring doubleQoute         = "test";
-
-|> is a comment line
 |->
-|> Function Test
-jfunc funcTest(() -> {
-	jreturn "TRUE";
-}).then((jstring test) -> {
-	$log -> "It RUN succesfully and it return ${test}";
-	jreturn 45; |> new return if you want
-});
-
 FunctionInstruction:
 	Function (name="funcTest"):
 	  -> Parameter:

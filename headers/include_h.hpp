@@ -28,14 +28,18 @@ enum TokenType {
 	ARITHMETIC_OPERATOR,
 	RELATIONAL_OPERATOR,
 	BITWISE_OPERATOR,
+
 	STRING,
 	INTEGER,
 	DECIMAL,
-	VARIABLE
+	VARIABLE,
+	LIST,
+	MAP
 };
 
 enum DataTypeEnum {
 	DATA_ANY,
+	DATA_MAP,
 	DATA_LIST,
 	DATA_STRING,
 	DATA_DOUBLE,
@@ -70,7 +74,8 @@ enum CustomKeywordEnum {
 enum CustomFunctionEnum {
 	CUSFUNC_LOG,
 	CUSFUNC_CAST,
-	CUSFUNC_GETTYPE
+	CUSFUNC_GETTYPE,
+	CUSFUNC_SORT
 };
 
 struct TokenStruct {
@@ -96,6 +101,7 @@ namespace JDM {
 
     const std::map<std::string, DataTypeEnum> dataTypeMap = {
         {"jany",     DataTypeEnum::DATA_ANY},
+        {"jmap",     DataTypeEnum::DATA_MAP},
         {"jlist",    DataTypeEnum::DATA_LIST},
         {"jstring",  DataTypeEnum::DATA_STRING},
         {"jdouble",  DataTypeEnum::DATA_DOUBLE},
@@ -105,18 +111,20 @@ namespace JDM {
     };
 
     const std::map<std::string, CustomKeywordEnum> customKeywordMap = {
-        {"jreverse",    CustomKeywordEnum::KEYWORD_REVERSE},
+        {"jreverse",  CustomKeywordEnum::KEYWORD_REVERSE},
         {"jbreak",    CustomKeywordEnum::KEYWORD_BREAK},
         {"jcontinue", CustomKeywordEnum::KEYWORD_CONTINUE},
         {"jdefault",  CustomKeywordEnum::KEYWORD_DEFAULT},
-        {"true",      CustomKeywordEnum::KEYWORD_TRUE},
-        {"false",     CustomKeywordEnum::KEYWORD_FALSE}
+        {"jtrue",     CustomKeywordEnum::KEYWORD_TRUE},
+        {"jfalse",    CustomKeywordEnum::KEYWORD_FALSE}
     };
 
     const std::map<std::string, CustomFunctionEnum> customFunctionMap = {
         {"$log",     CUSFUNC_LOG},
         {"$cast",    CUSFUNC_CAST},
-        {"$gettype", CUSFUNC_GETTYPE}
+        {"$gettype", CUSFUNC_GETTYPE},
+        {"$sort",    CUSFUNC_SORT}
+        // {"$gettype", CUSFUNC_GETTYPE}
     };
 
 	constexpr const char *tokenTypeToString(const TokenType type) {
@@ -139,6 +147,8 @@ namespace JDM {
 			case TokenType::BITWISE_OPERATOR             : return "BITWISE_OPERATOR";
 			case TokenType::INTEGER                      : return "INTEGER";
 			case TokenType::DECIMAL                      : return "DECIMAL";
+			case TokenType::LIST                         : return "LIST";
+			case TokenType::MAP                          : return "MAP";
 			case TokenType::VARIABLE                     : return "VARIABLE";
 			default                                      : return "UNDEFINED";
 		}

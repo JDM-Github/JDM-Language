@@ -1,0 +1,19 @@
+     1                                  ; ----------------------------------------------------------------------------
+     2                                  ; helloworld.asm
+     3                                  ;
+     4                                  ; This is a Win32 console program that writes "Hello, World" on one line and
+     5                                  ; then exits.  It needs to be linked with a C library.
+     6                                  ; ----------------------------------------------------------------------------
+     7                                  
+     8                                      global  main
+     9                                      extern  printf
+    10                                  
+    11                                      section .text
+    12                                  main:
+    13 00000000 68[0E000000]                push    message
+    14 00000005 E8(00000000)                call    printf
+    15 0000000A 83C404                      add     esp, 4
+    16 0000000D C3                          ret
+    17                                  message:
+    18 0000000E 48656C6C6F2C20576F-         db  'Hello, World', 10, 0
+    18 00000017 726C640A00         

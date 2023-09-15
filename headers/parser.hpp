@@ -20,6 +20,14 @@ private:
 	};
 	std::shared_ptr<Block> _mainBlock;
 
+	struct IfStatementLink {
+		std::shared_ptr<IfStatement> current;
+		std::shared_ptr<IfStatementLink> next;
+		std::shared_ptr<IfStatementLink> prev;
+	};
+
+	std::shared_ptr<IfStatementLink> __currIfLink;
+
 public:
 	inline Parser(const std::shared_ptr<TokenStruct> &tokens)
 		: __rootTokens(tokens) {
@@ -31,26 +39,38 @@ public:
 		for (const auto &instruction : block->instruction) {
 			if (instruction->getType() == IfStatementInstruction) {
 				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
-				this->analyzeAST(
-					std::dynamic_pointer_cast<Block>(
-						std::dynamic_pointer_cast<IfStatement>(instruction)->blockWillRun
-					), space+"    ");
+				auto ifState = std::dynamic_pointer_cast<IfStatement>(instruction);
+				this->analyzeAST(std::dynamic_pointer_cast<Block>(ifState->blockWillRun), space+"    ");
+				this->_analyzeAllIfElse(ifState->elseIf, space);
+
 			} else if (instruction->getType() == ForLoopStatementInstruction) {
 				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 				auto forLoop = std::dynamic_pointer_cast<ForLoopStatement>(instruction);
 				if (forLoop->start) {
-					std::cout << space << "    START: \n";
-					this->_printExpression(forLoop->start, space+"      ");
+					std::cout << space << "    START: { ... }\n";
+					// this->_printExpression(forLoop->start, space+"      ");
 				}
 				if (forLoop->stop) {
-					std::cout << space << "    STOP : \n";
-					this->_printExpression(forLoop->stop,  space+"      ");
+					std::cout << space << "    STOP { ... }: \n";
+					// this->_printExpression(forLoop->stop,  space+"      ");
 				}
 				if (forLoop->step) {
-					std::cout << space << "    STEP : \n";
-					this->_printExpression(forLoop->step,  space+"      ");
+					std::cout << space << "    STEP { ... }: \n";
+					// this->_printExpression(forLoop->step,  space+"      ");
 				}
 				this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"    ");
+
+			// FOREACH LIST
+			} else if (instruction->getType() == ForEachListStatementInstruction) {
+				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+				auto forEach = std::dynamic_pointer_cast<ForEachListStatement>(instruction);
+				this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
+
+			// FOREACH MAP
+			} else if (instruction->getType() == ForEachMapStatementInstruction) {
+				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+				auto forEach = std::dynamic_pointer_cast<ForEachMapStatement>(instruction);
+				this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
 			}
 			else
 				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": { ... }\n";
@@ -58,21 +78,46 @@ public:
 	}
 
 private:
+	inline const void _analyzeAllIfElse(const std::shared_ptr<IfStatement> &instruction, const std::string &space) {
+		if (instruction == nullptr) return;
+		std::string typeStr = (instruction->condition == nullptr) ? "ELSE" : "ELSE IF";
+		std::cout << space << "  " << typeStr << ": \n";
+		this->analyzeAST(std::dynamic_pointer_cast<Block>(instruction->blockWillRun), space+"    ");
+		this->_analyzeAllIfElse(instruction->elseIf, space);
+	}
+
 	inline const char *_instructionToString(InstructionType instruction) {
 		switch (instruction) {
-			case DeclarationInstruction      : return "DECLARATION";
-			case AssignmentInstruction       : return "ASSIGNMENT";
-			case IfStatementInstruction      : return "IF";
-			case ForLoopStatementInstruction : return "FOR";
+			case DeclarationInstruction          : return "DECLARATION";
+			case AssignmentInstruction           : return "ASSIGNMENT";
+			case IfStatementInstruction          : return "IF";
+			case ForLoopStatementInstruction     : return "FOR";
+			case WhileStatementInstruction       : return "WHILE";
+			case ForEachListStatementInstruction : return "FOREACH-LIST";
+			case ForEachMapStatementInstruction  : return "FOREACH-MAP";
 		}
 		return "Invalid Instruction";
 	}
 
 	inline const std::shared_ptr<Block> _getBlock(
 		   const std::shared_ptr<TokenStruct>& tokenS) {
+
+		if (this->__currIfLink == nullptr)
+			this->__currIfLink = std::make_shared<IfStatementLink>();
+		else {
+			this->__currIfLink->next = std::make_shared<IfStatementLink>();
+			this->__currIfLink->next->prev = this->__currIfLink;
+			this->__currIfLink = this->__currIfLink->next;
+		}
+
 		std::shared_ptr<Block> block = std::make_shared<Block>();
 		for (const auto& tokenStruct : tokenS->child)
 			this->predictInstruction(block, tokenStruct->child);
+
+		if (this->__currIfLink->prev != nullptr) {
+			this->__currIfLink = this->__currIfLink->prev;
+			this->__currIfLink->next = nullptr;
+		}
 		return block;
 	}
 
@@ -103,25 +148,147 @@ private:
 		const std::shared_ptr<TokenStruct> &controlType,
 		const std::vector<std::shared_ptr<TokenStruct>>& tokenS) {
 
+		// I can use at since I know I the elements will exist 100%
 		ControlFlowEnum control = JDM::controlFlowMap.at(std::get<0>(controlType->token));
 		switch (control) {
-			case ControlFlowEnum::CONTROL_IF:
-				this->_manageIfStatement(block, tokenS);
-				break;
+			case ControlFlowEnum::CONTROL_IF    : this->_manageIfElseWhileStatement(block, tokenS, control); break;
+			case ControlFlowEnum::CONTROL_ELSEIF: this->_manageIfElseWhileStatement(block, tokenS, control); break;
+			case ControlFlowEnum::CONTROL_ELSE  : this->_manageIfElseWhileStatement(block, tokenS, control); break;
+			case ControlFlowEnum::CONTROL_WHILE : this->_manageIfElseWhileStatement(block, tokenS, control); break;
 
 			case ControlFlowEnum::CONTROL_FOR:
 				if (std::get<1>(tokenS[0]->token) != TokenType::VARIABLE) 
 					throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 				if (std::get<1>(tokenS[1]->token) != TokenType::ARROW_OPERATOR) 
 					throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
-
 				this->_manageForloop(block, tokenS[0], {tokenS.begin()+2, tokenS.end()});
 				break;
+
+			case ControlFlowEnum::CONTROL_FOREACH: this->_manageForEachLoop(block, tokenS); break;
 		}
+
+		if (!this->_isIn(control, {ControlFlowEnum::CONTROL_IF, ControlFlowEnum::CONTROL_ELSEIF}))
+			this->__currIfLink->current = nullptr;
 	}
 
 	inline const bool _isBlockCurly(const std::shared_ptr<TokenStruct> &token) {
 		return (std::get<1>(token->token) == TokenType::OPEN_CASES && std::get<0>(token->token) == "{");
+	}
+
+	inline const void _manageForEachLoop(
+		const std::shared_ptr<Block      > &block,
+		const std::vector<std::shared_ptr<TokenStruct>>& tokens) {
+
+		auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
+			return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+		});
+
+		std::vector<std::shared_ptr<TokenStruct>> remainingToken;
+		if (it != tokens.end()) {
+			std::shared_ptr<Block> blockWillRun;
+
+			std::vector<std::shared_ptr<VariableObjects>> varArgs;
+			std::vector<std::shared_ptr<Expression>>      listArgs;
+			std::vector<std::shared_ptr<MapStruct>>       mapArgs;
+			std::shared_ptr<VariableObjects>              varToRun;
+
+			bool isReverse = false;
+			bool isMap     = false;
+
+			if (it+1 != tokens.end()) {
+
+				// Retrieve remaining token on right side
+				// Might be
+				// |> jreverse => ... => { ... }
+				// |> ... => { ... }
+				remainingToken = {it+1, tokens.end()};
+
+				// If : jreverse => ... => { ... }
+				auto rev = JDM::customKeywordMap.find(std::get<0>(remainingToken[0]->token));
+				if (rev != JDM::customKeywordMap.end() && rev->second == CustomKeywordEnum::KEYWORD_REVERSE) {
+					isReverse = true;
+					if (std::get<1>(remainingToken[1]->token) != TokenType::ARROW_OPERATOR) 
+						throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+
+					// Remove two token on remainingToken as they already used
+					// |> ... => { ... }
+					remainingToken = {remainingToken.begin() + 2, remainingToken.end()};
+				}
+
+				// Find another => on |> ... => { ... }
+				auto it2 = std::find_if(remainingToken.begin(), remainingToken.end(), [](const std::shared_ptr<TokenStruct> &tok){
+					return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+				});
+
+				if (it2   == remainingToken.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+				if (it2+1 == remainingToken.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
+
+				// Check if the next token is a BLOCK or a ONE line
+				auto newTok = (*(it2+1));
+				if ( this->_isBlockCurly(newTok))
+					blockWillRun = this->_getBlock(newTok);
+				else {
+					blockWillRun = std::make_shared<Block>();
+					this->predictInstruction(blockWillRun, {it2+1, remainingToken.end()});
+				}
+
+				// Get token on left side |> ...
+				remainingToken = {remainingToken.begin(), it2};
+
+				// Check if token is just a variable
+				if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::VARIABLE) {
+					varToRun = std::make_shared<VariableObjects>(remainingToken[0]);
+				} else {	
+					// Check if remaining token is a list or a map
+					// TODO
+					// MAKE THE ARGUMENTS TAKE ARITHMETIC LIST AND MAP
+					if (remainingToken.size() != 1) throw std::runtime_error("SYNTAX ERROR: Expecting ('jlist' | 'jmap') not Expression");
+					if (std::get<1>(remainingToken[0]->token) != TokenType::OPEN_CASES)
+						throw std::runtime_error("SYNTAX ERROR: Expecting 'jlist' | 'jmap'");
+
+					if (std::get<0>(remainingToken[0]->token) == "[")
+						this->_setArguments(listArgs, remainingToken[0]->child[0]->child);
+					else if (std::get<0>(remainingToken[0]->token) == "{") {
+						isMap = true;
+						this->_setMapArguments(mapArgs, remainingToken[0]->child[0]->child);
+
+					} else std::runtime_error("SYNTAX ERROR: Expecting 'jlist' | 'jmap'");
+				}
+			} else throw std::runtime_error("SYNTAX ERROR: Expecting a List | Map | jreverse");
+
+			remainingToken = {tokens.begin(), it};
+			// Return a list of VarObjects
+			if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES)
+				this->_setVarArgs(varArgs, remainingToken[0]->child[0]->child);
+			else this->_setVarArgs(varArgs, remainingToken);
+
+			if (varToRun != nullptr) {
+				if (varArgs.size() == 2) {
+					block->instruction.push_back(std::make_shared<ForEachMapStatement>(
+						blockWillRun, varArgs[0],
+						varArgs[1], varToRun, isReverse
+					));
+				} else if (varArgs.size() == 1) {
+					block->instruction.push_back(std::make_shared<ForEachListStatement>(
+						blockWillRun, varArgs[0], varToRun, isReverse
+					));
+				} else throw std::runtime_error("SYNTAX ERROR: Cannot determine if 'jlist' | 'jmap'");
+			} else if (isMap) {
+				if (varArgs.size() < 2)  throw std::runtime_error("SYNTAX ERROR: Missing 'key' | 'value'");
+				if (varArgs.size() >= 3) throw std::runtime_error("SYNTAX ERROR: Too many varArgs.");
+				block->instruction.push_back(std::make_shared<ForEachMapStatement>(
+					blockWillRun, varArgs[0],
+					varArgs[1], std::make_shared<MapObject> (mapArgs), isReverse
+				));
+			} else {
+				if (varArgs.size() < 1)  throw std::runtime_error("SYNTAX ERROR: Expecting a VARIABLE.");
+				if (varArgs.size() >= 2) throw std::runtime_error("SYNTAX ERROR: Too many varArgs.");
+				block->instruction.push_back(std::make_shared<ForEachListStatement>(
+					blockWillRun, varArgs[0], std::make_shared<ListObject>(listArgs), isReverse
+				));
+			}
+
+		} else throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 	}
 
 	inline const void _manageDataType(
@@ -142,25 +309,11 @@ private:
 			throw std::runtime_error("SYNTAX ERROR: Expecting '='");
 
 		std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokenS.begin() + 1, tokenS.end()};
-		if (JDM::dataTypeMap.at(std::get<0>(dataType->token)) == DataTypeEnum::DATA_LIST
-		    || (JDM::dataTypeMap.at(std::get<0>(dataType->token)) == DataTypeEnum::DATA_ANY
-		        && std::get<0>(remainingToken[0]->token) == "[")) {
 
-			std::vector<std::shared_ptr<Expression>> arguments;
-			if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES
-			 	&& std::get<0>(remainingToken[0]->token) == "[")
-				this->_setArguments(arguments, remainingToken[0]->child[0]->child);
-			else this->_setArguments(arguments, remainingToken);
-
-			auto newDeclaration = std::make_shared<Declaration>( dataType, newVar, nullptr );
-			newDeclaration->value = arguments;
-			block->instruction.push_back(newDeclaration);
-
-		} else {
-			std::shared_ptr<Expression> newExpression = this->_createExpression(
-				this->_transformTokenStruct(remainingToken))[0]->expression;
-			block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newExpression ));
-		}
+		std::shared_ptr<Expression> newExpression = this->_createExpression(
+			this->_transformTokenStruct(remainingToken))[0]->expression;
+		block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newExpression ));
+		// }
 	}
 
 	inline const void _manageVariable(
@@ -181,27 +334,17 @@ private:
 
 		std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokenS.begin() + 1, tokenS.end()};
 
-		if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES
-			 	&& std::get<0>(remainingToken[0]->token) == "[") {
+		std::shared_ptr<Expression> newExpression = this->_createExpression(
+			this->_transformTokenStruct(remainingToken))[0]->expression;
 
-			std::vector<std::shared_ptr<Expression>> arguments;
-			this->_setArguments(arguments, remainingToken[0]->child[0]->child);
-
-			auto newAssignment = std::make_shared<Assignment>( newVar, nullptr, nullptr );
-			newAssignment->value = arguments;
-			block->instruction.push_back(newAssignment);
-
-		} else {
-			std::shared_ptr<Expression> newExpression = this->_createExpression(
-				this->_transformTokenStruct(remainingToken))[0]->expression;
-
-			block->instruction.push_back(std::make_shared<Assignment>( newVar, newExpression ));
-		}
+		block->instruction.push_back(std::make_shared<Assignment>( newVar, newExpression ));
 	}
 
-	inline const void _manageIfStatement(
+	// WORKING, WILL OPTIMIZE SOON
+	inline const void _manageIfElseWhileStatement(
 		const std::shared_ptr<Block      > &block,
-		const std::vector<std::shared_ptr<TokenStruct>>& tokens) {
+		const std::vector<std::shared_ptr<TokenStruct>>& tokens,
+		ControlFlowEnum control) {
 
 		auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
 			return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
@@ -209,6 +352,7 @@ private:
 
 		if (it != tokens.end()) {
 			std::shared_ptr<Block> blockWillRun;
+			std::shared_ptr<Expression> condition;
 			if (it+1 != tokens.end()) {
 				auto newTok = (*(it+1));
 				if ( this->_isBlockCurly(newTok)) blockWillRun = this->_getBlock(newTok);
@@ -218,14 +362,34 @@ private:
 				}
 			} else throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
 
-			std::shared_ptr<Expression> condition = this->_createExpression(
-				this->_transformTokenStruct({tokens.begin(), it}))[0]->expression;
+			if (control != ControlFlowEnum::CONTROL_ELSE)
+				condition = this->_createExpression(this->_transformTokenStruct({tokens.begin(), it}))[0]->expression;
 
-			block->instruction.push_back(std::make_shared<IfStatement>(blockWillRun, condition));
+			switch (control) {
+				case ControlFlowEnum::CONTROL_IF:
+					this->__currIfLink->current = std::make_shared<IfStatement>(blockWillRun, condition);
+					block->instruction.push_back(this->__currIfLink->current);
+					break;
+				case ControlFlowEnum::CONTROL_ELSEIF:
+					if (this->__currIfLink->current == nullptr)
+						throw std::runtime_error("SYNTAX ERROR: jelseif with no jif");
+					this->__currIfLink->current->elseIf = std::make_shared<IfStatement>(blockWillRun, condition);
+					this->__currIfLink->current = this->__currIfLink->current->elseIf;
+					break;
+				case ControlFlowEnum::CONTROL_ELSE:
+					if (this->__currIfLink->current == nullptr)
+						throw std::runtime_error("SYNTAX ERROR: jelse with no jif");
+					this->__currIfLink->current->elseIf = std::make_shared<IfStatement>(blockWillRun);
+					break;
+				case ControlFlowEnum::CONTROL_WHILE:
+					block->instruction.push_back(std::make_shared<WhileStatement>(blockWillRun, condition));
+					break;
+			}
 		}
 		else throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 	}
 
+	// WORKING, WILL OPTIMIZE
 	inline const void _manageForloop(
 		const std::shared_ptr<Block      > &block,
 		const std::shared_ptr<TokenStruct> &varName,
@@ -285,6 +449,7 @@ private:
 		 * 
 		 * -> Make the NOT operand and ~ work, as intended.
 		 * -> Make it available on function call
+		 * -> Make it work on '[' and '{'
 		 *
 		 */
 		if (vec.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
@@ -292,18 +457,48 @@ private:
 		else if (vec.size() == 1) {
 			if (vec[0]->expression == nullptr) {
 				if (std::get<1>(vec[0]->token->token) == TokenType::OPEN_CASES) {
+					if (vec[0]->token->child.empty())     throw std::runtime_error("SYNTAX ERROR: Empty Open Case");
+					if (vec[0]->token->child.size() != 1) throw std::runtime_error("SYNTAX ERROR: Unexpected ';'");
 
-					return this->_createExpression(
-						this->_transformTokenStruct(vec[0]->token->child[0]->child)
-					);
+					if (std::get<0>(vec[0]->token->token) == "(")
+						return this->_createExpression(this->_transformTokenStruct(vec[0]->token->child[0]->child));
+
+					else if (std::get<0>(vec[0]->token->token) == "[") {
+
+						auto expressionTok = std::make_shared<ExpressionToken>();
+						auto newExpression = std::make_shared<Expression>();
+
+						std::vector<std::shared_ptr<Expression>> listVec;
+						this->_setArguments(listVec, vec[0]->token->child[0]->child);
+
+						newExpression->firstValue = std::make_shared<ListObject>(listVec);
+						expressionTok->expression = newExpression;
+
+						return { expressionTok };
+
+					} else if (std::get<0>(vec[0]->token->token) == "{") {
+
+						auto expressionTok = std::make_shared<ExpressionToken>();
+						auto newExpression = std::make_shared<Expression>();
+
+						std::vector<std::shared_ptr<MapStruct>> mapVec;
+						this->_setMapArguments(mapVec, vec[0]->token->child[0]->child);
+
+						newExpression->firstValue = std::make_shared<MapObject>(mapVec);
+						expressionTok->expression = newExpression;
+
+						return { expressionTok };
+					}
+
 				} else {
-					std::shared_ptr<Expression> newExpression = std::make_shared<Expression>();
+					auto newExpression = std::make_shared<Expression>();
 					this->_setValueObjects(newExpression->firstValue, vec[0]->token);
 					vec[0]->expression = newExpression;
 				}
 			}
 			return vec;
 		}
+
 		std::vector<std::shared_ptr<ExpressionToken>> newVec;
 		if (this->_findAndReplaceExpression({"**"                            }, vec, newVec) // ARITH (EXPONENT to POWER)
 		 || this->_findAndReplaceExpression({"*", "/", "//"                  }, vec, newVec) // ARITH (*, /, //)
@@ -318,6 +513,7 @@ private:
 		 || this->_findAndReplaceExpression({"&&"                            }, vec, newVec) // RELATIONAL AND
 		 || this->_findAndReplaceExpression({"||"                            }, vec, newVec) // RELATIONAL OR
 		) { }
+		else throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
 		return this->_createExpression(newVec);
 	}
 
@@ -339,37 +535,27 @@ private:
 				if (this->_isIn(tokStr, targetString)) {
 					int leftMinus = 1;
 					int rightAdd  = 2;
-					bool isLeftParen = false;
+
+					bool isLeftParen  = false;
 					bool isRightParen = false;
 
-					if (vec[index-1]->token != nullptr)
-						if (std::get<0>(vec[index-1]->token->token) == "(")
-							isLeftParen = true;
-
-					if (vec[index+1]->token != nullptr)
-						if (std::get<0>(vec[index+1]->token->token) == "(")
-							isRightParen = true;
+					if (vec[index-1]->token != nullptr && std::get<1>(vec[index-1]->token->token) == TokenType::OPEN_CASES)
+						isLeftParen = true;
+					if (vec[index+1]->token != nullptr && std::get<1>(vec[index+1]->token->token) == TokenType::OPEN_CASES)
+						isRightParen = true;
 
 					newVec  = { vec.begin(), vec.begin() + (index - leftMinus) };
 					std::shared_ptr<ExpressionToken> newExpressionTok = std::make_shared<ExpressionToken>();
 					std::shared_ptr<Expression     > newExpression = std::make_shared<Expression>();
 
-					if (vec[index - 1]->expression != nullptr)
-						newExpression->firstExpression = vec[index - 1]->expression;
-					else if (isLeftParen)
-						if (!vec[index - 1]->token->child.empty() && vec[index - 1]->token->child.size() <= 1)
-							newExpression->firstExpression = this->_getExpression(vec[index - 1]->token->child);
-						else throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
+					if (vec[index - 1]->expression != nullptr) newExpression->firstExpression = vec[index - 1]->expression;
+					else if (isLeftParen) newExpression->secondExpression = this->_createExpression( { vec[index - 1] } )[0]->expression;
 					else this->_setValueObjects(newExpression->firstValue, vec[index - 1]->token);
 
 					newExpression->opWillUse = vec[index]->token;
 
-					if (vec[index + 1]->expression != nullptr)
-						newExpression->secondExpression = vec[index + 1]->expression;
-					else if (isRightParen)
-						if (!vec[index + 1]->token->child.empty() && vec[index + 1]->token->child.size() <= 1)
-							newExpression->secondExpression = this->_getExpression(vec[index + 1]->token->child);
-						else throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
+					if (vec[index + 1]->expression != nullptr) newExpression->secondExpression = vec[index + 1]->expression;
+					else if (isRightParen) newExpression->secondExpression = this->_createExpression( { vec[index + 1] } )[0]->expression;
 					else this->_setValueObjects(newExpression->secondValue, vec[index + 1]->token);
 
 					newExpressionTok->expression = newExpression;
@@ -383,10 +569,10 @@ private:
 		return false;
 	}
 
-	inline const std::shared_ptr<Expression> _getExpression(
-		const std::vector<std::shared_ptr<TokenStruct>>& tokenS) {
-		return this->_createExpression(this->_transformTokenStruct(tokenS[0]->child))[0]->expression;
-	}
+	// inline const std::shared_ptr<Expression> _getExpression(
+	// 	const std::vector<std::shared_ptr<TokenStruct>>& tokenS) {
+	// 	return this->_createExpression(this->_transformTokenStruct(tokenS))[0]->expression;
+	// }
 
 	inline const void _printExpression(const std::shared_ptr<Expression>& expr, const std::string &space = "", int depth=0) {
 		/**
@@ -435,21 +621,11 @@ private:
 
 	inline const void _setValueObjects(std::shared_ptr<VarObjects> &value, const std::shared_ptr<TokenStruct> &tok) {
 		switch (std::get<1>(tok->token)) {
-			case TokenType::VARIABLE:
-				value = std::make_shared<VariableObjects>(tok);
-				return;
-			case TokenType::DECIMAL:
-				value = std::make_shared<DoubleObjects>(tok);
-				return;
-			case TokenType::INTEGER:
-				value = std::make_shared<IntegerObjects>(tok);
-				return;
-			case TokenType::STRING:
-				value = std::make_shared<StringObjects>(tok);
-				return;
-			default: {
-				throw std::runtime_error("SYNTAX ERROR: Invalid Value");
-			}
+			case TokenType::VARIABLE: value = std::make_shared<VariableObjects>(tok); return;
+			case TokenType::DECIMAL : value = std::make_shared<DoubleObjects  >(tok); return;
+			case TokenType::INTEGER : value = std::make_shared<IntegerObjects >(tok); return;
+			case TokenType::STRING  : value = std::make_shared<StringObjects  >(tok); return;
+			default: throw std::runtime_error("SYNTAX ERROR: Invalid Value");
 		}
 	}
 
@@ -458,17 +634,57 @@ private:
 		const std::vector<std::shared_ptr<TokenStruct>> &trav) {
 
 		auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
-			return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR;
-		});
+			return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
+
 		if (it != trav.end()) {
+
 			std::vector<std::shared_ptr<TokenStruct>> turnToExpression = { trav.begin(), it };
-			vec.push_back(this->_createExpression(
-				this->_transformTokenStruct(turnToExpression))[0]->expression);
+			vec.push_back(this->_createExpression(this->_transformTokenStruct(turnToExpression))[0]->expression);
 
 			if (it+1 != trav.end()) _setArguments(vec, { it+1, trav.end() });
 
-		} else
-		vec.push_back(this->_createExpression(this->_transformTokenStruct(trav))[0]->expression);
+		} else vec.push_back(this->_createExpression(this->_transformTokenStruct(trav))[0]->expression);
+	}
+
+	inline const void _setMapArguments(
+		std::vector<std::shared_ptr<MapStruct>> &vec,
+		const std::vector<std::shared_ptr<TokenStruct>> &trav) {
+
+		auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
+			return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
+
+		if (it != trav.end()) {
+			std::vector<std::shared_ptr<TokenStruct>> turnToExpression = { trav.begin(), it };
+			this->_addMapVec(vec, turnToExpression);
+
+			if (it+1 != trav.end()) _setMapArguments(vec, { it+1, trav.end() });
+		} else this->_addMapVec(vec, trav);
+	}
+
+	inline const void _addMapVec(
+		std::vector<std::shared_ptr<MapStruct>>& vec,
+		const std::vector<std::shared_ptr<TokenStruct>>& newVec) {
+
+		auto it = std::find_if(newVec.begin(), newVec.end(), [](const std::shared_ptr<TokenStruct>& tok) {
+			return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR; });
+
+		if (it == newVec.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+
+		auto map = std::make_shared<MapStruct>();
+		map->key   = this->_createExpression(this->_transformTokenStruct( { newVec.begin(), it } ))[0]->expression;
+		map->value = this->_createExpression(this->_transformTokenStruct( { it+1, newVec.end() } ))[0]->expression;
+		vec.push_back(map);
+	}
+
+	inline const void _setVarArgs(
+		std::vector<std::shared_ptr<VariableObjects>> &vec,
+		const std::vector<std::shared_ptr<TokenStruct>> &trav) {
+
+		for (const auto &tok : trav) {
+			if (std::get<1>(tok->token) == TokenType::COMMA_OPERATOR) continue;
+			if (std::get<1>(tok->token) == TokenType::VARIABLE) vec.push_back(std::make_shared<VariableObjects>(tok));
+			else throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
+		}
 	}
 
 	template <class _TypeClass>

@@ -45,9 +45,9 @@ protected:
 		this->__dataTypeVector.push_back   ("jlambda" );
 
 		// Control Flow
-		this->__controlFlowVector.push_back("jif");
+		this->__controlFlowVector.push_back("jif"    );
 		this->__controlFlowVector.push_back("jelseif");
-		this->__controlFlowVector.push_back("jelse");
+		this->__controlFlowVector.push_back("jelse"  );
 
 		this->__controlFlowVector.push_back("jfor");
 		this->__controlFlowVector.push_back("jforeach");
@@ -63,12 +63,13 @@ protected:
 		this->__keywordVector.push_back    ("jreverse");
 		this->__keywordVector.push_back    ("jcontinue");
 		this->__keywordVector.push_back    ("jdefault");
-		this->__keywordVector.push_back    ("true");
-		this->__keywordVector.push_back    ("false");
+		this->__keywordVector.push_back    ("jtrue");
+		this->__keywordVector.push_back    ("jfalse");
 
 		this->__functionsVector.push_back  ("$log");
 		this->__functionsVector.push_back  ("$cast");
 		this->__functionsVector.push_back  ("$getType");
+		this->__functionsVector.push_back  ("$sort");
 
 		// OOP
 		// this->__keywordVector.push_back("jclass");
@@ -100,6 +101,7 @@ private:
 	bool __is_comment_line           = false;
 	bool __is_comment_block          = false;
 	bool __is_in_paren               = false;
+	bool __candidate_block           = false;
 
 	std::ostringstream __stringStream;
 	std::vector<char> __opening_patt   = {};
@@ -372,8 +374,8 @@ private:
 			this->__current_token.clear();
 
 			if (!this->__is_in_paren) {
-				if (!(i+1 < this->__input_buffer.size() && this->__input_buffer[i+1] == '.'))
-					this->_lineBreak();
+				this->__just_added_token = false;
+				this->__candidate_block = true;
 			}
 			return true;
 		}
@@ -388,6 +390,20 @@ private:
 
 			TokenType tokenType = this->_determineTokenType(this->__current_token);
 
+			if (this->__candidate_block) {
+				std::cout << JDM::tokenTypeToString(this->__last_toke_type) << std::endl;
+				std::cout << JDM::tokenTypeToString(tokenType) << std::endl;
+				if (!this->_isIn(tokenType, {
+					TokenType::ARROW_OPERATOR,
+					TokenType::COMMA_OPERATOR,
+					TokenType::DOT_OPERATOR,
+					TokenType::BITWISE_OPERATOR,
+					TokenType::ARITHMETIC_OPERATOR,
+					TokenType::RELATIONAL_OPERATOR
+				})) this->_lineBreak();
+			}
+
+			this->__candidate_block = false;
 			this->__last_toke_type = tokenType;
 			if (tokenType == TokenType::STRING)
 				this->__current_token = this->__current_token.substr(1, this->__current_token.size()-2);
@@ -480,6 +496,7 @@ private:
 						this->__filename, this->__last_token,
 						this->__current_token, this->__track_row, this->__track_column);
 
+				this->__candidate_block = false;
 				this->_addToken();
 				if (this->_isIn(this->__last_toke_type, {
 					TokenType::CONTROL_FLOW,

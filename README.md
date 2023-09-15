@@ -1,7 +1,7 @@
 # JDM-Language
 JDM Language, Own Language created in C++
 
-```
+```jdm
 |> JDM Language : Single Line Comment
 |->  : Block Comment
 JDM Language 
@@ -18,7 +18,7 @@ jany anyList = [ ... ];     |> List, Note: 'jany' can only detect a list when it
 Explicitly Use Type:
 jmap
 
-jint    int    = 99;          |> Integer
+jint    int    = 99;          |> Integerp
 jdouble double = 99.45;       |> Double
 jstring str    = "'test'";    |> String
 

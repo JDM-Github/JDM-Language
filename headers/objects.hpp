@@ -7,7 +7,7 @@ protected:
 	TokenType varType = TokenType::UNDEFINED;
 
 protected:
-	VarObjects(TokenType type, size_t r, size_t c)
+	VarObjects(TokenType type, size_t r = 0, size_t c = 0)
 		: varType(type), row(r), col(c) {}
 	virtual ~VarObjects() {}
 
@@ -20,23 +20,45 @@ public:
 	}
 };
 
-// class ListObject : public VarObjects {
-// public:
-// 	const char *name;
-// 	std::vector<std::shared_ptr<VarObjects>> value;
+struct Expression {
+	std::shared_ptr<VarObjects > firstValue;
+	std::shared_ptr<VarObjects > secondValue;
+	std::shared_ptr<Expression > firstExpression;
+	std::shared_ptr<TokenStruct> opWillUse;
+	std::shared_ptr<Expression > secondExpression;
+};
 
-// public:
-// 	ListObject(const std::shared_ptr<TokenStruct> &tok)
-// 		: VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
-// 		name(std::get<0>(tok->token).c_str()) {
-// 	}
-// 	inline const char *returnStringValue(const std::string &space = "") {
-// 		std::ostringstream oss;
-// 		for (const auto &var : this->value)
-// 			oss << space << JDM::checkAndCallReturnStringValue(var) << '\n';
-// 		return oss.c_str();
-// 	}
-// };
+struct MapStruct {
+	std::shared_ptr<Expression> key;
+	std::shared_ptr<Expression> value;
+};
+
+class ListObject : public VarObjects {
+public:
+	std::vector<std::shared_ptr<Expression>> list;
+
+public:
+	ListObject(const std::vector<std::shared_ptr<Expression>> &_list)
+	: list (_list), VarObjects(TokenType::LIST) { }
+
+	inline const char *returnStringValue(const std::string &space = "") { return "LIST"; }
+};
+
+class MapObject : public VarObjects {
+public:
+	std::vector<std::shared_ptr<MapStruct>> map;
+
+public:
+	MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map)
+	: map (_map), VarObjects(TokenType::MAP) { }
+
+	inline const char *returnStringValue(const std::string &space = "") {
+		// std::ostringstream oss;
+		// for (const auto &var : this->map)
+		// 	oss << space << "MAP" << '\n';
+		return "MAP";
+	}
+};
 
 class FunctionObjects : public VarObjects {
 public:
@@ -52,17 +74,7 @@ public:
 
 class VariableObjects : public VarObjects {
 public:
-	// bool isString   = false;
-	// bool isInteger  = false;
-	// bool isDecimal  = false;
-	// bool isBoolean  = false;
-	// bool isFunction = false;
-
 	const char      *name;
-	// std::string      str_value;
-	// int64_t          int_value;
-	// long double      double_value;
-	// FunctionObjects *function = nullptr;
 
 public:
 	VariableObjects(const std::shared_ptr<TokenStruct> &tok)
