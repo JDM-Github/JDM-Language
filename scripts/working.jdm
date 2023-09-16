@@ -1,0 +1,42 @@
+|> WORKING
+
+|> Declaration
+jint test = 90;
+
+
+|> If statement
+jif (test + 45) => jint test = 90;   |> 1 LINE IF
+jelseif (test) => {
+	jif (test) => {
+		|> Nested
+	}
+}
+test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
+
+|> While Loop
+jwhile (condition) => { |-> Comment Block <-| };
+
+|> For Loop
+
+|> 1 = Start, 45 = Stop, 1 = Step
+jfor i => [1, 45, 1] => {}
+|> 1 = Start, 45 = Stop
+jfor i => 1, 45 => {}
+|> 45 = Stop
+jfor i => 45 => {}
+
+|> Foreach and more complicated stuff
+jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
+	jfor j => [1, 3, 4] => {
+		jstring testString = "test" + 'test2';
+		jif (testString == 'testtest2') => {
+			jmap map = {
+				'1'        => 1,
+				2          => '2',
+				testString => 2.0,
+			};
+			jforeach key, val => map => {
+			}
+		}
+	}
+}

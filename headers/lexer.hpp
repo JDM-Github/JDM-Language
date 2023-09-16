@@ -363,19 +363,18 @@ private:
 			this->__currentStruct->next = nullptr;
 
 			this->__opening_patt.pop_back();
-			this->__current_token += this->__input_buffer[i];
+			this->__current_token.clear();
 
-			if (!this->_checkIfNextTokenIsOperatorStart(i))
+			if (!this->_checkIfNextTokenIsOperatorStart(i, false))
 				this->__just_added_token = true;
 
 			this->__is_line_breaker = false;
-			this->__last_toke_type = TokenType::CLOSE_CASES;
-			this->__last_token = second;
-			this->__current_token.clear();
+			this->__last_toke_type  = TokenType::CLOSE_CASES;
+			this->__last_token      = second;
 
 			if (!this->__is_in_paren) {
 				this->__just_added_token = false;
-				this->__candidate_block = true;
+				this->__candidate_block  = true;
 			}
 			return true;
 		}
@@ -391,8 +390,6 @@ private:
 			TokenType tokenType = this->_determineTokenType(this->__current_token);
 
 			if (this->__candidate_block) {
-				std::cout << JDM::tokenTypeToString(this->__last_toke_type) << std::endl;
-				std::cout << JDM::tokenTypeToString(tokenType) << std::endl;
 				if (!this->_isIn(tokenType, {
 					TokenType::ARROW_OPERATOR,
 					TokenType::COMMA_OPERATOR,

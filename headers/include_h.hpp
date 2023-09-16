@@ -11,6 +11,31 @@
 #define J_TOKENS           std::string
 #define J_LOG_STREAMS      std::cout
 
+#define JDM_DLL __declspec(dllexport)
+
+// #define scast  static_cast
+// #define dcast  dynamic_cast
+// #define rcast  reinterpret_cast
+// #define dpcast std::dynamic_pointer_cast
+
+// template <class T> using sptr = std::shared_ptr<T>;
+// #define msptr std::make_shared
+
+// template <class T> using uptr = std::unique_ptr<T>;
+// #define muptr std::make_unique
+
+// #define ccharptr const char *
+// #define cstrref const std::string &
+
+// std::string         typedef str;
+// const std::string   typedef cstr;
+// const void          typedef cvoid;
+
+// template <class T> using vecsptr  = std::vector<std::shared_ptr<T>>;
+// template <class T> using cvecsptr = const std::vector<std::shared_ptr<T>>;
+// template <class T> using csptr    = const std::shared_ptr<T>;
+// template <class T> using csptrref = const std::shared_ptr<T> &;
+
 enum TokenType {
 	UNDEFINED,
 	DATA_TYPE,

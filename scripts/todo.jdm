@@ -1,0 +1,79 @@
+|->
+TODO:
+
+lambda on parameters
+
+lambda(() => {}) + 34
+
+Function call on parameters
+func() + 45
+
+List on parameters
+
+jfunc test() {
+	jfor i => [1, 45, 1] => {
+		$log => "TEST";
+		jif (something) => {
+			jtrue;
+			jbreak;
+		}
+	}
+}.then() => {
+	$log => "Success";
+}
+
+Sample:
+jfunc funcTest(() -> {
+	jreturn "TRUE";
+}).then((jint test) -> {
+|> another then if you want
+}).then(() -> {
+
+});
+-> The then keywords or function will not run if return type is not same on args.
+-> Also the then can be many times as you want
+-> Will print : It RUN succesfully it return TRUE
+
+<-|
+
+
+
+|-> Switch statement
+
+|> second args need to be unsigned or not negative
+|> start at 5 stop until it reach 45 with step 3
+
+|> start at 5 stop until it reach -19 with step 2 reverse
+jfor (jint i -> 5, -10, 2 -> reverse) -> {
+};
+
+jswitch (test) -> {
+	jcase '23' -> {
+		$log -> "23";
+	};
+};
+
+jint    testInteger         = (test-45);
+jdouble testDecimal         = .78;
+jstring oneQoute            = 'test';
+jstring doubleQoute         = "test";
+
+jfunc testFunction(jstring stringParam) -> {
+	jint test = 56;
+	jreturn true;
+};
+
+jfunc testFunction((jstring stringParam) -> {
+	jint test = 34;
+});then(() -> {
+
+});
+
+jfunc testFunction((jstring stringParam) -> {
+	jint test = 34;
+}).then(() -> {
+	$log -> "TTSTTST";
+});
+
+
+<-|

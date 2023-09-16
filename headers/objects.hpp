@@ -59,11 +59,9 @@ public:
 		return "MAP";
 	}
 };
-
 class FunctionObjects : public VarObjects {
 public:
 	const char *name;
-
 public:
 	FunctionObjects(const std::shared_ptr<TokenStruct> &tok)
 		: VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),

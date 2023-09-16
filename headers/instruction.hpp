@@ -105,7 +105,7 @@ public:
 
 class CreateFunction : public Instruction {
 public:
-	std::shared_ptr<FunctionObjects> function;
+	std::shared_ptr<FunctionObjects      > function;
 	std::vector<std::shared_ptr<Variable>> parameters;
 
 public:
@@ -114,7 +114,7 @@ public:
 
 class CallFunction : public Instruction {
 public:
-	std::shared_ptr<FunctionObjects> function;
+	std::shared_ptr<FunctionObjects        > function;
 	std::vector<std::shared_ptr<Expression>> arguments;
 
 public:
