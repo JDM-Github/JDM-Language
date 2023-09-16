@@ -3,5 +3,8 @@ jlist testList = ([23, 33]);
 jfor item => ({3=>4}) => {
     jint test = 34;
 }
-jfunc test() => { }
+jfunc test(jint test, jstring test2) => {
 
+}.jthen() => {
+	
+}

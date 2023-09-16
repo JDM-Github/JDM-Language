@@ -62,11 +62,17 @@ public:
 class FunctionObjects : public VarObjects {
 public:
 	const char *name;
+	std::vector<std::shared_ptr<Expression>> arguments;
+
 public:
-	FunctionObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
-		name(std::get<0>(tok->token).c_str()) {
-	}
+	FunctionObjects(
+		const std::shared_ptr<TokenStruct> &tok,
+		const std::vector<std::shared_ptr<Expression>> &_arguments)
+		:
+		VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
+		arguments (_arguments),
+		name(std::get<0>(tok->token).c_str()) {}
+
 	inline const char *returnStringValue() { return this->name; }
 };
 

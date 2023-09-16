@@ -60,6 +60,15 @@ public:
 				}
 				this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"    ");
 
+			// CREATE FUNCTION
+			} else if (instruction->getType() == CreateFunctionInstruction) {
+				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": (\n";
+				auto newFunc = std::dynamic_pointer_cast<CreateFunction>(instruction);
+				for (int i = 0; i < newFunc->parameters.size(); i++)
+					Log << space << "    " << newFunc->parameters[i]->varName->returnStringValue() << '\n';
+				Log << space << "  " << ")\n";
+				this->analyzeAST(std::dynamic_pointer_cast<Block>(newFunc->blockWillRun), space+"    ");
+
 			// FOREACH LIST
 			} else if (instruction->getType() == ForEachListStatementInstruction) {
 				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
@@ -95,6 +104,7 @@ private:
 			case WhileStatementInstruction       : return "WHILE";
 			case ForEachListStatementInstruction : return "FOREACH-LIST";
 			case ForEachMapStatementInstruction  : return "FOREACH-MAP";
+			case CreateFunctionInstruction       : return "CREATE FUNCTION";
 		}
 		return "Invalid Instruction";
 	}
@@ -165,14 +175,60 @@ private:
 				break;
 
 			case ControlFlowEnum::CONTROL_FOREACH: this->_manageForEachLoop(block, tokenS); break;
+			case ControlFlowEnum::CONTROL_FUNC   :
+				if (std::get<1>(tokenS[0]->token) != TokenType::VARIABLE) 
+					throw std::runtime_error("SYNTAX ERROR: Expecting FUNCTION NAME");
+				this->_manageCreateFunction(block, tokenS[0], {tokenS.begin()+1, tokenS.end()});
+				break;
 		}
 
-		if (!this->_isIn(control, {ControlFlowEnum::CONTROL_IF, ControlFlowEnum::CONTROL_ELSEIF}))
+		if (!isInVec(control, {ControlFlowEnum::CONTROL_IF, ControlFlowEnum::CONTROL_ELSEIF}))
 			this->__currIfLink->current = nullptr;
 	}
 
 	inline const bool _isBlockCurly(const std::shared_ptr<TokenStruct> &token) {
 		return (std::get<1>(token->token) == TokenType::OPEN_CASES && std::get<0>(token->token) == "{");
+	}
+
+	inline const void _createBlockOrLine(
+		std::shared_ptr<Block> &blockWillRun,
+		const std::shared_ptr<TokenStruct> &currToken,
+		const std::vector<std::shared_ptr<TokenStruct>>& tokens) {
+
+		if (this->_isBlockCurly(currToken)) {
+			if (tokens.size() != 1 && !isInVec(std::get<1>(tokens[1]->token), {
+				TokenType::DOT_OPERATOR
+			}))
+				throw std::runtime_error("SYNTAX ERROR: Unexpected Operator at the end of Block");
+			blockWillRun = this->_getBlock(currToken);
+		}
+		else {
+			blockWillRun = std::make_shared<Block>();
+			this->predictInstruction(blockWillRun, tokens);
+		}
+	}
+
+	inline const void _manageCreateFunction(
+		const std::shared_ptr<Block      > &block,
+		const std::shared_ptr<TokenStruct> &funcName,
+		const std::vector<std::shared_ptr<TokenStruct>>& tokens) {
+
+		std::vector<std::shared_ptr<Variable>> parameters;
+		std::shared_ptr<Block> blockWillRun;
+
+		if (std::get<0>(tokens[0]->token) != "(") throw std::runtime_error("SYNTAX ERROR: Expecting '()'");
+
+		if (!tokens[0]->child.empty()) this->_setTypeVarArgs(parameters, tokens[0]->child[0]->child);
+
+		if (std::get<1>(tokens[1]->token) != TokenType::ARROW_OPERATOR) 
+			throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+
+		if (tokens.size() < 3) throw std::runtime_error("SYNTAX ERROR: Expecting Block");
+		this->_createBlockOrLine(blockWillRun, tokens[2], {tokens.begin()+2, tokens.end()});
+
+		block->instruction.push_back(std::make_shared<CreateFunction>(
+			blockWillRun, std::make_shared<VariableObjects>(funcName), parameters
+		));
 	}
 
 	inline const void _manageForEachLoop(
@@ -238,10 +294,7 @@ private:
 				// Check if token is just a variable
 				if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::VARIABLE) {
 					varToRun = std::make_shared<VariableObjects>(remainingToken[0]);
-				} else {	
-					// Check if remaining token is a list or a map
-					// TODO
-					// MAKE THE ARGUMENTS TAKE ARITHMETIC LIST AND MAP
+				} else {
 					if (remainingToken.size() != 1) throw std::runtime_error("SYNTAX ERROR: Expecting ('jlist' | 'jmap') not Expression");
 					if (std::get<1>(remainingToken[0]->token) != TokenType::OPEN_CASES)
 						throw std::runtime_error("SYNTAX ERROR: Expecting 'jlist' | 'jmap'");
@@ -404,40 +457,32 @@ private:
 			std::vector<std::shared_ptr<Expression>> arguments;
 			std::shared_ptr<Block> blockWillRun;
 
-			if (it+1 != tokens.end()) {
-				auto newTok = (*(it+1));
-				if ( this->_isBlockCurly(newTok)) blockWillRun = this->_getBlock(newTok);
-				else {
+			if (it + 1 != tokens.end()) {
+				auto newTok = *(it + 1);
+				// Check If it is a Block
+				if (this->_isBlockCurly(newTok)) {
+					blockWillRun = this->_getBlock(newTok);
+				} else {
+					// Create a new block and make it a one line Code
 					blockWillRun = std::make_shared<Block>();
-					this->predictInstruction(blockWillRun, {it+1, tokens.end()});
+					this->predictInstruction(blockWillRun, {it + 1, tokens.end()});
 				}
-			} else throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
+			} else {
+				throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
+			}
 
 			std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokens.begin(), it};
 			if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES)
 				this->_setArguments(arguments, remainingToken[0]->child[0]->child);
 			else this->_setArguments(arguments, remainingToken);
 
-			if (arguments.size() >= 3) {
-				block->instruction.push_back(std::make_shared<ForLoopStatement>(
-					blockWillRun, newVar,
-					arguments[0], // START
-					arguments[1], // STOP
-					arguments[2]  // STEP
-				));
-			} else if (arguments.size() >= 2) {
-				block->instruction.push_back(std::make_shared<ForLoopStatement>(
-					blockWillRun, newVar,
-					arguments[0], // START
-					arguments[1]  // STOP
-				));
-			} else if (arguments.size() >= 1) {
-				block->instruction.push_back(std::make_shared<ForLoopStatement>(
-					blockWillRun, newVar,
-					nullptr,      // START
-					arguments[0]  // STOP
-				));
-			} else throw std::runtime_error("SYNTAX ERROR: Expecting 'Arguments'");
+			if (arguments.size() < 1) throw std::runtime_error("SYNTAX ERROR: Expecting 'Arguments'");
+
+			auto start = (arguments.size() >= 2) ? arguments[0] : nullptr;      // If there is more than 1, then he is arg[1]
+			auto stop  = (arguments.size() >= 2) ? arguments[1] : arguments[0]; // If there is more than 1, then he must be arg[1]
+			auto step  = (arguments.size() >= 3) ? arguments[2] : nullptr;      // If there is more than 2, then he is arg[2]
+
+			block->instruction.push_back(std::make_shared<ForLoopStatement>( blockWillRun, newVar, start, stop, step ));			
 		}
 		else throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 	}
@@ -449,7 +494,6 @@ private:
 		 * 
 		 * -> Make the NOT operand and ~ work, as intended.
 		 * -> Make it available on function call
-		 * -> Make it work on '[' and '{'
 		 *
 		 */
 		if (vec.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
@@ -532,7 +576,7 @@ private:
 
 			if (tok != nullptr) {
 				std::string tokStr = std::get<0>(tok->token);
-				if (this->_isIn(tokStr, targetString)) {
+				if (isInVec(tokStr, targetString)) {
 					int leftMinus = 1;
 					int rightAdd  = 2;
 
@@ -568,11 +612,6 @@ private:
 		}
 		return false;
 	}
-
-	// inline const std::shared_ptr<Expression> _getExpression(
-	// 	const std::vector<std::shared_ptr<TokenStruct>>& tokenS) {
-	// 	return this->_createExpression(this->_transformTokenStruct(tokenS))[0]->expression;
-	// }
 
 	inline const void _printExpression(const std::shared_ptr<Expression>& expr, const std::string &space = "", int depth=0) {
 		/**
@@ -633,6 +672,7 @@ private:
 		std::vector<std::shared_ptr<Expression>> &vec,
 		const std::vector<std::shared_ptr<TokenStruct>> &trav) {
 
+		if (trav.empty()) return;
 		auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
 			return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
 
@@ -650,6 +690,7 @@ private:
 		std::vector<std::shared_ptr<MapStruct>> &vec,
 		const std::vector<std::shared_ptr<TokenStruct>> &trav) {
 
+		if (trav.empty()) return;
 		auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
 			return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
 
@@ -665,6 +706,7 @@ private:
 		std::vector<std::shared_ptr<MapStruct>>& vec,
 		const std::vector<std::shared_ptr<TokenStruct>>& newVec) {
 
+		if (newVec.empty()) return;
 		auto it = std::find_if(newVec.begin(), newVec.end(), [](const std::shared_ptr<TokenStruct>& tok) {
 			return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR; });
 
@@ -687,11 +729,41 @@ private:
 		}
 	}
 
-	template <class _TypeClass>
-	inline const bool _isIn(const _TypeClass &e, const std::vector<_TypeClass> eList)  {
-		for (size_t i = 0; i < eList.size(); i++) 
-			if (e == eList[i]) return true;
-		return false;
+	inline const void _setTypeVarArgs(
+		std::vector<std::shared_ptr<Variable>> &vec,
+		const std::vector<std::shared_ptr<TokenStruct>> &trav) {
+
+		if (trav.empty()) return;
+		auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
+			return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
+
+		if (it != trav.end()) {
+
+			vec.push_back(this->_createVariable( { trav.begin(), it } ));
+			if (it+1 != trav.end()) _setTypeVarArgs(vec, { it+1, trav.end() });
+		} else vec.push_back(this->_createVariable( trav ));
+	}
+
+	inline const std::shared_ptr<Variable> _createVariable(
+		const std::vector<std::shared_ptr<TokenStruct>> &turnToVariable) {
+		std::vector<std::shared_ptr<TokenStruct>> newVec = turnToVariable;
+
+		std::shared_ptr<Variable> newVar = std::make_shared<Variable>();
+		if (newVec.empty()) throw std::runtime_error("SYNTAX ERROR: Expecting DATATYPE | VARIABLE");
+
+		if (std::get<1>(newVec[0]->token) == TokenType::DATA_TYPE) {
+			newVar->dataType = newVec[0];
+			newVec = { newVec.begin() + 1, newVec.end() };
+		}
+		if (newVec.empty() || std::get<1>(newVec[0]->token) != TokenType::VARIABLE)
+			throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
+		newVar->varName = std::make_shared<VariableObjects>(newVec[0]);
+		if (newVec.size() > 1) {
+			if (std::get<1>(newVec[1]->token) == TokenType::ASSIGNMENT_OPERATOR)
+				newVar->varValue = this->_createExpression(this->_transformTokenStruct( { newVec.begin() + 2, newVec.end() } ))[0]->expression;
+			else throw std::runtime_error("SYNTAX ERROR: Expecting '=' or None");
+		}
+		return newVar;
 	}
 
 	// inline const _createExpression(

@@ -1,14 +1,3 @@
-# BIN:= Build
-# INCLUDE:= -I"headers"
-
-# all: compile exec
-
-# compile:
-# 	@g++ main.cpp ${INCLUDE} -o ${BIN}/main.exe
-
-# exec:
-# 	@${BIN}/main.exe
-
 CXX = g++
 MAIN       = main
 DLL_NAME   = JDM
@@ -25,7 +14,7 @@ INCLUDE    = -I"headers"
 EXECUTABLE = $(BIN_DIR)/$(MAIN).exe
 DLL        = $(DLL_DIR)/$(DLL_NAME).dll
 
-all: $(EXECUTABLE) exec
+all: clean $(EXECUTABLE) exec
 
 $(EXECUTABLE): $(DLL)
 	$(CXX) $(MAIN).cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME)
@@ -46,8 +35,8 @@ oclean:
 	rm -rf $(OBJ_DIR)
 
 clean:	
-	del $(EXECUTABLE)
-	del $(DLL)
+	del $(BIN_DIR)\$(MAIN).exe
+	del $(DLL_DIR)\$(DLL_NAME).dll
 
 test:
 	@g++ test.cpp -o ${BIN_DIR}/test.exe
