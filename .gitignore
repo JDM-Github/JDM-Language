@@ -1,1 +1,6 @@
 source/
+tokens/
+object/
+Assembly/
+test.cpp
+Build/test.exe
