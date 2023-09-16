@@ -2,12 +2,12 @@
 #include <tuple>
 #include <vector>
 
-#include "include_h.hpp"
+#include "defines.hpp"
 #include "objects.hpp"
 #include "instruction.hpp"
 #include "error_handler.hpp"
 
-class Parser {
+class JDM_DLL Parser {
 private:
 	std::shared_ptr<TokenStruct> __rootTokens;
 	std::shared_ptr<Block> __mainBlock = std::make_shared<Block>();
@@ -35,45 +35,45 @@ public:
 		this->analyzeAST(this->__mainBlock);
 	}
 	inline const void analyzeAST(const std::shared_ptr<Block> &block, const std::string &space = "") {
-		std::cout << space << "BLOCK: \n";
+		Log << space << "BLOCK: \n";
 		for (const auto &instruction : block->instruction) {
 			if (instruction->getType() == IfStatementInstruction) {
-				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 				auto ifState = std::dynamic_pointer_cast<IfStatement>(instruction);
 				this->analyzeAST(std::dynamic_pointer_cast<Block>(ifState->blockWillRun), space+"    ");
 				this->_analyzeAllIfElse(ifState->elseIf, space);
 
 			} else if (instruction->getType() == ForLoopStatementInstruction) {
-				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 				auto forLoop = std::dynamic_pointer_cast<ForLoopStatement>(instruction);
 				if (forLoop->start) {
-					std::cout << space << "    START: { ... }\n";
+					Log << space << "    START: { ... }\n";
 					// this->_printExpression(forLoop->start, space+"      ");
 				}
 				if (forLoop->stop) {
-					std::cout << space << "    STOP { ... }: \n";
+					Log << space << "    STOP { ... }: \n";
 					// this->_printExpression(forLoop->stop,  space+"      ");
 				}
 				if (forLoop->step) {
-					std::cout << space << "    STEP { ... }: \n";
+					Log << space << "    STEP { ... }: \n";
 					// this->_printExpression(forLoop->step,  space+"      ");
 				}
 				this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"    ");
 
 			// FOREACH LIST
 			} else if (instruction->getType() == ForEachListStatementInstruction) {
-				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 				auto forEach = std::dynamic_pointer_cast<ForEachListStatement>(instruction);
 				this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
 
 			// FOREACH MAP
 			} else if (instruction->getType() == ForEachMapStatementInstruction) {
-				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 				auto forEach = std::dynamic_pointer_cast<ForEachMapStatement>(instruction);
 				this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
 			}
 			else
-				std::cout << space << "  " << this->_instructionToString(instruction->getType()) << ": { ... }\n";
+				Log << space << "  " << this->_instructionToString(instruction->getType()) << ": { ... }\n";
 		}
 	}
 
@@ -81,7 +81,7 @@ private:
 	inline const void _analyzeAllIfElse(const std::shared_ptr<IfStatement> &instruction, const std::string &space) {
 		if (instruction == nullptr) return;
 		std::string typeStr = (instruction->condition == nullptr) ? "ELSE" : "ELSE IF";
-		std::cout << space << "  " << typeStr << ": \n";
+		Log << space << "  " << typeStr << ": \n";
 		this->analyzeAST(std::dynamic_pointer_cast<Block>(instruction->blockWillRun), space+"    ");
 		this->_analyzeAllIfElse(instruction->elseIf, space);
 	}
@@ -580,32 +580,32 @@ private:
 		 * 
 		 */
 		if (!expr) return;
-		if (depth == 0) std::cout << space << "EXPRESSION: {\n";
+		if (depth == 0) Log << space << "EXPRESSION: {\n";
 
 		if (expr->firstValue) {
-			std::cout << space << "  Value: ";
+			Log << space << "  Value: ";
 			JDM::checkAndCallReturnStringValue(expr->firstValue);
-			std::cout << '\n';
+			Log << '\n';
 		} else {
-			std::cout << space << "  Expression: {\n";
+			Log << space << "  Expression: {\n";
 			this->_printExpression(expr->firstExpression, space+"  ", depth+1);
-			std::cout << space << "  }\n";
+			Log << space << "  }\n";
 		}
 
 		// if operator exist then thier is 100% a second value or expression
 		if (expr->opWillUse) {
-			std::cout << space << "  Operator: " << std::get<0>(expr->opWillUse->token) << '\n';
+			Log << space << "  Operator: " << std::get<0>(expr->opWillUse->token) << '\n';
 			if (expr->secondValue) {
-				std::cout << space << "  Value: ";
+				Log << space << "  Value: ";
 				JDM::checkAndCallReturnStringValue(expr->secondValue);
-				std::cout << '\n';
+				Log << '\n';
 			} else if (expr->secondExpression) {
-				std::cout << space << "  Expression: {\n";
+				Log << space << "  Expression: {\n";
 				this->_printExpression(expr->secondExpression, space+"  ", depth+1);
-				std::cout << space << "  }\n";
+				Log << space << "  }\n";
 			}
 		}
-		if (depth == 0) std::cout << space << "}\n";
+		if (depth == 0) Log << space << "}\n";
 	}
 
 	inline const std::vector<std::shared_ptr<ExpressionToken>> _transformTokenStruct(

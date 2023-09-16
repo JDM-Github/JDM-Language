@@ -1,14 +1,56 @@
-BIN:= Build
-INCLUDE:= -I"headers"
+# BIN:= Build
+# INCLUDE:= -I"headers"
 
-all: compile exec
+# all: compile exec
 
-compile:
-	@g++ main.cpp ${INCLUDE} -o ${BIN}/main.exe
+# compile:
+# 	@g++ main.cpp ${INCLUDE} -o ${BIN}/main.exe
+
+# exec:
+# 	@${BIN}/main.exe
+
+CXX = g++
+MAIN       = main
+DLL_NAME   = JDM
+
+SRC_DIR    = source
+BIN_DIR    = Build
+DLL_DIR    = Build
+OBJ_DIR    = object
+
+SOURCES    = $(wildcard $(SRC_DIR)/*.cpp)
+OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
+INCLUDE    = -I"headers"
+
+EXECUTABLE = $(BIN_DIR)/$(MAIN).exe
+DLL        = $(DLL_DIR)/$(DLL_NAME).dll
+
+all: $(EXECUTABLE) exec
+
+$(EXECUTABLE): $(DLL)
+	$(CXX) $(MAIN).cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME)
+
+$(DLL): $(OBJECTS)
+	$(CXX) -shared -o $(DLL) $(OBJECTS) $(INCLUDE)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	$(CXX) -c $< -o $@ $(INCLUDE)
+
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
 exec:
-	@${BIN}/main.exe
+	@$(EXECUTABLE)
+
+oclean:
+	rm -rf $(OBJ_DIR)
+
+clean:	
+	del $(EXECUTABLE)
+	del $(DLL)
 
 test:
-	@g++ test.cpp -o ${BIN}/test.exe
-	@${BIN}/test.exe
+	@g++ test.cpp -o ${BIN_DIR}/test.exe
+	@${BIN_DIR}/test.exe
+
+.PHONY: all clean oclean test exec
