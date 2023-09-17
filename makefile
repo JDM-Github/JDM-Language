@@ -1,5 +1,5 @@
 CXX = g++
-MAIN       = main
+MAIN       = JDM
 DLL_NAME   = JDM
 
 SRC_DIR    = source
@@ -17,7 +17,7 @@ DLL        = $(DLL_DIR)/$(DLL_NAME).dll
 all: clean $(EXECUTABLE) exec
 
 $(EXECUTABLE): $(DLL)
-	$(CXX) $(MAIN).cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME)
+	$(CXX) main.cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME)
 
 $(DLL): $(OBJECTS)
 	$(CXX) -shared -o $(DLL) $(OBJECTS) $(INCLUDE)

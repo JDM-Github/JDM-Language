@@ -36,8 +36,6 @@ jfunc funcTest(() -> {
 
 <-|
 
-
-
 |-> Switch statement
 
 |> second args need to be unsigned or not negative

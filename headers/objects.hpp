@@ -1,37 +1,5 @@
 #pragma once
-#include "defines.hpp"
-
-class VarObjects {
-protected:
-	size_t row, col;
-	TokenType varType = TokenType::UNDEFINED;
-
-protected:
-	VarObjects(TokenType type, size_t r = 0, size_t c = 0)
-		: varType(type), row(r), col(c) {}
-	virtual ~VarObjects() {}
-
-public:
-	inline const char* getStringToken() {
-		return JDM::tokenTypeToString(this->varType);
-	}
-	inline const TokenType getToken() {
-		return this->varType;
-	}
-};
-
-struct Expression {
-	std::shared_ptr<VarObjects > firstValue;
-	std::shared_ptr<VarObjects > secondValue;
-	std::shared_ptr<Expression > firstExpression;
-	std::shared_ptr<TokenStruct> opWillUse;
-	std::shared_ptr<Expression > secondExpression;
-};
-
-struct MapStruct {
-	std::shared_ptr<Expression> key;
-	std::shared_ptr<Expression> value;
-};
+#include "baseInsObj.hpp"
 
 class ListObject : public VarObjects {
 public:
@@ -51,14 +19,33 @@ public:
 public:
 	MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map)
 	: map (_map), VarObjects(TokenType::MAP) { }
-
-	inline const char *returnStringValue(const std::string &space = "") {
-		// std::ostringstream oss;
-		// for (const auto &var : this->map)
-		// 	oss << space << "MAP" << '\n';
-		return "MAP";
-	}
+	inline const char *returnStringValue(const std::string &space = "") { return "MAP"; }
 };
+
+
+class LambdaObjects : public VarObjects {
+public:
+	bool wilLCall = false;
+	std::vector<std::shared_ptr<Expression>> arguments;
+	std::vector<std::shared_ptr<Variable  >> parameters;
+	std::shared_ptr<Instruction            > blockWillRun;
+
+public:
+	LambdaObjects(
+		bool _willCall = false,
+		const std::vector<std::shared_ptr<Expression>> &_arguments    = {},
+		const std::vector<std::shared_ptr<Variable  >> &_parameters   = {},
+		const std::shared_ptr<Instruction            > &_blockWillRun = nullptr
+	) :
+	VarObjects(TokenType::FUNCTIONS),
+	wilLCall     (_willCall    ),
+	arguments    (_arguments   ),
+	parameters   (_parameters  ),
+	blockWillRun (_blockWillRun) {}
+
+	inline const char *returnStringValue() { return "LAMBDA"; }
+};
+
 class FunctionObjects : public VarObjects {
 public:
 	const char *name;
@@ -66,25 +53,13 @@ public:
 
 public:
 	FunctionObjects(
-		const std::shared_ptr<TokenStruct> &tok,
-		const std::vector<std::shared_ptr<Expression>> &_arguments)
-		:
+		const std::shared_ptr<TokenStruct>             &tok        = nullptr,
+		const std::vector<std::shared_ptr<Expression>> &_arguments = {}
+		) :
+		name(std::get<0>(tok->token).c_str()),
 		VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
-		arguments (_arguments),
-		name(std::get<0>(tok->token).c_str()) {}
+		arguments (_arguments) {}
 
-	inline const char *returnStringValue() { return this->name; }
-};
-
-class VariableObjects : public VarObjects {
-public:
-	const char      *name;
-
-public:
-	VariableObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::VARIABLE, std::get<2>(tok->token), std::get<3>(tok->token)),
-		name(std::get<0>(tok->token).c_str()) {
-	}
 	inline const char *returnStringValue() { return this->name; }
 };
 
@@ -93,8 +68,8 @@ public:
 	std::string value;
 public:
 	StringObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::STRING, std::get<2>(tok->token),  std::get<3>(tok->token)) {
-		value = std::get<0>(tok->token);
+		: VarObjects(TokenType::STRING, std::get<2>(tok->token), std::get<3>(tok->token)) {
+		this->value = std::get<0>(tok->token);
 	}
 	inline const char *returnStringValue() { return this->value.c_str(); }
 };
@@ -104,7 +79,7 @@ public:
 	int64_t value;
 public:
 	IntegerObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::INTEGER, std::get<2>(tok->token),  std::get<3>(tok->token)) {
+		: VarObjects(TokenType::INTEGER, std::get<2>(tok->token), std::get<3>(tok->token)) {
 		this->value = std::stoll(std::get<0>(tok->token));
 	}
 	inline const int64_t returnStringValue() { return this->value; }
@@ -115,7 +90,7 @@ public:
 	long double value;
 public:
 	DoubleObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::DECIMAL, std::get<2>(tok->token),  std::get<3>(tok->token)) {
+		: VarObjects(TokenType::DECIMAL, std::get<2>(tok->token), std::get<3>(tok->token)) {
 		this->value = std::stod(std::get<0>(tok->token));
 	}
 	inline const long double returnStringValue() { return this->value; }

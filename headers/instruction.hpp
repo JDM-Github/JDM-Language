@@ -1,38 +1,5 @@
 #pragma once
-#include <memory>
 #include "objects.hpp"
-
-struct Variable {
-	std::shared_ptr<TokenStruct    > dataType;
-	std::shared_ptr<VariableObjects> varName;
-	std::shared_ptr<Expression     > varValue;
-};
-
-enum InstructionType {
-	DefaultInstruction,
-	DeclarationInstruction,
-	AssignmentInstruction,
-	BlockInstruction,
-	IfStatementInstruction,
-	CreateFunctionInstruction,
-	CallFunctionInstruction,
-	ForLoopStatementInstruction,
-	WhileStatementInstruction,
-	ForEachListStatementInstruction,
-	ForEachMapStatementInstruction,
-};
-
-class Instruction {
-protected:
-	InstructionType _instructType;
-	Instruction(InstructionType type) : _instructType(type) {}
-	virtual ~Instruction() {}
-
-public:
-	inline const InstructionType getType() {
-		return this->_instructType;
-	}
-};
 
 class Block : public Instruction {
 public:

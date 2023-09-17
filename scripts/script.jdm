@@ -1,10 +1,9 @@
 
-jlist testList = ([23, 33]);
-jfor item => ({3=>4}) => {
-    jint test = 34;
-}
 jfunc test(jint test, jstring test2) => {
-
-}.jthen() => {
-	
+	jfor item => ({3=>4}) => {
+    	jint test = 34;
+	}
+	jlist testList = ([23, 33]);
 }
+
+jlambda test = 34 + 6;
