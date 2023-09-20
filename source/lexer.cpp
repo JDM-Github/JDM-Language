@@ -338,6 +338,7 @@ CBool Tokenizer::_handle_paren(
 	if (this->__input_buffer[i] == first &&
 	   (this->__is_line_breaker ||
 		isInVec(this->__last_toke_type, {
+			TokenType::DATA_TYPE,
 			TokenType::VARIABLE,
 			TokenType::CONTROL_FLOW,
 			TokenType::OPEN_CASES,
@@ -410,6 +411,7 @@ CBool Tokenizer::_addToken()
 
 		if (this->__candidate_block) {
 			if (!isInVec(tokenType, {
+				TokenType::ASSIGNMENT_OPERATOR,
 				TokenType::ARROW_OPERATOR,
 				TokenType::COMMA_OPERATOR,
 				TokenType::DOT_OPERATOR,

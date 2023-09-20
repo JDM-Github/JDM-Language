@@ -88,16 +88,22 @@ public:
 	Instruction  (InstructionType::CreateFunctionInstruction) {}
 };
 
-class CallFunction : public Instruction {
+class Call : public Instruction {
 public:
-	std::shared_ptr<FunctionObjects        > function;
+	bool isAssigning = false;
+	std::shared_ptr<CallObjects> callObj;
+	std::shared_ptr<Expression > expression;
 
 public:
-	CallFunction(
-		const std::shared_ptr<FunctionObjects        > &_function   = nullptr
+	Call(
+		bool _isAssigning = false,
+		const std::shared_ptr<CallObjects> &_callObj   = nullptr,
+		const std::shared_ptr<Expression > &_expression = nullptr
 	) :
-	function    (_function),
-	Instruction (InstructionType::CallFunctionInstruction) {}
+	isAssigning(_isAssigning),
+	callObj    (_callObj),
+	expression (_expression),
+	Instruction(InstructionType::CallInstruction) {}
 };
 
 class ForLoopStatement : public Instruction {

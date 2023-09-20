@@ -3,11 +3,13 @@ MAIN       = JDM
 DLL_NAME   = JDM
 
 SRC_DIR    = source
-BIN_DIR    = Build
-DLL_DIR    = Build
 OBJ_DIR    = object
 
-SOURCES    = $(wildcard $(SRC_DIR)/*.cpp)
+BIN_DIR    = Build
+DLL_DIR    = Build
+
+OTHER_SRC  = tokenizerSource parserSource
+SOURCES    = $(wildcard $(SRC_DIR)/*.cpp) $(foreach D, $(OTHER_SRC), $(wildcard $(SRC_DIR)\$(D)/*.cpp))
 OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 INCLUDE    = -I"headers"
 
@@ -17,7 +19,7 @@ DLL        = $(DLL_DIR)/$(DLL_NAME).dll
 all: clean $(EXECUTABLE) exec
 
 $(EXECUTABLE): $(DLL)
-	$(CXX) main.cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME)
+	$(CXX) main.cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME) $(INCLUDE)
 
 $(DLL): $(OBJECTS)
 	$(CXX) -shared -o $(DLL) $(OBJECTS) $(INCLUDE)
@@ -32,14 +34,13 @@ exec:
 	@$(EXECUTABLE)
 
 oclean:
-	rm -rf $(OBJ_DIR)
+	del $(OBJ_DIR)\*
 
-clean:	
+clean:
 	del $(BIN_DIR)\$(MAIN).exe
 	del $(DLL_DIR)\$(DLL_NAME).dll
 
 test:
-	@g++ test.cpp -o ${BIN_DIR}/test.exe
-	@${BIN_DIR}/test.exe
+	echo $(OBJECTS)
 
-.PHONY: all clean oclean test exec
+.PHONY: all oclean clean test exec

@@ -68,6 +68,25 @@ template <class _TypeClass>
 }
 
 namespace JDM {
+
+	const std::vector<std::string> powerVec   = { "**"                             };
+	const std::vector<std::string> multDivVec = { "*", "/", "//"                   };
+	const std::vector<std::string> addSubVec  = { "+", "-"                         };
+	const std::vector<std::string> notVec     = { "~"                              };
+	const std::vector<std::string> shiftVec   = { "<<", ">>"                       };
+	const std::vector<std::string> andVec     = { "&"                              };
+	const std::vector<std::string> xorVec     = { "^"                              };
+	const std::vector<std::string> orVec      = { "|"                              };
+	const std::vector<std::string> logicalVec = { "<", ">", "<=", ">=", "==", "!=" };
+	const std::vector<std::string> relNotVec  = { "!"                              };
+	const std::vector<std::string> relAndVec  = { "&&"                             };
+	const std::vector<std::string> relOrVec   = { "||"                             };
+
+	const std::vector<std::string> operatorCombinedVector = {
+		"**", "*", "/", "//", "+", "-", "~", "<<", ">>", "&",
+		"^", "|", "<", ">", "<=", ">=", "==", "!=", "!", "&&", "||"
+	};
+
 	const std::unordered_map<std::string, ControlFlowEnum> controlFlowMap = {
         {"jif",      ControlFlowEnum::CONTROL_IF},
         {"jelseif",  ControlFlowEnum::CONTROL_ELSEIF},

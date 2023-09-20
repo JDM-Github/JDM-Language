@@ -8,7 +8,7 @@ enum InstructionType {
 	BlockInstruction,
 	IfStatementInstruction,
 	CreateFunctionInstruction,
-	CallFunctionInstruction,
+	CallInstruction,
 	ForLoopStatementInstruction,
 	WhileStatementInstruction,
 	ForEachListStatementInstruction,
@@ -44,18 +44,19 @@ public:
 	inline const TokenType getToken() {
 		return this->varType;
 	}
+	virtual const std::string returnStringValue() { return "INVALID"; };
 };
 
 class VariableObjects : public VarObjects {
 public:
-	const char      *name;
+	std::string name;
 
 public:
 	VariableObjects(const std::shared_ptr<TokenStruct> &tok)
 		: VarObjects(TokenType::VARIABLE, std::get<2>(tok->token), std::get<3>(tok->token)),
-		name(std::get<0>(tok->token).c_str()) {
+		name(std::get<0>(tok->token)) {
 	}
-	inline const char *returnStringValue() { return this->name; }
+	inline const std::string returnStringValue() { return this->name; }
 };
 
 struct Expression {

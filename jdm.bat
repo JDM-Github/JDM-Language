@@ -1,2 +1,2 @@
 @echo OFF
-Build\main %1
+Build\JDM %1
