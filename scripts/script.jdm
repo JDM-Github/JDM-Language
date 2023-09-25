@@ -1,30 +1,10 @@
+jint test2 = 3;
 
-
-|> jfunc test(test, test2) => {
-|> 
-	|> jif test => {
-		|> jif nested => { }
-	|> }
-	|> jelseif test2 => |-> Comment Block <-| jany oneLineBlock = 99;
-	|> jelse => { }
-|> 
-	|> jfor i => 34 => { }       |> Stop
-	|> jfor i => 1, 34 => { }    |> Start, Stop
-	|> jfor i => 1, 34, 2 => { } |> Start, Stop, Step
-|> 
-	|> jforeach val => list => { }
-	|> jforeach key, val => map => { }
-|> 
-	|> jforeach val => [1, 2, 3] => { }
-	|> jforeach val, key => {'1'=>1, '2'=>2, "3"=>3} => { }
-|> 
-	|> jforeach val => jreverse => list => { }
-	|> jforeach key, val => jreverse => map => { }
-|> 
-	|> jforeach val => jreverse => [1, 2, 3] => { }
-	|> jforeach val, key => jreverse => {'1'=>1, '2'=>2, "3"=>3} => { }
-|> }
-
-jany lambda = jlambda(() => {}) + ()=>{}=>();
-
-test.test() = 9;
+jfunc testFunction(jdouble test3) => {
+	$logn => test3;
+	test2 = test2 - 1;
+	jif (test2) => {
+		testFunction(test2);
+	}
+}
+testFunction(32.523 / 3 + (34));

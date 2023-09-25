@@ -10,6 +10,7 @@ public:
 	: list (_list), VarObjects(TokenType::LIST) { }
 
 	inline const std::string returnStringValue() { return "LIST"; }
+	inline const std::vector<std::shared_ptr<Expression>> returnValue() { return this->list; }
 };
 
 class MapObject : public VarObjects {
@@ -20,8 +21,56 @@ public:
 	MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map)
 	: map (_map), VarObjects(TokenType::MAP) { }
 	inline const std::string returnStringValue() { return "MAP"; }
+
+	inline const std::vector<std::shared_ptr<MapStruct>> returnValue() { return this->map; }
 };
 
+class CallObjects : public VarObjects {
+public:
+	std::shared_ptr<VarObjects > currObject;
+	std::shared_ptr<CallObjects> prevObject;
+	std::shared_ptr<VarObjects > nextObject;
+
+public:
+	CallObjects(
+		const std::shared_ptr<VarObjects > &_currObject = nullptr,
+		const std::shared_ptr<CallObjects> &_prevObject = nullptr
+		) :
+		VarObjects(TokenType::CALL_OBJ),
+		currObject(_currObject),
+		prevObject(_prevObject) {}
+
+	inline const std::string returnStringValue() { return "CALL"; }
+};
+
+class ClassObjects : public VarObjects {
+public:
+	std::string name;
+
+public:
+	ClassObjects(const std::shared_ptr<TokenStruct> &tok)
+		: VarObjects(TokenType::CLASS, std::get<2>(tok->token), std::get<3>(tok->token)),
+		name(std::get<0>(tok->token)) {
+	}
+	inline const std::string returnStringValue() { return this->name; }
+};
+
+class CastObjects : public VarObjects {
+public:
+	DataTypeEnum datTypeToTurn;
+	std::shared_ptr<Expression> expression;
+
+public:
+	CastObjects(
+		DataTypeEnum _datTypeToTurn,
+		const std::shared_ptr<Expression > &_expression = nullptr
+		) :
+		VarObjects(TokenType::CAST),
+		datTypeToTurn(_datTypeToTurn),
+		expression   (_expression) {}
+
+	inline const std::string returnStringValue() { return "CAST"; }
+};
 
 class LambdaObjects : public VarObjects {
 public:
@@ -46,18 +95,6 @@ public:
 	inline const std::string returnStringValue() { return "LAMBDA"; }
 };
 
-class ClassObjects : public VarObjects {
-public:
-	std::string name;
-
-public:
-	ClassObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::CLASS, std::get<2>(tok->token), std::get<3>(tok->token)),
-		name(std::get<0>(tok->token)) {
-	}
-	inline const std::string returnStringValue() { return this->name; }
-};
-
 class FunctionObjects : public VarObjects {
 public:
 	std::string name;
@@ -75,69 +112,46 @@ public:
 	inline const std::string returnStringValue() { return this->name; }
 };
 
-class CallObjects : public VarObjects {
-public:
-	std::shared_ptr<VarObjects > currObject;
-	std::shared_ptr<CallObjects> prevObject;
-
-public:
-	CallObjects(
-		const std::shared_ptr<VarObjects > &_currObject = nullptr,
-		const std::shared_ptr<CallObjects> &_prevObject = nullptr
-		) :
-		VarObjects(TokenType::CALL_OBJ),
-		currObject(_currObject),
-		prevObject(_prevObject) {}
-
-	inline const std::string returnStringValue() { return "CALL"; }
-};
-
-class CastObjects : public VarObjects {
-public:
-	DataTypeEnum datTypeToTurn;
-	std::shared_ptr<Expression > expression;
-
-public:
-	CastObjects(
-		DataTypeEnum _datTypeToTurn,
-		const std::shared_ptr<Expression > &_expression = nullptr
-		) :
-		VarObjects(TokenType::CAST),
-		datTypeToTurn(_datTypeToTurn),
-		expression   (_expression) {}
-
-	inline const std::string returnStringValue() { return "CAST"; }
-};
-
 class StringObjects : public VarObjects {
 public:
 	std::string value;
+
 public:
 	StringObjects(const std::shared_ptr<TokenStruct> &tok)
 		: VarObjects(TokenType::STRING, std::get<2>(tok->token), std::get<3>(tok->token)) {
 		this->value = std::get<0>(tok->token);
 	}
 	inline const std::string returnStringValue() { return this->value; }
+	inline const std::string returnValue() { return this->value; }
 };
 
 class IntegerObjects : public VarObjects {
 public:
 	int64_t value;
+
 public:
 	IntegerObjects(const std::shared_ptr<TokenStruct> &tok)
 		: VarObjects(TokenType::INTEGER, std::get<2>(tok->token), std::get<3>(tok->token)) {
-		this->value = std::stoll(std::get<0>(tok->token));
+
+		auto tokenValue = std::get<0>(tok->token);
+		if (tokenValue == "jtrue" || tokenValue == "jfalse")
+    		 this->value = static_cast<int64_t>(tokenValue == "jtrue");
+		else this->value = std::stoll(tokenValue);
+
 	}
 	inline const std::string returnStringValue() { return std::to_string(this->value); }
+	inline const int64_t returnValue() { return this->value; }
 };
 
 class DoubleObjects : public VarObjects {
 public:
 	long double value;
+
 public:
 	DoubleObjects(const std::shared_ptr<TokenStruct> &tok)
 		: VarObjects(TokenType::DECIMAL, std::get<2>(tok->token), std::get<3>(tok->token)) {
 		this->value = std::stod(std::get<0>(tok->token));
 	}
 	inline const std::string returnStringValue() { return std::to_string(this->value); }
+	inline const long double returnValue() { return this->value; }
 };

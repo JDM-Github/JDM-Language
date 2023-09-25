@@ -60,10 +60,25 @@ struct TokenCurrentLink {
 #define CSharedTokenLink      const SharedTokenStruct
 #define CSharedTokenLinkRef   const SharedTokenStruct&
 
+template <class T> using Vector     = std::vector<T>;
+template <class T> using VectorRef  = std::vector<T>&;
+template <class T> using CVector    = const std::vector<T>;
+template <class T> using CVectorRef = const std::vector<T>&;
+
+template <class T> using SharedPtr        = std::shared_ptr<T>;
+template <class T> using SharedPtrRef     = std::shared_ptr<T>&;
+template <class T> using CSharedPtr       = const std::shared_ptr<T>;
+template <class T> using CSharedPtrRef    = const std::shared_ptr<T>&;
+
+template <class T> using VecSharedPtr     = std::vector<std::shared_ptr<T>>;
+template <class T> using VecSharedPtrRef  = std::vector<std::shared_ptr<T>>&;
+template <class T> using CVecSharedPtr    = const std::vector<std::shared_ptr<T>>;
+template <class T> using CVecSharedPtrRef = const std::vector<std::shared_ptr<T>>&;
+
+
 template <class _TypeClass>
 	CBool isInVec(const _TypeClass &e, const std::vector<_TypeClass> eList) {
-	for (SizeT i = 0; i < eList.size(); i++) if (e == eList[i])
-		return true;
+	for (SizeT i = 0; i < eList.size(); i++) if (e == eList[i]) return true;
 	return false;
 }
 
@@ -123,6 +138,7 @@ namespace JDM {
 
     const std::unordered_map<std::string, CustomFunctionEnum> customFunctionMap = {
         {"$log",     CUSFUNC_LOG},
+        {"$logn",    CUSFUNC_LOGN},
         {"$cast",    CUSFUNC_CAST},
         {"$gettype", CUSFUNC_GETTYPE},
         {"$sort",    CUSFUNC_SORT}

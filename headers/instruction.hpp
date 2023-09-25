@@ -1,20 +1,12 @@
 #pragma once
 #include "objects.hpp"
 
-class Block : public Instruction {
-public:
-	std::vector<std::shared_ptr<VariableObjects>> localBlockVariable;
-	std::vector<std::shared_ptr<Instruction    >> instruction;
-
-public:
-	Block() : Instruction(InstructionType::BlockInstruction) { }
-};
-
+// DONE
 class Declaration : public Instruction {
 public:
-	std::shared_ptr<TokenStruct            > dataType;
-	std::shared_ptr<VariableObjects        > varName;
-	std::shared_ptr<Expression             > expression;
+	std::shared_ptr<TokenStruct    > dataType;
+	std::shared_ptr<VariableObjects> varName;
+	std::shared_ptr<Expression     > expression;
 
 public:
 	Declaration(
@@ -28,11 +20,12 @@ public:
 	Instruction(InstructionType::DeclarationInstruction) {}
 };
 
+// DONE
 class Assignment : public Instruction {
 public:
-	std::shared_ptr<VariableObjects        > varName;
-	std::shared_ptr<TokenStruct            > operation;
-	std::shared_ptr<Expression             > expression;
+	std::shared_ptr<VariableObjects> varName;
+	std::shared_ptr<TokenStruct    > operation;
+	std::shared_ptr<Expression     > expression;
 
 public:
 	Assignment(
@@ -54,6 +47,29 @@ public:
 	Instruction(InstructionType::AssignmentInstruction) {}
 };
 
+// DONE
+class Logger : public Instruction {
+public:
+	bool addNewLine = false;
+	std::vector<std::shared_ptr<Expression>> expressions;
+	Logger(
+		const std::vector<std::shared_ptr<Expression>> &_expressions = {},
+		const bool _addNewLine = false
+	) :
+	expressions(_expressions),
+	addNewLine (_addNewLine ),
+	Instruction(InstructionType::LoggerInstruction) {}
+};
+
+class Block : public Instruction {
+public:
+	std::vector<std::shared_ptr<Instruction>> instruction;
+
+public:
+	Block() : Instruction(InstructionType::BlockInstruction) { }
+};
+
+// DONE
 class IfStatement : public Instruction {
 public:
 	std::shared_ptr<Block      > blockWillRun;
@@ -62,14 +78,15 @@ public:
 
 public:
 	IfStatement(
-		const std::shared_ptr<Block      > &_blockWillRun = nullptr,
-		const std::shared_ptr<Expression > &_condition    = nullptr
+		const std::shared_ptr<Block     > &_blockWillRun = nullptr,
+		const std::shared_ptr<Expression> &_condition    = nullptr
 	) :
 	blockWillRun(_blockWillRun),
 	condition   (_condition   ),
 	Instruction (InstructionType::IfStatementInstruction) {}
 };
 
+// DONE
 class CreateFunction : public Instruction {
 public:
 	std::shared_ptr<Block                > blockWillRun;
@@ -108,11 +125,11 @@ public:
 
 class ForLoopStatement : public Instruction {
 public:
-	std::shared_ptr<Block            > blockWillRun;
-	std::shared_ptr<VariableObjects  > variable;
-	std::shared_ptr<Expression       > start; // Must be a INTEGER
-	std::shared_ptr<Expression       > stop;  // Must be a INTEGER
-	std::shared_ptr<Expression       > step;  // Must be a INTEGER
+	std::shared_ptr<Block          > blockWillRun;
+	std::shared_ptr<VariableObjects> variable;
+	std::shared_ptr<Expression     > start; // Must be a INTEGER
+	std::shared_ptr<Expression     > stop;  // Must be a INTEGER
+	std::shared_ptr<Expression     > step;  // Must be a INTEGER
 
 public:
 	ForLoopStatement(
@@ -132,13 +149,13 @@ public:
 
 class WhileStatement : public Instruction {
 public:
-	std::shared_ptr<Block      > blockWillRun;
-	std::shared_ptr<Expression > condition;
+	std::shared_ptr<Block     > blockWillRun;
+	std::shared_ptr<Expression> condition;
 
 public:
 	WhileStatement(
-		const std::shared_ptr<Block      > &_blockWillRun = nullptr,
-		const std::shared_ptr<Expression > &_condition    = nullptr
+		const std::shared_ptr<Block     > &_blockWillRun = nullptr,
+		const std::shared_ptr<Expression> &_condition    = nullptr
 	) :
 	blockWillRun(_blockWillRun),
 	condition   (_condition   ),
@@ -155,9 +172,9 @@ public:
 
 public:
 	ForEachListStatement(
-		const std::shared_ptr<Block                  > &_blockWillRun = nullptr,
-		const std::shared_ptr<VariableObjects        > &_variable     = nullptr,
-		const std::shared_ptr<ListObject             > &_listToRun    = nullptr,
+		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
+		const std::shared_ptr<VariableObjects> &_variable     = nullptr,
+		const std::shared_ptr<ListObject     > &_listToRun    = nullptr,
 		const bool _reverse = false
 	) :
 	blockWillRun(_blockWillRun),
@@ -167,9 +184,9 @@ public:
 	Instruction(InstructionType::ForEachListStatementInstruction) {}
 
 	ForEachListStatement(
-		const std::shared_ptr<Block                  > &_blockWillRun = nullptr,
-		const std::shared_ptr<VariableObjects        > &_variable     = nullptr,
-		const std::shared_ptr<VariableObjects        > &_varToRun     = nullptr,
+		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
+		const std::shared_ptr<VariableObjects> &_variable     = nullptr,
+		const std::shared_ptr<VariableObjects> &_varToRun     = nullptr,
 		const bool _reverse = false
 	) :
 	blockWillRun(_blockWillRun),
@@ -182,18 +199,18 @@ public:
 class ForEachMapStatement : public Instruction {
 public:
 	bool isReverse = false;
-	std::shared_ptr<Block           > blockWillRun;
-	std::shared_ptr<VariableObjects > varKey;
-	std::shared_ptr<VariableObjects > varVal;
-	std::shared_ptr<MapObject       > mapToRun;
-	std::shared_ptr<VariableObjects > varToRun;
+	std::shared_ptr<Block          > blockWillRun;
+	std::shared_ptr<VariableObjects> varKey;
+	std::shared_ptr<VariableObjects> varVal;
+	std::shared_ptr<MapObject      > mapToRun;
+	std::shared_ptr<VariableObjects> varToRun;
 
 public:
 	ForEachMapStatement(
-		const std::shared_ptr<Block           > &_blockWillRun = nullptr,
-		const std::shared_ptr<VariableObjects > &_varKey       = nullptr,
-		const std::shared_ptr<VariableObjects > &_varVal       = nullptr,
-		const std::shared_ptr<MapObject       > &_mapToRun     = nullptr,
+		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
+		const std::shared_ptr<VariableObjects> &_varKey       = nullptr,
+		const std::shared_ptr<VariableObjects> &_varVal       = nullptr,
+		const std::shared_ptr<MapObject      > &_mapToRun     = nullptr,
 		const bool _reverse = false
 	) :
 	blockWillRun(_blockWillRun),
@@ -204,10 +221,10 @@ public:
 	Instruction(InstructionType::ForEachMapStatementInstruction) {}
 
 	ForEachMapStatement(
-		const std::shared_ptr<Block           > &_blockWillRun = nullptr,
-		const std::shared_ptr<VariableObjects > &_varKey       = nullptr,
-		const std::shared_ptr<VariableObjects > &_varVal       = nullptr,
-		const std::shared_ptr<VariableObjects > &_varToRun     = nullptr,
+		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
+		const std::shared_ptr<VariableObjects> &_varKey       = nullptr,
+		const std::shared_ptr<VariableObjects> &_varVal       = nullptr,
+		const std::shared_ptr<VariableObjects> &_varToRun     = nullptr,
 		const bool _reverse = false
 	) :
 	blockWillRun(_blockWillRun),

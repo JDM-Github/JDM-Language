@@ -3,6 +3,7 @@
 
 enum InstructionType {
 	DefaultInstruction,
+	LoggerInstruction,
 	DeclarationInstruction,
 	AssignmentInstruction,
 	BlockInstruction,
@@ -76,4 +77,13 @@ struct Variable {
 	std::shared_ptr<TokenStruct    > dataType;
 	std::shared_ptr<VariableObjects> varName;
 	std::shared_ptr<Expression     > varValue;
+};
+
+struct ExpressionToken {
+	std::shared_ptr<Expression> expression;
+	std::shared_ptr<TokenStruct> token;
+	ExpressionToken(
+		const std::shared_ptr<Expression> &exp = nullptr,
+		const std::shared_ptr<TokenStruct> &tok = nullptr)
+	: expression(exp), token(tok) {}
 };

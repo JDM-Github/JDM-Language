@@ -302,7 +302,7 @@ CBool Tokenizer::_handle_string(
 {
 	if (this->__is_start_string != 'N') {
 		if (this->__input_buffer[i] == this->__is_start_string) {
-			this->__is_start_string  = 'N';
+			this->__is_start_string = 'N';
 			this->__current_token += this->__input_buffer[i];
 			if (!this->_checkIfNextTokenIsOperatorStart(i)) {
 				this->_addToken();
@@ -317,6 +317,8 @@ CBool Tokenizer::_handle_string(
 		if (!this->__current_token.empty())
 			throw UnexpectedCharacter(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
 		this->__is_start_string = this->__input_buffer[i];
+		this->__current_token  += this->__input_buffer[i];
+		return true;
 	}
 	return false;
 }
@@ -342,6 +344,7 @@ CBool Tokenizer::_handle_paren(
 			TokenType::VARIABLE,
 			TokenType::CONTROL_FLOW,
 			TokenType::OPEN_CASES,
+			TokenType::CLOSE_CASES,
 			TokenType::ARROW_OPERATOR,
 			TokenType::COMMA_OPERATOR,
 			TokenType::BITWISE_OPERATOR,
@@ -594,6 +597,12 @@ CVoid Tokenizer::_getTokens()
 				else
 					this->__current_token.clear();
 			}
+		}
+		else if (this->__is_start_string != 'N') {
+			// Handle the escape '\' character combination
+			if (this->_handle_escape(i))
+				this->__current_token += this->__input_buffer[i];
+			else this->_handle_string(i);
 		}
 		// Check if it is in ignored character, and if it is not, and also not a comment line, the proceed
 		else if (!this->_isNextTokenInIgnored(i) && !this->__is_comment_line) {

@@ -1,5 +1,6 @@
 #include "headers/lexer.hpp"
 #include "headers/parser.hpp"
+#include "headers/compiler.hpp"
 #include <memory>
 #include <cstring>
 #include <stdexcept>
@@ -51,15 +52,17 @@ int main(int argc, char* argv[]) {
     }
     std::unique_ptr<Tokenizer> newTokenizer;
     std::unique_ptr<Parser> newParser;
+    std::unique_ptr<Compiler> newCompiler;
 
     try {
         newTokenizer = std::make_unique<Tokenizer>(filename, getScriptOnFile(filename));
-        newTokenizer->analyzeAllTokens(true);
+        // newTokenizer->analyzeAllTokens(true);
     } catch (const JDMTokenizingHandler& error) {
         std::cerr << error.what() << std::endl;
         std::exit(EXIT_SUCCESS);
     }
-    std::cout << "\n\nParse AST:\n";
+
+    // std::cout << "\n\nParse AST:\n";
     try {
         newParser = std::make_unique<Parser>(newTokenizer->getTokens());
     } catch (const std::runtime_error& error) {
@@ -67,14 +70,15 @@ int main(int argc, char* argv[]) {
         std::exit(EXIT_SUCCESS);
     }
 
-    // try {
-    //     Compiler newCompiler = Compiler(newParser.getAST());
-    // } catch (const JDMCompilerHandler& error) {
-    //     std::cerr << error.what() << std::endl;
-    //     std::exit(EXIT_SUCCESS);
-    // }
+    // std::cout << "\nCompiler:\n";
+    try {
+        newCompiler = std::make_unique<Compiler>(newParser->getAST());
+    } catch (const std::runtime_error& error) {
+        std::cerr << error.what() << std::endl;
+        std::exit(EXIT_SUCCESS);
+    }
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << "Time taken by function: " << duration.count() << " milliseconds" << std::endl;
+    std::cout << "\n\nTime taken by function: " << duration.count() << " milliseconds" << std::endl;
 }
