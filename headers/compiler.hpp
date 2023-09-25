@@ -13,7 +13,7 @@ private:
 
 	struct VariableLink {
 		std::map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> variables;
-		// std::map<std::string, std::shared_ptr<FunctionCall>> functionMap;
+		std::map<std::string, std::shared_ptr<FunctionCall>> functionMap;
 		std::shared_ptr<VariableLink> next;
 		std::shared_ptr<VariableLink> prev;
 	};
@@ -79,9 +79,11 @@ public:
 		if (this->variable->prev != nullptr) {
 			this->variable = this->variable->prev;
 			std::map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> tempMap;
-			for (const auto& element : this->variable->variables)
-    			tempMap[element.first] = this->variable->next->variables.at(element.first);
-
+			for (const auto& element : this->variable->variables) {
+				if (this->variable->next->variables.count(element.first)) {
+            		tempMap[element.first] = this->variable->next->variables.at(element.first);
+        		} else tempMap[element.first] = element.second;
+			}
 			this->variable->variables = tempMap;
 			this->variable->next = nullptr;
 		}
@@ -250,12 +252,12 @@ public:
 				}
 				else if (operation == "*") {
 					if (!secondVal->isInteger && !secondVal->isDecimal) throw std::runtime_error("Runtime Error: Must be a Number to multiply to String.");
-
 					secondVal->castToInteger();
+
 					if (secondVal->integerValue < 0) throw std::runtime_error("Runtime Error: Integer must be greater than 0.");
 
 					std::string temporary = firstVal->stringValue;
-					for (int i = 0; i < secondVal->integerValue; i++)
+					for (int i = 1; i < secondVal->integerValue; i++)
 						firstVal->stringValue += temporary;
 					return firstVal;
 
