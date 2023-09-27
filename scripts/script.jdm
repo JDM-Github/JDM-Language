@@ -1,8 +1,0 @@
-
-jfunc testFunction(jint test3) => {
-	$logn => test3;
-	$logn => "here?";
-}
-
-jdouble test2 = 34 + 34 - 34 / 3;
-testFunction("test" + test2);

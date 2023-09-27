@@ -14,6 +14,8 @@ enum InstructionType {
 	WhileStatementInstruction,
 	ForEachListStatementInstruction,
 	ForEachMapStatementInstruction,
+	ReturnInstruction,
+	CFunctionInstruction
 };
 
 class Instruction {

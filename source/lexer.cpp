@@ -170,7 +170,7 @@ CTokenType Tokenizer::_determineTokenType(
 	if (token == "+"  || token == "-"  || token == "*" || token == "**"
 	 || token == "/"  || token == "%"  || token == "//")
 		return TokenType::ARITHMETIC_OPERATOR;
-	if (token == "&&" || token == "||" || token == "==" || token == "!=" 
+	if (token == "&&" || token == "||" || token == "==" || token == "!=" || token == "!"
 	 || token == "<"  || token == "<=" || token == ">=" || token == ">" )
 		return TokenType::RELATIONAL_OPERATOR;
 	if (token == "&"  || token == "|"  || token == "^"
@@ -314,8 +314,9 @@ CBool Tokenizer::_handle_string(
 		return true;
 	}
 	else if (this->__input_buffer[i] == '\'' || this->__input_buffer[i] == '"') {
-		if (!this->__current_token.empty())
+		if (!this->__current_token.empty()) {
 			throw UnexpectedCharacter(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
+		}
 		this->__is_start_string = this->__input_buffer[i];
 		this->__current_token  += this->__input_buffer[i];
 		return true;
@@ -565,10 +566,11 @@ CVoid Tokenizer::_getTokens()
 				TokenType::RELATIONAL_OPERATOR,
 				TokenType::FUNCTIONS,
 				TokenType::DATA_TYPE,
-			}))
+			})) {
 				throw UnexpectedCharacter(
 					this->__filename, this->__last_token,
 					this->__current_token, this->__track_row, this->__track_column);
+			}
 
 			this->__track_column++;
 			this->_lineBreak();
@@ -619,6 +621,7 @@ CVoid Tokenizer::_getTokens()
 				  && !this->_checkNextToken(i, "|", {'|'          })
 				  && !this->_checkNextToken(i, ">", {'=', '>'     })
 				  && !this->_checkNextToken(i, "<", {'=', '<'     })
+				  && !this->_checkNextToken(i, "!", {'=',         })
 			) {
 				// Check if the token is operator, example + - . , eg.
 				if (this->__current_token.size() == 1 && isInVec(this->__current_token[0], this->__operator_symbol)) {
@@ -643,7 +646,7 @@ CVoid Tokenizer::_getTokens()
 				// If token is just added, example token added is string, "test" and you add without the space, throw error, example
 				// "test"c c is UnexpectedCharacter
 				if (this->__just_added_token &&
-				   !isInVec(this->__input_buffer[i], {')', ']', '}'}) &&
+				   !isInVec(this->__input_buffer[i], {'(', '[', '{', ')', ']', '}'}) &&
 				   !isInVec(this->__input_buffer[i], this->__operator_symbol)
 				)
 					throw UnexpectedCharacter(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);

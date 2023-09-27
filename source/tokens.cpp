@@ -3,7 +3,7 @@
 JDM_DLL Tokens::Tokens()
 	: __ignored_keywords   ({ ' ', '\t', '\n' }),
 	  __escape_combination ({ '\'', '"', '?', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v' }),
-	  __operator_symbol    ({ '=', '+', '-', '*', '/', '%', '&', '|', '>', '<', '^', '~', '.', ','}),
+	  __operator_symbol    ({ '=', '!', '+', '-', '*', '/', '%', '&', '|', '>', '<', '^', '~', '.', ','}),
 	  __tokenMap           ({
 			{"^(-?[0-9]*)$"              , TokenType::INTEGER},
 			{"^(-?[0-9]*\\.[0-9]*)$"     , TokenType::DECIMAL},
@@ -18,6 +18,10 @@ JDM_DLL Tokens::Tokens()
 	this->__dataTypeVector.push_back   ("jint"     );
 	this->__dataTypeVector.push_back   ("jboolean" );
 	this->__dataTypeVector.push_back   ("jlambda"  );
+
+	this->__dataTypeVector.push_back   ("jconst"   );
+	this->__dataTypeVector.push_back   ("jforce"   );
+	this->__dataTypeVector.push_back   ("jcforce"  );
 
 	// Control Flow
 	this->__controlFlowVector.push_back("jif"      );
@@ -46,5 +50,6 @@ JDM_DLL Tokens::Tokens()
 	this->__functionsVector.push_back  ("$cast"     );
 	this->__functionsVector.push_back  ("$getType"  );
 	this->__functionsVector.push_back  ("$sort"     );
-	this->__functionsVector.push_back  ("$call"     );
+	this->__functionsVector.push_back  ("$clear"    );
+	this->__functionsVector.push_back  ("$sleep"    );
 }

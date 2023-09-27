@@ -1,6 +1,7 @@
 #pragma once
 #include "baseInsObj.hpp"
 
+// DONE
 class ListObject : public VarObjects {
 public:
 	std::vector<std::shared_ptr<Expression>> list;
@@ -13,6 +14,7 @@ public:
 	inline const std::vector<std::shared_ptr<Expression>> returnValue() { return this->list; }
 };
 
+// DONE
 class MapObject : public VarObjects {
 public:
 	std::vector<std::shared_ptr<MapStruct>> map;
@@ -25,11 +27,12 @@ public:
 	inline const std::vector<std::shared_ptr<MapStruct>> returnValue() { return this->map; }
 };
 
+// DONE
 class CallObjects : public VarObjects {
 public:
 	std::shared_ptr<VarObjects > currObject;
 	std::shared_ptr<CallObjects> prevObject;
-	std::shared_ptr<VarObjects > nextObject;
+	std::shared_ptr<CallObjects> nextObject;
 
 public:
 	CallObjects(
@@ -65,9 +68,9 @@ public:
 		DataTypeEnum _datTypeToTurn,
 		const std::shared_ptr<Expression > &_expression = nullptr
 		) :
-		VarObjects(TokenType::CAST),
-		datTypeToTurn(_datTypeToTurn),
-		expression   (_expression) {}
+		VarObjects   (TokenType::CAST),
+		datTypeToTurn(_datTypeToTurn ),
+		expression   (_expression    ) {}
 
 	inline const std::string returnStringValue() { return "CAST"; }
 };
@@ -95,6 +98,7 @@ public:
 	inline const std::string returnStringValue() { return "LAMBDA"; }
 };
 
+// DONE
 class FunctionObjects : public VarObjects {
 public:
 	std::string name;
@@ -112,6 +116,7 @@ public:
 	inline const std::string returnStringValue() { return this->name; }
 };
 
+// DONE
 class StringObjects : public VarObjects {
 public:
 	std::string value;
@@ -125,6 +130,7 @@ public:
 	inline const std::string returnValue() { return this->value; }
 };
 
+// DONE
 class IntegerObjects : public VarObjects {
 public:
 	int64_t value;
@@ -143,6 +149,7 @@ public:
 	inline const int64_t returnValue() { return this->value; }
 };
 
+// DONE
 class DoubleObjects : public VarObjects {
 public:
 	long double value;
@@ -154,4 +161,22 @@ public:
 	}
 	inline const std::string returnStringValue() { return std::to_string(this->value); }
 	inline const long double returnValue() { return this->value; }
+};
+
+// DONE
+class ExpressionObjects : public VarObjects {
+public:
+	std::string name;
+	std::shared_ptr<Expression> expression;
+
+public:
+	ExpressionObjects(
+		const std::shared_ptr<TokenStruct> &tok  = nullptr,
+		const std::shared_ptr<Expression > &expr = nullptr
+	) :
+	name(std::get<0>(tok->token)),
+	expression(expr),
+	VarObjects(TokenType::EXPRESSION, std::get<2>(tok->token), std::get<3>(tok->token)) { }
+
+	inline const std::string returnStringValue() { return this->name; }
 };

@@ -85,7 +85,7 @@ template <class _TypeClass>
 namespace JDM {
 
 	const std::vector<std::string> powerVec   = { "**"                             };
-	const std::vector<std::string> multDivVec = { "*", "/", "//"                   };
+	const std::vector<std::string> multDivVec = { "*", "/", "//", "%"              };
 	const std::vector<std::string> addSubVec  = { "+", "-"                         };
 	const std::vector<std::string> notVec     = { "~"                              };
 	const std::vector<std::string> shiftVec   = { "<<", ">>"                       };
@@ -98,7 +98,7 @@ namespace JDM {
 	const std::vector<std::string> relOrVec   = { "||"                             };
 
 	const std::vector<std::string> operatorCombinedVector = {
-		"**", "*", "/", "//", "+", "-", "~", "<<", ">>", "&",
+		"**", "*", "/", "//", "%", "+", "-", "~", "<<", ">>", "&",
 		"^", "|", "<", ">", "<=", ">=", "==", "!=", "!", "&&", "||"
 	};
 
@@ -124,7 +124,10 @@ namespace JDM {
         {"jdouble",  DataTypeEnum::DATA_DOUBLE},
         {"jint",     DataTypeEnum::DATA_INTEGER},
         {"jboolean", DataTypeEnum::DATA_BOOLEAN},
-        {"jlambda",  DataTypeEnum::DATA_LAMBDA}
+        {"jlambda",  DataTypeEnum::DATA_LAMBDA},
+        {"jconst",   DataTypeEnum::DATA_CONST},
+        {"jforce",   DataTypeEnum::DATA_FORCE},
+        {"jcforce",  DataTypeEnum::DATA_CFORCE},
     };
 
     const std::unordered_map<std::string, CustomKeywordEnum> customKeywordMap = {
@@ -141,7 +144,9 @@ namespace JDM {
         {"$logn",    CUSFUNC_LOGN},
         {"$cast",    CUSFUNC_CAST},
         {"$gettype", CUSFUNC_GETTYPE},
-        {"$sort",    CUSFUNC_SORT}
+        {"$sort",    CUSFUNC_SORT},
+        {"$clear",   CUSFUNC_CLEAR},
+        {"$sleep",   CUSFUNC_SLEEP}
     };
 
 	constexpr const char *tokenTypeToString(const TokenType type) {

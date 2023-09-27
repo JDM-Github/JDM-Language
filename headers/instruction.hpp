@@ -4,6 +4,8 @@
 // DONE
 class Declaration : public Instruction {
 public:
+	bool isConst = true;
+	bool isForce = false;
 	std::shared_ptr<TokenStruct    > dataType;
 	std::shared_ptr<VariableObjects> varName;
 	std::shared_ptr<Expression     > expression;
@@ -12,11 +14,14 @@ public:
 	Declaration(
 		const std::shared_ptr<TokenStruct    > &_dataType   = nullptr,
 		const std::shared_ptr<VariableObjects> &_varName    = nullptr,
-		const std::shared_ptr<Expression     > &_expression = nullptr
+		const std::shared_ptr<Expression     > &_expression = nullptr,
+		const bool _isConst = false, const bool _isForce = false
 	) :
 	dataType   (_dataType  ),
 	varName    (_varName   ),
 	expression (_expression),
+	isConst    (_isConst   ),
+	isForce    (_isForce   ),
 	Instruction(InstructionType::DeclarationInstruction) {}
 };
 
@@ -61,6 +66,20 @@ public:
 	Instruction(InstructionType::LoggerInstruction) {}
 };
 
+// DONE
+class CFunction : public Instruction {
+public:
+	CustomFunctionEnum funcType;
+	std::shared_ptr<Expression> expression;
+	CFunction(
+		CustomFunctionEnum type,
+		const std::shared_ptr<Expression> &expr = nullptr
+	) :
+	funcType(type),
+	expression(expr),
+	Instruction(InstructionType::CFunctionInstruction) {}
+};
+
 class Block : public Instruction {
 public:
 	std::vector<std::shared_ptr<Instruction>> instruction;
@@ -84,6 +103,17 @@ public:
 	blockWillRun(_blockWillRun),
 	condition   (_condition   ),
 	Instruction (InstructionType::IfStatementInstruction) {}
+};
+
+// DONE
+class Return : public Instruction {
+public:
+	std::shared_ptr<Expression > returnValue;
+	Return(
+		const std::shared_ptr<Expression> &_returnValue = nullptr
+	) :
+	returnValue(_returnValue),
+	Instruction(InstructionType::ReturnInstruction) {}
 };
 
 // DONE
@@ -123,6 +153,7 @@ public:
 	Instruction(InstructionType::CallInstruction) {}
 };
 
+// DONE
 class ForLoopStatement : public Instruction {
 public:
 	std::shared_ptr<Block          > blockWillRun;

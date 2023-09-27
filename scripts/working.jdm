@@ -40,3 +40,33 @@ jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
 		}
 	}
 }
+
+|>>> HOW TO USE JLIST
+jlist testList = [2, 0, 4, "test", 4.56];
+
+$log => "Test Search: ";
+$logn => testList.search(4); |> Will return index. If not found -1
+
+testList.insert("in Index 2", 2);
+$log => "Test Insert (2): ";
+$logn => testList;
+
+testList.delete(0);
+$log => "Test Delete (0): ";
+$logn => testList;
+
+testList.push_back("in back");
+$log => "Test Push Back: ";
+$logn => testList;
+
+testList.push_front("in front");
+$log => "Test Push Front: ";
+$logn => testList;
+
+testList.pop_back();
+$log => "Test Pop Back: ";
+$logn => testList;
+
+testList.pop_front();
+$log => "Test Pop Front: ";
+$logn => testList;

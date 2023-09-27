@@ -41,7 +41,7 @@ private:
 	JDM_DLL CVoid _manageControlFlow         (CSharedPtrRef<Block> block, CSharedTokenStructRef controlType, CVectorRef<SharedTokenStruct> tokenS);
 	JDM_DLL CVoid _manageCreateFunction      (CSharedPtrRef<Block> block, CSharedTokenStructRef funcName, CVectorRef<SharedTokenStruct> tokens);
 	JDM_DLL CVoid _manageForEachLoop         (CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens);
-	JDM_DLL CVoid _manageDataType            (CSharedPtrRef<Block> block, CSharedTokenStructRef dataType, CSharedTokenStructRef varName, CVectorRef<SharedTokenStruct> tokenS);
+	JDM_DLL CVoid _manageDataType            (CSharedPtrRef<Block> block, CSharedTokenStructRef dataType, CSharedTokenStructRef varName, CVectorRef<SharedTokenStruct> tokenS, CBool isConst = false, CBool isForce = false);
 	JDM_DLL CVoid _manageVariable            (CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens);
 	JDM_DLL CVoid _manageIfElseWhileStatement(CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens, ControlFlowEnum control);
 	JDM_DLL CVoid _manageForloop             (CSharedPtrRef<Block> block, CSharedTokenStructRef varName, CVectorRef<SharedTokenStruct> tokens);
