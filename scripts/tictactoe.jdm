@@ -3,9 +3,9 @@ jlist board = [
 	[' ', ' ', ' '],
 	[' ', ' ', ' '],
 ];
-jint turn = 0;
+jforce jint turn = 0;
 jfunc draw() => {
-	$logn => "Welcome to TIC-TAC-TOE2\n";
+	$logn => "Welcome to TIC-TAC-TOE\n";
 	jfor r => 3 => {
 		$log => '    | ';
 		jfor c => 3 =>
@@ -33,18 +33,18 @@ jfunc checkTurn() => {
 jfunc checkWinner() => {
 	jfor r => 3 => {
 		jif (board[r][0] != ' ') && (board[r][0] == board[r][1]) && (board[r][1] == board[r][2]) => jreturn jtrue;
-		jif (board[0][r] != ' ') && (board[0][r] == board[1][r]) && (board[1][r] == board[1][r]) => jreturn jtrue;
+		jif (board[0][r] != ' ') && (board[0][r] == board[1][r]) && (board[1][r] == board[2][r]) => jreturn jtrue;
 	}
-	jif (board[0][0] != ' ') && (board[0][0] == board[1][1]) && (board[1][1] == board[2][2]) => jreturn jtrue;
-	jif (board[0][2] != ' ') && (board[0][2] == board[1][1]) && (board[1][1] == board[2][0]) => jreturn jtrue;
+	jif any(all((board[0][0] != ' '), (board[0][0] == board[1][1]), (board[1][1] == board[2][2])),
+		    all((board[0][2] != ' '), (board[0][2] == board[1][1]), (board[1][1] == board[2][0]))
+	) => jreturn jtrue;
+
 	jreturn jfalse;
 }
 
 jfunc main() => {
 	$clear;
-	jwhile !checkWinner() => {
-		draw(); checkTurn(); $clear;
-	}
+	jwhile !checkWinner() => { draw(); checkTurn(); $clear; }
 	draw();
 	$logn => "\nThank you for playing.";
 }

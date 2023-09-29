@@ -5,9 +5,12 @@ class HigherObject {
 public:
 	struct FunctionCall {
 		std::string funcName;
-		std::vector<std::string> varNameAccesible;
 		std::shared_ptr<Block> blockWillRun;
-		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> parameters;
+		std::vector<std::string> varNameAccesible;
+		std::vector<std::shared_ptr<HigherObject>> preArgs;
+		std::unordered_map<
+			std::string, std::pair<DataTypeEnum,
+			std::shared_ptr<HigherObject>>> parameters;
 	};
 	enum ActiveDataType {
 		NON_NONE,
@@ -19,6 +22,9 @@ public:
     	ACTIVE_LIST,
     	ACTIVE_MAP
 	};
+
+	bool isListSorted = false;
+
 	bool isString  = false;
 	bool isInteger = false;
 	bool isDecimal = false;
@@ -56,13 +62,13 @@ public:
 
 	HigherObject(const std::shared_ptr<HigherObject> &obj) {
 		this->refalseAll();
-		if      (obj->isString ) { this->stringValue  = obj->stringValue ; this->isString  = true; currActive = ACTIVE_STRING; }
-		else if (obj->isInteger) { this->integerValue = obj->integerValue; this->isInteger = true; currActive = ACTIVE_INTEGER; }
-		else if (obj->isDecimal) { this->doubleValue  = obj->doubleValue ; this->isDecimal = true; currActive = ACTIVE_DECIMAL; }
-		else if (obj->isBoolean) { this->booleanValue = obj->booleanValue; this->isBoolean = true; currActive = ACTIVE_BOOLEAN; }
+		if      (obj->isString ) { this->stringValue  = obj->stringValue ; this->isString  = true; currActive = ACTIVE_STRING;   }
+		else if (obj->isInteger) { this->integerValue = obj->integerValue; this->isInteger = true; currActive = ACTIVE_INTEGER;  }
+		else if (obj->isDecimal) { this->doubleValue  = obj->doubleValue ; this->isDecimal = true; currActive = ACTIVE_DECIMAL;  }
+		else if (obj->isBoolean) { this->booleanValue = obj->booleanValue; this->isBoolean = true; currActive = ACTIVE_BOOLEAN;  }
 		else if (obj->isFunc   ) { this->funcValue    = obj->funcValue   ; this->isFunc    = true; currActive = ACTIVE_FUNCTION; }
-		else if (obj->isList   ) { this->listValue    = obj->listValue   ; this->isList    = true; currActive = ACTIVE_LIST; }
-		else if (obj->isMap    ) { this->mapValue     = obj->mapValue    ; this->isMap     = true; currActive = ACTIVE_MAP; }
+		else if (obj->isList   ) { this->listValue    = obj->listValue   ; this->isList    = true; currActive = ACTIVE_LIST;     }
+		else if (obj->isMap    ) { this->mapValue     = obj->mapValue    ; this->isMap     = true; currActive = ACTIVE_MAP;      }
 	}
 	virtual ~HigherObject() {}
 
@@ -96,7 +102,10 @@ public:
 		else if (isInteger) oss << this->integerValue;
 		else if (isDecimal) oss << this->doubleValue;
 		else if (isBoolean) oss << (booleanValue) ? "jtrue" : "jfalse";
-		else if (isFunc   ) oss << "Function: " << funcValue;
+		else if (isFunc   ) {
+			if (this->funcValue == nullptr) oss << "Function: Invalid.";
+			else oss << "Function: " << funcValue;
+		}
 		else if (isList   ) {
 			oss << "[ ";
 			int index = 0;
@@ -121,10 +130,6 @@ public:
 		return oss.str();
 	}
 
-	// const void addHigherObject(const std::shared_ptr<HigherObject> &obj1) {
-	// 	if ()
-	// }
-
 	const void refalseAll() {
 		isString  = false;
 		isInteger = false;
@@ -144,21 +149,63 @@ public:
 		return nullptr;
 	}
 
-	const bool compareHigherObject(const std::shared_ptr<HigherObject> &obj) {
-		if (this->currActive != obj->currActive)
-			return false;
+	const void sortList() {
+		if (!this->isList || this->isListSorted) return;
+		std::vector<std::shared_ptr<HigherObject>> stringObject;
+		std::vector<std::shared_ptr<HigherObject>> decimalObject;
+		std::vector<std::shared_ptr<HigherObject>> listObject;
+		std::vector<std::shared_ptr<HigherObject>> mapObject;
+		std::vector<std::shared_ptr<HigherObject>> otherObject;
 
-		     if (this->currActive == ACTIVE_STRING)
+		for (const auto &obj : this->listValue) {
+			if      (obj->isString ) stringObject .push_back(obj);
+			else if (obj->isInteger || obj->isDecimal || obj->isBoolean) {
+				obj->castToDecimal();
+				decimalObject.push_back(obj);
+			}
+			else if (obj->isList   ) listObject.push_back(obj);
+			else if (obj->isMap    ) mapObject .push_back(obj);
+			else otherObject.push_back(obj);
+		}
+		std::sort(mapObject.begin(), mapObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+			{ return a->mapValue.size() < b->mapValue.size(); });
+		std::sort(listObject.begin(), listObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+			{ return a->listValue.size() < b->listValue.size(); });
+		std::sort(stringObject.begin(), stringObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+			{ return a->stringValue < b->stringValue; });
+		std::sort(decimalObject.begin(), decimalObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+			{ return a->doubleValue < b->doubleValue; });
+
+		this->listValue.clear();
+		this->listValue.insert(this->listValue.end(), mapObject    .begin(), mapObject    .end());
+		this->listValue.insert(this->listValue.end(), listObject   .begin(), listObject   .end());
+		this->listValue.insert(this->listValue.end(), stringObject .begin(), stringObject .end());
+		this->listValue.insert(this->listValue.end(), decimalObject.begin(), decimalObject.end());
+		this->listValue.insert(this->listValue.end(), otherObject  .begin(), otherObject  .end());
+
+		this->isListSorted = true;
+	}
+
+	const bool compareHigherObject(const std::shared_ptr<HigherObject> &obj) {
+		if (this->currActive == ACTIVE_STRING && this->currActive == obj->currActive)
 			return this->stringValue == obj->stringValue;
-		else if (this->currActive == ACTIVE_INTEGER)
-			return this->integerValue == obj->integerValue;
-		else if (this->currActive == ACTIVE_DECIMAL)
+
+		else if (this->currActive == ACTIVE_INTEGER) {
+			obj->castToDecimal();
+			return this->integerValue == obj->doubleValue;
+		}
+		else if (this->currActive == ACTIVE_DECIMAL) {
+			obj->castToDecimal();
 			return this->doubleValue == obj->doubleValue;
-		else if (this->currActive == ACTIVE_BOOLEAN)
-			return this->booleanValue == obj->booleanValue;
-		else if (this->currActive == ACTIVE_FUNCTION)
-			return this->funcValue == obj->funcValue;
-		else if (this->currActive == ACTIVE_LIST) {
+		}
+		else if (this->currActive == ACTIVE_BOOLEAN) {
+			obj->castToDecimal();
+			return this->booleanValue == obj->doubleValue;
+		}
+
+		else if (this->currActive == ACTIVE_FUNCTION && this->currActive == obj->currActive)
+			return this->funcValue == obj->funcValue && this->funcValue != nullptr;
+		else if (this->currActive == ACTIVE_LIST && this->currActive == obj->currActive) {
 			if (this->listValue.size() != obj->listValue.size())
 				return false;
 
@@ -168,7 +215,7 @@ public:
 			}
 			return true;
 		}
-		else if (this->currActive == ACTIVE_MAP) {
+		else if (this->currActive == ACTIVE_MAP && this->currActive == obj->currActive) {
 			if (this->mapValue.size() != obj->mapValue.size())
 				return false;
 
@@ -193,7 +240,7 @@ public:
 		else if (isDecimal) this->stringValue = std::to_string(doubleValue);
 		else if (isBoolean) this->stringValue = (booleanValue) ? "jtrue" : "jfalse";
 
-		else if (isFunc   ) this->stringValue = "";
+		else if (isFunc   ) this->stringValue = this->_getStringValue();
 		else if (isList   ) this->stringValue = this->_getStringValue();
 		else if (isMap    ) this->stringValue = this->_getStringValue();
 		this->refalseAll();
@@ -213,7 +260,7 @@ public:
 		else if (isDecimal) this->integerValue = static_cast<int>(doubleValue);
 		else if (isBoolean) this->integerValue = (booleanValue) ? 1 : 0;
 
-		else if (isFunc   ) this->integerValue = 1;
+		else if (isFunc   ) this->integerValue = (this->funcValue != nullptr) ? 1 : 0;
 		else if (isList   ) this->integerValue = this->listValue.size();
 		else if (isMap    ) this->integerValue = this->mapValue.size();
 
@@ -233,7 +280,7 @@ public:
 		}
 		else if (isInteger) this->doubleValue = static_cast<double>(integerValue);
 		else if (isBoolean) this->doubleValue = (booleanValue) ? 1.0 : 0.0;
-		else if (isFunc   ) this->doubleValue = 1;
+		else if (isFunc   ) this->doubleValue = (this->funcValue != nullptr) ? 1.0 : 0.0;
 		else if (isList   ) this->doubleValue = this->listValue.size();
 		else if (isMap    ) this->doubleValue = this->mapValue.size();
 
@@ -248,7 +295,7 @@ public:
 		else if (isInteger) this->booleanValue = integerValue > 0;
 		else if (isDecimal) this->booleanValue = doubleValue > 0.0;
 
-		else if (isFunc   ) this->booleanValue = true;
+		else if (isFunc   ) this->booleanValue = (this->funcValue != nullptr);
 		else if (isList   ) this->booleanValue = this->listValue.empty();
 		else if (isMap    ) this->booleanValue = this->mapValue.empty();
 
@@ -258,9 +305,11 @@ public:
 	}
 
 	const void castToFunction() {
-		if      (isFunc   ) return;
-		this->funcValue = nullptr;
+		if (isFunc) return;
+		this->funcValue = std::make_shared<FunctionCall>();
+		this->funcValue->blockWillRun = std::make_shared<Block>();
 		this->refalseAll();
+
 		isFunc = true;
 		currActive = ACTIVE_FUNCTION;
 	}
@@ -275,8 +324,10 @@ public:
 		else if (isBoolean) this->listValue.push_back(std::make_shared<HigherObject>(booleanValue));
 
 		else if (isFunc   ) this->listValue.push_back(std::make_shared<HigherObject>(funcValue));
-		else if (isMap    ) this->listValue.push_back(std::make_shared<HigherObject>(mapValue));
-
+		else if (isMap    ) {
+			for (auto it = this->mapValue.begin(); it != this->mapValue.end(); ++it)
+				this->listValue.push_back(it->first);
+		}
 		this->refalseAll();
 		isList = true;
 		currActive = ACTIVE_LIST;
@@ -284,98 +335,10 @@ public:
 
 	const void castToMap() {
 		if (isMap) return;
+
 		this->mapValue.clear();
 		this->refalseAll();
 		isMap = true;
 		currActive = ACTIVE_MAP;
 	}
-};
-
-
-class ListHigherFunctions {
-public:
-	enum ListFunction {
-    	list_sort,
-    	list_search,
-    	list_insert,
-    	list_delete,
-    	list_at,
-    	list_push_back,
-    	list_push_front,
-    	list_pop_back,
-    	list_pop_front
-	};
-
-	static std::unordered_map<std::string, ListFunction> listFunctions;
-
-	static const void sort      (std::shared_ptr<HigherObject> &obj1) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-	}
-	static const int search     (std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2) {
-		int index = 0;
-		for (const auto &li : obj1->listValue)
-			if (li->compareHigherObject(obj2)) return index;
-			else index++;
-		return -1;
-	}
-	static const void insert    (std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2, int index = -1) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-		if (index < 0)   index += obj1->listValue.size();
-		if (index < 0 || index >  obj1->listValue.size())
-    		throw std::runtime_error("Runtime Error: Index out of bounds.");
-
-		obj1->listValue.insert(obj1->listValue.begin()+index, obj2);
-	}
-	static const void del    (std::shared_ptr<HigherObject> &obj1, int index) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-		if (index < 0)   index += obj1->listValue.size();
-		if (index < 0 || index >= obj1->listValue.size())
-    		throw std::runtime_error("Runtime Error: Index out of bounds.");
-
-		obj1->listValue.erase(obj1->listValue.begin()+index);
-	}
-	static const std::shared_ptr<HigherObject> at        (std::shared_ptr<HigherObject> &obj1, int index) {
-		if (index < 0)   index += obj1->listValue.size();
-		if (index < 0 || index >= obj1->listValue.size())
-    		throw std::runtime_error("Runtime Error: Index out of bounds.");
-
-    	return obj1->listValue[index];
-	}
-	static const void push_back (std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-		obj1->listValue.push_back(obj2);
-	}
-	static const void push_front(std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-		obj1->listValue.insert(obj1->listValue.begin(), obj2);
-	}
-	static const void pop_back  (std::shared_ptr<HigherObject> &obj1) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-		if (obj1->listValue.empty()) return;
-		obj1->listValue.pop_back();
-	}
-	static const void pop_front (std::shared_ptr<HigherObject> &obj1) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
-		if (obj1->listValue.empty()) return;
-		obj1->listValue.erase(obj1->listValue.begin());
-	}
-};
-
-enum NativeFunction {
-	NATIVE_INPUT,
-};
-std::unordered_map<std::string, NativeFunction> allNativeFunction = {
-	{"input", NATIVE_INPUT}
-};
-
-std::unordered_map<std::string, ListHigherFunctions::ListFunction> ListHigherFunctions::listFunctions = {
-	{"sort"      , ListFunction::list_sort      },
-    {"search"    , ListFunction::list_search    },
-    {"insert"    , ListFunction::list_insert    },
-    {"delete"    , ListFunction::list_delete    },
-    {"at"        , ListFunction::list_at        },
-    {"push_back" , ListFunction::list_push_back },
-    {"push_front", ListFunction::list_push_front},
-    {"pop_back"  , ListFunction::list_pop_back  },
-    {"pop_front" , ListFunction::list_pop_front }
 };

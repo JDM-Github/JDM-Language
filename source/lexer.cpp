@@ -159,7 +159,11 @@ CTokenType Tokenizer::_determineTokenType(
 		return TokenType::STRING;
 
 	if (token == "->" || token == "=>")  return TokenType::ARROW_OPERATOR;
-	if (token == "=")                    return TokenType::ASSIGNMENT_OPERATOR;
+
+	if (token == "="  || token == "+=" || token == "-="
+	 || token == "*=" || token == "/=" || token == "%=") 
+		return TokenType::ASSIGNMENT_OPERATOR;
+
 	if (token == ".")                    return TokenType::DOT_OPERATOR;
 	if (token == ",")                    return TokenType::COMMA_OPERATOR;
 	if (token == "++" || token == "--")  return TokenType::INCREMENT_DECREMENT_OPERATOR;
@@ -211,22 +215,6 @@ CBool Tokenizer::_checkNextToken(
 		}
 	}
 	return false;
-}
-
-/**
- * @brief Checks if the given token is an operator token.
- *
- * @param token The input token to check.
- * @return True if the token is an operator; otherwise, false.
- */
-JDM_DLL
-CBool Tokenizer::_checkIfTokenIsOperator(
-	CTokenStrRef token)
-{
-	return (token == "==" || token == "++" || token == "--" || token == "**" || token == "//"
-		||  token == "%"  || token == "&&" || token == "||" || token == "=>" || token == "<="
-		||  token == ">=" || token == "=<" || token == "<<" || token == ">>" || token == "^"
-		||  token == "~"  || token == ".");
 }
 
 /**
@@ -546,11 +534,6 @@ CVoid Tokenizer::_getTokens()
 
 		// If the input is line break and it is not a comment, Add the token if there is, and make new currentTokens list
 		if (this->__input_buffer[i] == EndLine && !this->__is_comment_line && !this->__is_comment_block) {
-			// Don't allow lin break when parenthesis, use comma or something
-			if (this->__is_in_paren)
-				throw UnexpectedCharacter(
-					this->__filename, this->__last_token,
-					this->__current_token, this->__track_row, this->__track_column);
 
 			this->__candidate_block = false;
 			this->_addToken();
@@ -613,10 +596,11 @@ CVoid Tokenizer::_getTokens()
 			if (this->_isComment(i)) this->__current_token.clear();
 			// Check inidividual token that might have a double pattern, example ++ -- eg.
 			else if (!this->_checkNextToken(i, "=", {'=', '>', '<'})
-				  && !this->_checkNextToken(i, "+", {'+'          })
-				  && !this->_checkNextToken(i, "-", {'-', '>'     })
-				  && !this->_checkNextToken(i, "*", {'*'          })
-				  && !this->_checkNextToken(i, "/", {'/'          })
+				  && !this->_checkNextToken(i, "+", {'='          })
+				  && !this->_checkNextToken(i, "-", {'>', '='     })
+				  && !this->_checkNextToken(i, "*", {'*', '='     })
+				  && !this->_checkNextToken(i, "/", {'/', '='     })
+				  && !this->_checkNextToken(i, "%", {'='          })
 				  && !this->_checkNextToken(i, "&", {'&'          })
 				  && !this->_checkNextToken(i, "|", {'|'          })
 				  && !this->_checkNextToken(i, ">", {'=', '>'     })

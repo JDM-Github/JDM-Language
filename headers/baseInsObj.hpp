@@ -25,9 +25,7 @@ protected:
 	virtual ~Instruction() {}
 
 public:
-	inline const InstructionType getType() {
-		return this->_instructType;
-	}
+	inline const InstructionType getType() { return this->_instructType; }
 };
 
 class VarObjects {
@@ -36,17 +34,12 @@ protected:
 	TokenType varType = TokenType::UNDEFINED;
 
 protected:
-	VarObjects(TokenType type, size_t r = 0, size_t c = 0)
-		: varType(type), row(r), col(c) {}
+	VarObjects(TokenType type, size_t r = 0, size_t c = 0) : varType(type), row(r), col(c) {}
 	virtual ~VarObjects() {}
 
 public:
-	inline const char* getStringToken() {
-		return JDM::tokenTypeToString(this->varType);
-	}
-	inline const TokenType getToken() {
-		return this->varType;
-	}
+	inline const char* getStringToken() { return JDM::tokenTypeToString(this->varType); }
+	inline const TokenType getToken() { return this->varType; }
 	virtual const std::string returnStringValue() { return "INVALID"; };
 };
 
@@ -56,9 +49,7 @@ public:
 
 public:
 	VariableObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::VARIABLE, std::get<2>(tok->token), std::get<3>(tok->token)),
-		name(std::get<0>(tok->token)) {
-	}
+		: VarObjects(TokenType::VARIABLE, std::get<2>(tok->token), std::get<3>(tok->token)), name(std::get<0>(tok->token)) {}
 	inline const std::string returnStringValue() { return this->name; }
 };
 

@@ -1,10 +1,22 @@
 #pragma once
 #include <iostream>
 #include <tuple>
-#include <memory>
 #include <vector>
 #include <string>
+#include <regex>
 #include <unordered_map>
+#include <cstdlib>
+#include <sstream>
+#include <iomanip>
+#include <algorithm>
+#include <fstream>
+#include <memory>
+#include <cmath>
+#include <chrono>
+#include <thread>
+#include <cstring>
+#include <random>
+#include <functional>
 
 #include "enums.hpp"
 

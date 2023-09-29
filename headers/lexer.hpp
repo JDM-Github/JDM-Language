@@ -1,18 +1,4 @@
 #pragma once
-#include <iostream>
-#include <string>
-#include <vector>
-#include <list>
-#include <unordered_map>
-#include <cstdlib>
-#include <tuple>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-#include <fstream>
-#include <regex>
-#include <memory>
-
 #include "defines.hpp"
 #include "error_handler.hpp"
 
@@ -87,7 +73,6 @@ private:
 	JDM_DLL CTokenType  _determineTokenType              (CTokenStrRef token                                       );
 
 	JDM_DLL CBool       _checkNextToken                  (CSizeT i, CTokenStrRef compStr, CVecCharRef vecCharacters);
-	JDM_DLL CBool       _checkIfTokenIsOperator          (CTokenStrRef token                                       );
 	JDM_DLL CBool       _checkIfNextTokenIsOperatorStart (CSizeT i, CBool willAdd = true                           );
 
 	JDM_DLL CBool       _handle_escape                   (CSizeT i                                                 );

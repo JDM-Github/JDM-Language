@@ -1,10 +1,6 @@
 #include "headers/lexer.hpp"
 #include "headers/parser.hpp"
 #include "headers/compiler.hpp"
-#include <memory>
-#include <cstring>
-#include <stdexcept>
-#include <chrono>
 
 class FileNotExistError : public std::runtime_error {
 public:

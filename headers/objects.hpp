@@ -7,7 +7,7 @@ public:
 	std::vector<std::shared_ptr<Expression>> list;
 
 public:
-	ListObject(const std::vector<std::shared_ptr<Expression>> &_list)
+	ListObject(const std::vector<std::shared_ptr<Expression>> &_list = {})
 	: list (_list), VarObjects(TokenType::LIST) { }
 
 	inline const std::string returnStringValue() { return "LIST"; }
@@ -20,7 +20,7 @@ public:
 	std::vector<std::shared_ptr<MapStruct>> map;
 
 public:
-	MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map)
+	MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map = {})
 	: map (_map), VarObjects(TokenType::MAP) { }
 	inline const std::string returnStringValue() { return "MAP"; }
 
@@ -33,6 +33,7 @@ public:
 	std::shared_ptr<VarObjects > currObject;
 	std::shared_ptr<CallObjects> prevObject;
 	std::shared_ptr<CallObjects> nextObject;
+	std::string operation = "";
 
 public:
 	CallObjects(

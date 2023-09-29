@@ -41,11 +41,18 @@ jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
 	}
 }
 
-|>>> HOW TO USE JLIST
+|> LIST NATIVE FUNCTIONS
 jlist testList = [2, 0, 4, "test", 4.56];
 
-$log => "Test Search: ";
-$logn => testList.search(4); |> Will return index. If not found -1
+$log => "Test Size: ";
+$logn => testList.size();
+
+testList.sort();
+$log => "Test Sort: ";
+$logn => testList;
+
+$log => "Test Search 4: ";
+$logn => testList.search(4);
 
 testList.insert("in Index 2", 2);
 $log => "Test Insert (2): ";
@@ -53,6 +60,13 @@ $logn => testList;
 
 testList.delete(0);
 $log => "Test Delete (0): ";
+$logn => testList;
+
+$log => "Test At: ";
+$logn => testList.at(3);
+
+testList.reverse();
+$log => "Test Reverse: ";
 $logn => testList;
 
 testList.push_back("in back");
@@ -70,3 +84,40 @@ $logn => testList;
 testList.pop_front();
 $log => "Test Pop Front: ";
 $logn => testList;
+
+
+|> TEST NATIVE FUNCTIONS
+jfunc testFilterFunction( arg ) =>
+	jreturn arg % 2 == 0;
+
+jfunc testReduceFunction( arg1, arg2) =>
+	jreturn arg1 + arg2;
+
+jfunc testSortIfFunction( arg1, arg2 ) =>
+	jreturn arg1 < arg2;
+
+jfunc testMapFunction( arg ) =>
+	jreturn arg ** 2;
+
+jlist testList = [1, 2, 3, 4, 5];
+$logn
+	=> input    ("Test Input: ")
+	=> len      (testList)
+	=> abs      (-436)
+	=> ceil     (34.3)
+	=> floor    (34.3)
+	=> max      (testList)
+	=> min      (testList)
+	=> reverse  (testList)
+	=> round    (34.76)
+	=> sum      (testList)
+	=> join     (testList, " -> ")
+	=> index    (testList, 4)
+	=> randint  (100, 200)
+	=> randfloat(10.0, 20.0)
+	=> filter   (testList, testFilterFunction)
+	=> reduce   (testList, testReduceFunction)
+	=> sort_if  (testList, testSortIfFunction)
+	=> map      (testList, testMapFunction   )
+	=> chain    (testList, testList, testList)
+;

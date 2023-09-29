@@ -1,14 +1,8 @@
 #pragma once
-#include <tuple>
-#include <vector>
-
-#include <algorithm>
 #include "defines.hpp"
 #include "objects.hpp"
 #include "instruction.hpp"
 #include "error_handler.hpp"
-
-
 
 class JDM_DLL Parser {
 private:
@@ -54,7 +48,7 @@ private:
  */
 private:
 	JDM_DLL CBool                          _isBlockCurly            (CSharedTokenStructRef token);
-	JDM_DLL CBool                          _findAndReplaceLambdaCall(CVecSharedPtrRef<ExpressionToken> vec, VecSharedPtrRef<ExpressionToken> newVec, bool willNeedToCall = true);
+	JDM_DLL CBool                          _findAndReplaceLambdaCall(CVecSharedPtrRef<ExpressionToken> vec, VecSharedPtrRef<ExpressionToken> newVec);
 	JDM_DLL CVecSharedPtr<ExpressionToken> _getAllTokenFromSide     (CVecSharedPtrRef<ExpressionToken> vec, int index, bool isLeft = false);
 	JDM_DLL CVecSharedPtr<ExpressionToken> _transformTokenStruct    (CVectorRef<SharedTokenStruct> tokenS);
 	JDM_DLL CBool                          _findAndReplaceExpression(CVecTokenStrRef targetString, CVecSharedPtrRef<ExpressionToken> vec, VecSharedPtrRef<ExpressionToken> newVec);

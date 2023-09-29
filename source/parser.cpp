@@ -290,7 +290,6 @@ const void Parser::_manageControlFlow(
 		case ControlFlowEnum::CONTROL_FOR:
 			if (std::get<1>(tokenS[0]->token) != TokenType::VARIABLE) throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 			if (std::get<1>(tokenS[1]->token) != TokenType::ARROW_OPERATOR) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
-
 			this->_manageForloop(block, tokenS[0], {tokenS.begin()+2, tokenS.end()});
 			break;
 
@@ -301,11 +300,8 @@ const void Parser::_manageControlFlow(
 			break;
 
 		case ControlFlowEnum::CONTROL_RETURN :
-			if (tokenS.empty())
-				block->instruction.push_back(std::make_shared<Return>(nullptr));
-			else block->instruction.push_back(std::make_shared<Return>(
-				this->_createExpression(this->_transformTokenStruct(tokenS))[0]->expression
-			));
+			if (tokenS.empty()) block->instruction.push_back(std::make_shared<Return>(nullptr));
+			else block->instruction.push_back(std::make_shared<Return>(this->_createExpression(this->_transformTokenStruct(tokenS))[0]->expression));
 			break;
 	}
 
@@ -440,18 +436,26 @@ const void Parser::_manageDataType(
 		block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, nullptr, isConst, isForce ));
 		return;
 	}
-	if (std::get<1>(tokenS[0]->token) != TokenType::ASSIGNMENT_OPERATOR)
-		throw std::runtime_error("SYNTAX ERROR: Expecting '='");
+	if (std::get<1>(tokenS[0]->token) != TokenType::ASSIGNMENT_OPERATOR
+	 || std::get<0>(tokenS[0]->token) != "=") throw std::runtime_error("SYNTAX ERROR: Expecting '='");
 
 	std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokenS.begin() + 1, tokenS.end()};
 	if (remainingToken.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
 	auto transformToken = this->_transformTokenStruct(remainingToken);
 
 	if (currDataType == DataTypeEnum::DATA_LAMBDA) {
-		std::vector<std::shared_ptr<ExpressionToken>> newVec;
-		this->_findAndReplaceLambdaCall(transformToken, newVec, false);
-		if (newVec.size() != 1) throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Declaration");
-		else block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newVec[0]->expression, isConst, isForce));
+		if (remainingToken.size() == 1) {
+			if (std::get<1>(remainingToken[0]->token) == TokenType::VARIABLE
+			 || std::get<0>(remainingToken[0]->token) == "(")
+				block->instruction.push_back(std::make_shared<Declaration>(
+				dataType, newVar, this->_createExpression(transformToken)[0]->expression, isConst, isForce ));
+			else throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Declaration");
+		} else {
+			std::vector<std::shared_ptr<ExpressionToken>> newVec;
+			this->_findAndReplaceLambdaCall(transformToken, newVec);
+			if (newVec.size() != 1) throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Declaration");
+			else block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newVec[0]->expression, isConst, isForce));
+		}
 	} else {
 		block->instruction.push_back(std::make_shared<Declaration>(
 			dataType, newVar, this->_createExpression(transformToken)[0]->expression, isConst, isForce ));
@@ -464,7 +468,6 @@ const void Parser::_manageVariable(
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens)
 {
 	if (tokens.empty()) return;
-
 	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
 		return std::get<1>(tok->token) == TokenType::ASSIGNMENT_OPERATOR;
 	});
@@ -478,10 +481,10 @@ const void Parser::_manageVariable(
 		if (leftToks.size() > 1)
 			block->instruction.push_back(std::make_shared<Call>(true,
 				this->_createCallObject(this->_transformTokenStruct(leftToks), nullptr, true),
-				newExpression));
+				newExpression, std::get<0>((*it)->token)));
 
 		else block->instruction.push_back(std::make_shared<Assignment>(
-			std::make_shared<VariableObjects>(tokens[0]), newExpression ));
+			std::make_shared<VariableObjects>(tokens[0]), *it, newExpression ));
 
 	} else block->instruction.push_back(std::make_shared<Call>(false,
 			this->_createCallObject(this->_transformTokenStruct(tokens), nullptr, false)));
@@ -734,21 +737,29 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 	bool relAndBool  , bool relOrBool )
 {
 	if (vec.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
-
-
 	else if (vec.size() == 1) {
 
 		if (vec[0]->expression == nullptr) {
 			if (std::get<1>(vec[0]->token->token) == TokenType::OPEN_CASES) {
-				if (vec[0]->token->child.empty())     throw std::runtime_error("SYNTAX ERROR: Empty Open Case");
-				if (vec[0]->token->child.size() != 1) throw std::runtime_error("SYNTAX ERROR: Unexpected ';'");
+				if (vec[0]->token->child.size() > 1) throw std::runtime_error("SYNTAX ERROR: Unexpected ';'");
 
-				if (std::get<0>(vec[0]->token->token) == "(")
+				if (std::get<0>(vec[0]->token->token) == "(") {
+					if (vec[0]->token->child.empty())     throw std::runtime_error("SYNTAX ERROR: Empty Open Case");					
 					return this->_createExpression(this->_transformTokenStruct(vec[0]->token->child[0]->child));
+				}
 				else if (std::get<0>(vec[0]->token->token) == "[") {
-					return { std::make_shared<ExpressionToken>(this->_createListExpression (vec[0]->token->child[0]->child) ) };
+					if (vec[0]->token->child.empty()) {
+						auto newExpression = std::make_shared<Expression>();
+						newExpression->firstValue = std::make_shared<ListObject>();
+						return { std::make_shared<ExpressionToken>( newExpression ) };
+					} else return { std::make_shared<ExpressionToken>(this->_createListExpression(vec[0]->token->child[0]->child) ) };
+
 				} else if (std::get<0>(vec[0]->token->token) == "{") {
-					return { std::make_shared<ExpressionToken>(this->_createMapExpression  (vec[0]->token->child[0]->child) ) };
+					if (vec[0]->token->child.empty()) {
+						auto newExpression = std::make_shared<Expression>();
+						newExpression->firstValue = std::make_shared<MapObject>();
+						return { std::make_shared<ExpressionToken>( newExpression ) };
+					} else return { std::make_shared<ExpressionToken>(this->_createMapExpression(vec[0]->token->child[0]->child) ) };
 				}
 
 			} else if (std::get<1>(vec[0]->token->token) == TokenType::CUSTOM_KEYWORD) {
@@ -817,7 +828,7 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 
 			if (dataTypeEnum == DataTypeEnum::DATA_LAMBDA) {
 				std::vector<std::shared_ptr<ExpressionToken>> newVec;
-				this->_findAndReplaceLambdaCall(this->_transformTokenStruct( vec[1]->token->child[0]->child ), newVec, false);
+				this->_findAndReplaceLambdaCall(this->_transformTokenStruct( vec[1]->token->child[0]->child ), newVec);
 				if (newVec.size() != 1) throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Declaration");
 				else newExpression->firstValue = std::make_shared<CastObjects>( dataTypeEnum, newVec[0]->expression );
 			} else
@@ -974,7 +985,8 @@ const std::shared_ptr<Variable> Parser::_createVariable(
 	// Check for optional variable initialization.
 	newVariable->varName = std::make_shared<VariableObjects>(turnToVariable[incrementIfDataType]);
 	if (turnToVariable.size() > 1+incrementIfDataType) {
-		if (std::get<1>(turnToVariable[1+incrementIfDataType]->token) != TokenType::ASSIGNMENT_OPERATOR)
+		if (std::get<1>(turnToVariable[1+incrementIfDataType]->token) != TokenType::ASSIGNMENT_OPERATOR
+		 || std::get<0>(turnToVariable[1+incrementIfDataType]->token) != "=")
 			throw std::runtime_error("SYNTAX ERROR: Expecting '=' or None");
 
 		newVariable->varValue = this->_createExpression(
@@ -998,19 +1010,13 @@ const bool Parser::_isBlockCurly(const std::shared_ptr<TokenStruct> &token)
 JDM_DLL
 const bool Parser::_findAndReplaceLambdaCall(
 	const std::vector<std::shared_ptr<ExpressionToken>>& vec,
-	std::vector<std::shared_ptr<ExpressionToken>> &newVec,
-	bool willNeedToCall)
+	std::vector<std::shared_ptr<ExpressionToken>> &newVec)
 {
 	for (int index = 0; index < vec.size(); index++) {
 		if (vec[index]->token == nullptr || std::get<1>(vec[index]->token->token) != TokenType::ARROW_OPERATOR) continue;
 
 		auto leftTokens  = this->_getAllTokenFromSide(vec, index, true);
 		auto rightTokens = this->_getAllTokenFromSide(vec, index, false);
-
-		if (willNeedToCall && rightTokens.size() != 3)
-			throw std::runtime_error("SYNTAX ERROR: Invalid Expression. Lambda Expected to be called on Expression.");
-		if (!willNeedToCall && rightTokens.size() != 1)
-			throw std::runtime_error("SYNTAX ERROR: Invalid Expression. Lambda Expected to NOT be called.");
 
 		if ((rightTokens.size() != 1 && rightTokens.size() != 3) || leftTokens.size() != 1
 		|| std::get<0>(leftTokens [0]->token->token) != "("
@@ -1029,7 +1035,7 @@ const bool Parser::_findAndReplaceLambdaCall(
 		if (rightTokens.size() == 3) {
 			willCall = true;
 			if (std::get<1>(rightTokens[1]->token->token) != TokenType::ARROW_OPERATOR
-			|| std::get<0>(rightTokens[2]->token->token) != "(")
+			 || std::get<0>(rightTokens[2]->token->token) != "(")
 				throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Expression.");
 			if (!rightTokens[2]->token->child.empty()) this->_setArguments(arguments, rightTokens[2]->token->child[0]->child);
 

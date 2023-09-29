@@ -1,6 +1,4 @@
 #pragma once
-#include <regex>
-#include <iostream>
 
 enum TokenType {
 	UNDEFINED,
