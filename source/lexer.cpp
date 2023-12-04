@@ -23,7 +23,7 @@ Tokenizer::Tokenizer(
 	this->__is_comment_block  = false;
 	this->__is_in_paren       = false;
 	this->__candidate_block   = false;
-	this->__last_toke_type    = TokenType::UNDEFINED;
+	this->__last_toke_type    = JDM::TokenType::UNDEFINED;
 	this->__currentStruct     = MSharedTokenLink();
 
 	this->_getTokens();
@@ -149,37 +149,37 @@ CTokenType Tokenizer::_determineTokenType(
 	CTokenStrRef token)
 {
 	if (this->__cache_tokType.count(token) > 0)                return this->__cache_tokType.at(token);
-	if (this->_checkKeyword(token, this->__dataTypeVector   )) return TokenType::DATA_TYPE;
-	if (this->_checkKeyword(token, this->__controlFlowVector)) return TokenType::CONTROL_FLOW;
-	if (this->_checkKeyword(token, this->__keywordVector    )) return TokenType::CUSTOM_KEYWORD;
-	if (this->_checkKeyword(token, this->__functionsVector  )) return TokenType::CUSTOM_FUNCTIONS;
+	if (this->_checkKeyword(token, this->__dataTypeVector   )) return JDM::TokenType::DATA_TYPE;
+	if (this->_checkKeyword(token, this->__controlFlowVector)) return JDM::TokenType::CONTROL_FLOW;
+	if (this->_checkKeyword(token, this->__keywordVector    )) return JDM::TokenType::CUSTOM_KEYWORD;
+	if (this->_checkKeyword(token, this->__functionsVector  )) return JDM::TokenType::CUSTOM_FUNCTIONS;
 
 	if ((token.size() >= 2 && (token.front() == '"'  && token.back() == '"' ))
 	||  (token.size() >= 2 && (token.front() == '\'' && token.back() == '\'')))
-		return TokenType::STRING;
+		return JDM::TokenType::STRING;
 
-	if (token == "->" || token == "=>")  return TokenType::ARROW_OPERATOR;
+	if (token == "->" || token == "=>")  return JDM::TokenType::ARROW_OPERATOR;
 
 	if (token == "="  || token == "+=" || token == "-="
 	 || token == "*=" || token == "/=" || token == "%=") 
-		return TokenType::ASSIGNMENT_OPERATOR;
+		return JDM::TokenType::ASSIGNMENT_OPERATOR;
 
-	if (token == ".")                    return TokenType::DOT_OPERATOR;
-	if (token == ",")                    return TokenType::COMMA_OPERATOR;
-	if (token == "++" || token == "--")  return TokenType::INCREMENT_DECREMENT_OPERATOR;
+	if (token == ".")                    return JDM::TokenType::DOT_OPERATOR;
+	if (token == ",")                    return JDM::TokenType::COMMA_OPERATOR;
+	if (token == "++" || token == "--")  return JDM::TokenType::INCREMENT_DECREMENT_OPERATOR;
 
-	if (token == "("  || token == "["  || token == "{") return TokenType::OPEN_CASES;
-	if (token == ")"  || token == "]"  || token == "}") return TokenType::CLOSE_CASES;
+	if (token == "("  || token == "["  || token == "{") return JDM::TokenType::OPEN_CASES;
+	if (token == ")"  || token == "]"  || token == "}") return JDM::TokenType::CLOSE_CASES;
 
 	if (token == "+"  || token == "-"  || token == "*" || token == "**"
 	 || token == "/"  || token == "%"  || token == "//")
-		return TokenType::ARITHMETIC_OPERATOR;
+		return JDM::TokenType::ARITHMETIC_OPERATOR;
 	if (token == "&&" || token == "||" || token == "==" || token == "!=" || token == "!"
 	 || token == "<"  || token == "<=" || token == ">=" || token == ">" )
-		return TokenType::RELATIONAL_OPERATOR;
+		return JDM::TokenType::RELATIONAL_OPERATOR;
 	if (token == "&"  || token == "|"  || token == "^"
 	 || token == "~"  || token == "<<" || token == ">>")
-		return TokenType::BITWISE_OPERATOR;
+		return JDM::TokenType::BITWISE_OPERATOR;
 
 	for (const auto& entry : this->__tokenMap) {
 		std::regex pattern(entry.first);
@@ -329,17 +329,17 @@ CBool Tokenizer::_handle_paren(
 	if (this->__input_buffer[i] == first &&
 	   (this->__is_line_breaker ||
 		isInVec(this->__last_toke_type, {
-			TokenType::DATA_TYPE,
-			TokenType::VARIABLE,
-			TokenType::CONTROL_FLOW,
-			TokenType::OPEN_CASES,
-			TokenType::CLOSE_CASES,
-			TokenType::ARROW_OPERATOR,
-			TokenType::COMMA_OPERATOR,
-			TokenType::BITWISE_OPERATOR,
-			TokenType::ARITHMETIC_OPERATOR,
-			TokenType::ASSIGNMENT_OPERATOR,
-			TokenType::RELATIONAL_OPERATOR,
+			JDM::TokenType::DATA_TYPE,
+			JDM::TokenType::VARIABLE,
+			JDM::TokenType::CONTROL_FLOW,
+			JDM::TokenType::OPEN_CASES,
+			JDM::TokenType::CLOSE_CASES,
+			JDM::TokenType::ARROW_OPERATOR,
+			JDM::TokenType::COMMA_OPERATOR,
+			JDM::TokenType::BITWISE_OPERATOR,
+			JDM::TokenType::ARITHMETIC_OPERATOR,
+			JDM::TokenType::ASSIGNMENT_OPERATOR,
+			JDM::TokenType::RELATIONAL_OPERATOR,
 		}))) {
 		this->_addToken(); // Add the last Token
 
@@ -375,7 +375,7 @@ CBool Tokenizer::_handle_paren(
 			this->__just_added_token = true;
 
 		this->__is_line_breaker = false;
-		this->__last_toke_type  = TokenType::CLOSE_CASES;
+		this->__last_toke_type  = JDM::TokenType::CLOSE_CASES;
 		this->__last_token      = second;
 
 		if (!this->__is_in_paren) {
@@ -399,23 +399,23 @@ CBool Tokenizer::_addToken()
 		if (this->__is_start_string != 'N')
 			throw UnterminatedString(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
 
-		TokenType tokenType = this->_determineTokenType(this->__current_token);
+		JDM::TokenType tokenType = this->_determineTokenType(this->__current_token);
 
 		if (this->__candidate_block) {
 			if (!isInVec(tokenType, {
-				TokenType::ASSIGNMENT_OPERATOR,
-				TokenType::ARROW_OPERATOR,
-				TokenType::COMMA_OPERATOR,
-				TokenType::DOT_OPERATOR,
-				TokenType::BITWISE_OPERATOR,
-				TokenType::ARITHMETIC_OPERATOR,
-				TokenType::RELATIONAL_OPERATOR
+				JDM::TokenType::ASSIGNMENT_OPERATOR,
+				JDM::TokenType::ARROW_OPERATOR,
+				JDM::TokenType::COMMA_OPERATOR,
+				JDM::TokenType::DOT_OPERATOR,
+				JDM::TokenType::BITWISE_OPERATOR,
+				JDM::TokenType::ARITHMETIC_OPERATOR,
+				JDM::TokenType::RELATIONAL_OPERATOR
 			})) this->_lineBreak();
 		}
 		this->__candidate_block = false;
 		this->__last_toke_type  = tokenType;
 
-		if (tokenType == TokenType::STRING)
+		if (tokenType == JDM::TokenType::STRING)
 			this->__current_token = this->__current_token.substr(1, this->__current_token.size()-2);
 		else
 			this->__cache_tokType[this->__current_token] = tokenType;
@@ -429,10 +429,10 @@ CBool Tokenizer::_addToken()
 		this->__current_token.clear();
 		this->__just_added_token = (
 			isInVec(tokenType, {
-				TokenType::VARIABLE,
-				TokenType::STRING,
-				TokenType::INTEGER,
-				TokenType::DECIMAL,
+				JDM::TokenType::VARIABLE,
+				JDM::TokenType::STRING,
+				JDM::TokenType::INTEGER,
+				JDM::TokenType::DOUBLE,
 			})
 		);
 		this->__is_line_breaker = false;
@@ -538,17 +538,17 @@ CVoid Tokenizer::_getTokens()
 			this->__candidate_block = false;
 			this->_addToken();
 			if (isInVec(this->__last_toke_type, {
-				TokenType::CONTROL_FLOW,
-				TokenType::OPEN_CASES,
-				TokenType::ARROW_OPERATOR,
-				TokenType::COMMA_OPERATOR,
-				TokenType::DOT_OPERATOR,
-				TokenType::BITWISE_OPERATOR,
-				TokenType::ARITHMETIC_OPERATOR,
-				TokenType::ASSIGNMENT_OPERATOR,
-				TokenType::RELATIONAL_OPERATOR,
-				TokenType::FUNCTIONS,
-				TokenType::DATA_TYPE,
+				JDM::TokenType::CONTROL_FLOW,
+				JDM::TokenType::OPEN_CASES,
+				JDM::TokenType::ARROW_OPERATOR,
+				JDM::TokenType::COMMA_OPERATOR,
+				JDM::TokenType::DOT_OPERATOR,
+				JDM::TokenType::BITWISE_OPERATOR,
+				JDM::TokenType::ARITHMETIC_OPERATOR,
+				JDM::TokenType::ASSIGNMENT_OPERATOR,
+				JDM::TokenType::RELATIONAL_OPERATOR,
+				JDM::TokenType::FUNCTIONS,
+				JDM::TokenType::DATA_TYPE,
 			})) {
 				throw UnexpectedCharacter(
 					this->__filename, this->__last_token,
@@ -614,15 +614,15 @@ CVoid Tokenizer::_getTokens()
 						this->__current_token[0] == '.') &&
 					   (this->__is_line_breaker ||
 						isInVec(this->__last_toke_type, {
-							TokenType::CONTROL_FLOW,
-							TokenType::OPEN_CASES,
-							TokenType::ARROW_OPERATOR,
-							TokenType::COMMA_OPERATOR,
-							TokenType::BITWISE_OPERATOR,
-							TokenType::ARITHMETIC_OPERATOR,
-							TokenType::ASSIGNMENT_OPERATOR,
-							TokenType::RELATIONAL_OPERATOR,
-							TokenType::INCREMENT_DECREMENT_OPERATOR,
+							JDM::TokenType::CONTROL_FLOW,
+							JDM::TokenType::OPEN_CASES,
+							JDM::TokenType::ARROW_OPERATOR,
+							JDM::TokenType::COMMA_OPERATOR,
+							JDM::TokenType::BITWISE_OPERATOR,
+							JDM::TokenType::ARITHMETIC_OPERATOR,
+							JDM::TokenType::ASSIGNMENT_OPERATOR,
+							JDM::TokenType::RELATIONAL_OPERATOR,
+							JDM::TokenType::INCREMENT_DECREMENT_OPERATOR,
 						})))) {
 						this->_addToken();
 					}

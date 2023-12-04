@@ -4,11 +4,15 @@
 #include "library/listObject.hpp"
 #include "library/mapObject.hpp"
 #include "library/jdm_math.hpp"
+// #include "library/console.hpp"
 
 class Compiler {
 private:
 	std::shared_ptr<Block> __mainBlock;
 
+	std::vector<std::string> allNativeClass = {
+		"Console"
+	};
 	struct VariableLink {
 		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> variables;
 		std::unordered_map<std::string, std::shared_ptr<HigherObject::FunctionCall>> functionMap;
@@ -76,6 +80,21 @@ public:
 					timeML->castToInteger();
 					std::this_thread::sleep_for(std::chrono::milliseconds(timeML->integerValue));
 				}
+				else if (cfunction->funcType == CUSFUNC_INCLUDE) {
+					auto varName = std::dynamic_pointer_cast<VariableObjects>(cfunction->expression->firstValue)->returnStringValue();
+					auto className = std::find(this->allNativeClass.begin(), this->allNativeClass.end(), varName);
+					if (className != this->allNativeClass.end()) {
+
+						auto newClass = std::make_shared<HigherObject::ClassObject>();
+						newClass->className = varName;
+
+						auto var = std::make_shared<HigherObject>(newClass);
+						var->isForcedConstraint = true;
+						var->isConstant = true;
+						this->variable->variables[varName] = std::make_pair(DataTypeEnum::DATA_OBJECT, this->checkVariableConstraint(var, DataTypeEnum::DATA_OBJECT));
+
+					} else throw std::runtime_error("Runtime Error: Cannot find the thing you want to included.");
+				}
 
 			} else if (instruction->getType() == IfStatementInstruction) {
 				auto valueToReturn = this->processIfStatement(instruction);
@@ -107,7 +126,7 @@ public:
 			}
 		}
 		this->setupVariablePrevious();
-		return std::make_shared<HigherObject>( static_cast<int64_t>(0) );
+		return nullptr;
 	}
 
 	const void setupVariablePrevious() {
@@ -169,9 +188,17 @@ public:
 		const std::shared_ptr<HigherObject::FunctionCall> &newFunc,
 		const std::vector<std::shared_ptr<HigherObject>> &arguments) {
 
-		if (arguments.size() > newFunc->parameters.size())
-			throw std::runtime_error("Runtime Error: Too many arguments.");
+		std::vector<std::shared_ptr<HigherObject>> newArgVec = { arguments.begin(), arguments.end() };
+		newArgVec.insert(newArgVec.end(), newFunc->preArgs.begin(), newFunc->preArgs.end());
 
+		if (newFunc->funcName.find("$native-") == 0) {
+			auto nativeFunc = NativeFunction::allNativeFunction.find(newFunc->funcName.substr(8));
+			if (nativeFunc != NativeFunction::allNativeFunction.end()) {
+				return this->handleNativeFunction(nativeFunc->second, newArgVec);
+			} else throw std::runtime_error("Runtime Error: Function is not declared.");
+		}
+
+		if (newArgVec.size() > newFunc->parameters.size()) throw std::runtime_error("Runtime Error: Too many arguments.");
 		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> scopedVariables;
 		for (const auto& varName : newFunc->varNameAccesible)
 			scopedVariables[varName] = this->variable->variables.at(varName);
@@ -181,9 +208,10 @@ public:
 			= newFunc->parameters;
 
 		for (const auto &param : newFunc->parameters) {
-			if (index == arguments.size()) break;
-			auto var = this->checkVariableConstraint(arguments[index++], param.second.first);
+			if (index == newArgVec.size()) break;
+			auto var = this->checkVariableConstraint(newArgVec[newArgVec.size()-1-index], param.second.first);
 			newParam[param.first] = std::make_pair(param.second.first, var);
+			index++;
 		}
 
 		return this->compile(newFunc->blockWillRun, scopedVariables, newParam, this->variable->functionMap);
@@ -249,6 +277,17 @@ private:
 					});
 				return newList;
 			}
+		} else if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_PARTIAL) {
+			if (objects.size() < 1 ) throw std::runtime_error("Runtime Error: Expecting atleast 1 argument. Target Function.");
+			if (!objects[0]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'partial'.");
+			auto newFunction              = std::make_shared<HigherObject::FunctionCall>();
+			newFunction->funcName         = objects[0]->funcValue->funcName;
+			newFunction->varNameAccesible = objects[0]->funcValue->varNameAccesible;
+			newFunction->blockWillRun     = objects[0]->funcValue->blockWillRun;
+			newFunction->parameters       = objects[0]->funcValue->parameters;
+			newFunction->preArgs          = { objects.begin()+1, objects.end() };
+			return std::make_shared<HigherObject>(newFunction);
+
 		} else return NativeFunction::manageFunction( nativeType, objects );
 		return nullptr;
 	}
@@ -261,15 +300,15 @@ private:
 		auto tok = callObj->currObject->getToken();
 		std::shared_ptr<HigherObject> returnValue;
 
-		if (tok == TokenType::FUNCTIONS) {
+		if (tok == JDM::TokenType::FUNCTIONS) {
 			auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(callObj->currObject);
-
 			std::shared_ptr<HigherObject::FunctionCall> newFunc;
-			auto variables = this->variable->variables  .find(functionObj->returnStringValue());
+
+			// auto variables = this->variable->variables  .find(functionObj->returnStringValue());
 			auto function  = this->variable->functionMap.find(functionObj->returnStringValue());
 
 				 if (function  != this->variable->functionMap.end()) newFunc = function->second;
-			else if (variables != this->variable->variables  .end() && variables->second.second->isFunc) newFunc = variables->second.second->funcValue;
+			// else if (variables != this->variable->variables  .end() && variables->second.second->isFunc) newFunc = variables->second.second->funcValue;
 			else {
 				auto nativeFunc = NativeFunction::allNativeFunction.find(functionObj->returnStringValue());
 				if (nativeFunc != NativeFunction::allNativeFunction.end()) {
@@ -280,17 +319,18 @@ private:
 			if (newFunc == nullptr) throw std::runtime_error("Runtime Error: Invalid Function.");
 			returnValue = this->runFunction(newFunc, this->getVectorHigherObject(functionObj->arguments));
 
-		} else if (tok == TokenType::EXPRESSION) {
+		} else if (tok == JDM::TokenType::EXPRESSION) {
 			auto exprObj = std::dynamic_pointer_cast<ExpressionObjects>(callObj->currObject);
 
 			auto variables = this->variable->variables.find(exprObj->returnStringValue());
 			if (variables == this->variable->variables.end()) throw std::runtime_error("Runtime Error: Variable is not declared.");
 
 			auto varList = variables->second.second;
-			if (!varList->isList && !varList->isMap) throw std::runtime_error("Runtime Error: Variable is not a List or a Map.");
-			if (varList->isList || varList->isMap) returnValue = this->manageCallBrackets(callObj, varList, expressionAssign);
+			if (varList->isList || varList->isMap || varList->isString)
+				returnValue = this->manageCallBrackets(callObj, varList, expressionAssign);
+			else throw std::runtime_error("Runtime Error: Variable is not a String, List or a Map.");
 
-		} else if (tok == TokenType::VARIABLE) {
+		} else if (tok == JDM::TokenType::VARIABLE) {
 			auto var = std::dynamic_pointer_cast<VariableObjects>(callObj->currObject);
 			auto variables = this->variable->variables.find(var->returnStringValue());
 			if (variables == this->variable->variables.end()) throw std::runtime_error("Runtime Error: Variable is not declared.");
@@ -314,14 +354,32 @@ private:
 			auto tok = newCallObj->currObject->getToken();
 
 			if (returnVal->isFunc) {
-				if (tok != TokenType::FUNCTIONS) throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
+				if (tok != JDM::TokenType::FUNCTIONS) throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
 				auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCallObj->currObject);
 				if (functionObj->returnStringValue() != "(") throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
 				return this->runFunction(returnVal->funcValue, this->getVectorHigherObject(functionObj->arguments));
 
+			} else if (returnVal->isObject) {
+				if (tok == JDM::TokenType::FUNCTIONS) {
+					throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
+				} else if (tok == JDM::TokenType::VARIABLE) {
+					
+				}
+				// auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCallObj->currObject);
+				// if (functionObj->returnStringValue() != "(") throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
+				// return this->runFunction(returnVal->funcValue, this->getVectorHigherObject(functionObj->arguments));
+
+			} else if (returnVal->isString) {
+			 	if (tok == JDM::TokenType::EXPRESSION)
+			 		newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+				else if (tok == JDM::TokenType::FUNCTIONS) {
+					throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
+				}
+				return this->manageEndCall(newCallObj, newReturn);
+
 			} else if (returnVal->isList || returnVal->isMap) {
-				if (tok == TokenType::EXPRESSION) newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
-				else if (tok == TokenType::FUNCTIONS) {
+				if (tok == JDM::TokenType::EXPRESSION) newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+				else if (tok == JDM::TokenType::FUNCTIONS) {
 					auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCallObj->currObject);
 					if (functionObj->returnStringValue() == "(") throw std::runtime_error("Runtime Error: A List or Map cannot be called.");
 
@@ -376,6 +434,14 @@ private:
 				returnVal->isListSorted     = false;
 			}
 			return returnVal->listValue[index];
+
+		} else if (returnVal->isString) {
+			expr->castToInteger();
+			int index = expr->integerValue;
+			if (index < 0) index += returnVal->stringValue.size();
+			if (index < 0 || index >= returnVal->stringValue.size())
+				throw std::runtime_error("Runtime Error: String index out of bounds.");
+			return std::make_shared<HigherObject>(std::string(1, returnVal->stringValue[index]));
 
 		} else if (returnVal->isMap) {
 
@@ -459,6 +525,8 @@ private:
 					throw std::runtime_error("Runtime Error: Due to force constraint. Value is not a Number.");
 			} else if (dataT == DataTypeEnum::DATA_LAMBDA) {
 				if (dataT != varType) throw std::runtime_error("Runtime Error: Due to force constraint. Value is not a Function or Lambda.");
+			} else if (dataT == DataTypeEnum::DATA_OBJECT) {
+				if (dataT != varType) throw std::runtime_error("Runtime Error: Due to force constraint. Value is not a Object.");
 			} else if (dataT == DataTypeEnum::DATA_LIST) {
 				if (dataT != varType) throw std::runtime_error("Runtime Error: Due to force constraint. Value is not a List.");
 			} else if (dataT == DataTypeEnum::DATA_MAP) {
@@ -470,6 +538,7 @@ private:
 		else if (dataT == DataTypeEnum::DATA_BOOLEAN) var->castToBoolean ();
 		else if (dataT == DataTypeEnum::DATA_DOUBLE ) var->castToDecimal ();
 		else if (dataT == DataTypeEnum::DATA_LAMBDA ) var->castToFunction();
+		else if (dataT == DataTypeEnum::DATA_OBJECT ) var->castToObject  ();
 		else if (dataT == DataTypeEnum::DATA_LIST   ) var->castToList    ();
 		else if (dataT == DataTypeEnum::DATA_MAP    ) var->castToMap     ();
 		return var;
@@ -655,6 +724,20 @@ private:
 				firstVal->castToBoolean();
 				firstVal->booleanValue = result;
 
+			} else if (firstVal->isObject) {
+				if (!secondVal->isObject) throw std::runtime_error("Runtime Error: Cannot do operation on 'jobject' and not 'jobject'.");
+				bool result = false;
+				bool firstBool  = firstVal ->objectValue != nullptr;
+				bool secondBool = secondVal->objectValue != nullptr;
+					 if (operation == "&&") result = firstBool && secondBool;
+				else if (operation == "||") result = firstBool || secondBool;
+				else if (operation == "==") result =  firstVal->compareHigherObject(secondVal);
+				else if (operation == "!=") result = !firstVal->compareHigherObject(secondVal);
+				else throw std::runtime_error("Runtime Error: This operation is not allowed on 'jfunc'.");
+
+				firstVal->castToBoolean();
+				firstVal->booleanValue = result;
+
 			} else if (firstVal->isInteger || firstVal->isDecimal || firstVal->isBoolean) {
 				if (secondVal->isString) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jstring'.");
 				if (secondVal->isFunc  ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'func'.");
@@ -708,46 +791,57 @@ private:
 	{
 		std::shared_ptr<HigherObject> value;
 		if ( Value ) {
-			TokenType type = Value->getToken();
-			if (type == TokenType::VARIABLE)
+			JDM::TokenType type = Value->getToken();
+			if (type == JDM::TokenType::VARIABLE)
 			{
 				auto varName = std::dynamic_pointer_cast<VariableObjects>(Value)->returnStringValue();
 				auto var  = this->variable->variables.  find(varName);
 				auto func = this->variable->functionMap.find(varName);
 				     if (var  != this->variable->variables  .end()) value = std::make_shared<HigherObject>(var->second.second);
 				else if (func != this->variable->functionMap.end()) value = std::make_shared<HigherObject>(func->second);
-				else throw std::runtime_error("Runtime Error: Variable or Function is not declared.");
+				else {
+					auto nativeFunc = NativeFunction::allNativeFunction.find(varName);
+					if (nativeFunc != NativeFunction::allNativeFunction.end()) {
+
+						auto newFunction = std::make_shared<HigherObject::FunctionCall>();
+						newFunction->funcName = "$native-" + varName;
+						value = std::make_shared<HigherObject>(newFunction);
+
+					} else throw std::runtime_error("Runtime Error: Variable or Function is not declared.");
+				}
 			}
-			else if (type == TokenType::STRING ) value = std::make_shared<HigherObject>(std::dynamic_pointer_cast<StringObjects >(Value)->returnValue());
-			else if (type == TokenType::INTEGER) value = std::make_shared<HigherObject>(std::dynamic_pointer_cast<IntegerObjects>(Value)->returnValue());
-			else if (type == TokenType::DECIMAL) value = std::make_shared<HigherObject>(std::dynamic_pointer_cast<DoubleObjects >(Value)->returnValue());
-			else if (type == TokenType::LIST)
+			else if (type == JDM::TokenType::STRING ) value = std::make_shared<HigherObject>(std::dynamic_pointer_cast<StringObjects >(Value)->returnValue());
+			else if (type == JDM::TokenType::INTEGER) value = std::make_shared<HigherObject>(std::dynamic_pointer_cast<IntegerObjects>(Value)->returnValue());
+			else if (type == JDM::TokenType::DOUBLE) value = std::make_shared<HigherObject>(std::dynamic_pointer_cast<DoubleObjects >(Value)->returnValue());
+			else if (type == JDM::TokenType::LIST)
 			{
 				std::vector<std::shared_ptr<HigherObject>> vecList;
 				auto exprList = std::dynamic_pointer_cast<ListObject>(Value)->returnValue();
 				for (const auto &expr : exprList) vecList.push_back( this->evaluateExpression(expr) );
 				value = std::make_shared<HigherObject>(vecList);
 			}
-			else if (type == TokenType::MAP)
+			else if (type == JDM::TokenType::MAP)
 			{
 				std::unordered_map<std::shared_ptr<HigherObject>, std::shared_ptr<HigherObject>> mapList;
 				auto mapStruct = std::dynamic_pointer_cast<MapObject>(Value)->returnValue();
 				for (const auto &expr : mapStruct) mapList[this->evaluateExpression(expr->key)] = this->evaluateExpression(expr->value);
 				value = std::make_shared<HigherObject>(mapList);
 			}
-			else if (type == TokenType::CALL_OBJ)
+			else if (type == JDM::TokenType::CALL_OBJ)
 			{
 				auto callObjRoot = std::dynamic_pointer_cast<CallObjects>(Value);
 				while (callObjRoot->prevObject != nullptr)
 					callObjRoot = callObjRoot->prevObject;
+
 				auto result = this->recursivelyCall(callObjRoot);
 				if (result == nullptr) value = nullptr;
 				else value = std::make_shared<HigherObject>(result);
 			}
-			else if (type == TokenType::LAMBDA)
+			else if (type == JDM::TokenType::LAMBDA)
 			{
-				auto lambdaObj = std::dynamic_pointer_cast<LambdaObjects>(Value);
-				std::shared_ptr<HigherObject::FunctionCall> newFunction = std::make_shared<HigherObject::FunctionCall>();
+				auto lambdaObj   = std::dynamic_pointer_cast<LambdaObjects>(Value);
+				auto newFunction = std::make_shared<HigherObject::FunctionCall>();
+
 				for (const auto &var : lambdaObj->parameters) {
 					if (var->dataType != nullptr) {
 						auto dataT   = JDM::dataTypeMap.at(std::get<0>(var->dataType->token));
@@ -759,7 +853,7 @@ private:
 				if (lambdaObj->willCall) value = this->runFunction(newFunction, this->getVectorHigherObject(lambdaObj->arguments));
 				else value = std::make_shared<HigherObject>(newFunction);
 			}
-			else if (type == TokenType::CAST)
+			else if (type == JDM::TokenType::CAST)
 			{
 				auto castObj = std::dynamic_pointer_cast<CastObjects>(Value);
 				value = this->castVariable(castObj->expression, castObj->datTypeToTurn, false);
@@ -773,6 +867,7 @@ private:
 	{
 		if (!expr) return std::make_shared<HigherObject>(static_cast<int64_t>(0));
 		auto firstVal = this->getHigherObject(expr->firstValue, expr->firstExpression);
+		if (firstVal == nullptr) throw std::runtime_error("Runtime Error: Invalid Expression. Return null.");
 
 		if (expr->opWillUse) {
 			if (expr->secondValue || expr->secondExpression) {

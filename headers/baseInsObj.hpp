@@ -31,15 +31,15 @@ public:
 class VarObjects {
 protected:
 	size_t row, col;
-	TokenType varType = TokenType::UNDEFINED;
+	JDM::TokenType varType = JDM::TokenType::UNDEFINED;
 
 protected:
-	VarObjects(TokenType type, size_t r = 0, size_t c = 0) : varType(type), row(r), col(c) {}
+	VarObjects(JDM::TokenType type, size_t r = 0, size_t c = 0) : varType(type), row(r), col(c) {}
 	virtual ~VarObjects() {}
 
 public:
 	inline const char* getStringToken() { return JDM::tokenTypeToString(this->varType); }
-	inline const TokenType getToken() { return this->varType; }
+	inline const JDM::TokenType getToken() { return this->varType; }
 	virtual const std::string returnStringValue() { return "INVALID"; };
 };
 
@@ -49,7 +49,7 @@ public:
 
 public:
 	VariableObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::VARIABLE, std::get<2>(tok->token), std::get<3>(tok->token)), name(std::get<0>(tok->token)) {}
+		: VarObjects(JDM::TokenType::VARIABLE, std::get<2>(tok->token), std::get<3>(tok->token)), name(std::get<0>(tok->token)) {}
 	inline const std::string returnStringValue() { return this->name; }
 };
 

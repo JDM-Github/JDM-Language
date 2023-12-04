@@ -1,0 +1,216 @@
+|->
+ -> Sort:
+ -> This function sorts an iterable.
+ ->
+ -> Args: Iterable
+ -> Return: Sorted iterable.
+<-|
+jcforce jlambda sort = sort;
+
+|->
+ -> Input:
+ -> This function reads input from the user.
+ ->
+ -> Args: None
+ -> Return:
+ ->  - User input as a string.
+<-|
+jcforce jlambda input = input;
+
+|->
+ -> Len:
+ -> This function returns the length of an iterable.
+ ->
+ -> Args: Iterable
+ -> Return: Length of the iterable as an integer.
+<-|
+jcforce jlambda len = len;
+
+|->
+ -> Abs:
+ -> This function returns the absolute value of a number.
+ ->
+ -> Args: Number
+ -> Return: Absolute value of the number.
+<-|
+jcforce jlambda abs = abs;
+
+|->
+ -> Ceil:
+ -> This function rounds a number up to the nearest integer.
+ ->
+ -> Args: Number
+ -> Return: Rounded-up integer value.
+<-|
+jcforce jlambda ceil = ceil;
+
+|->
+ -> Floor:
+ -> This function rounds a number down to the nearest integer.
+ ->
+ -> Args: Number
+ -> Return: Rounded-down integer value.
+<-|
+jcforce jlambda floor = floor;
+
+|->
+ -> Max:
+ -> This function returns the maximum value in an iterable.
+ ->
+ -> Args:
+ ->   - Iterable: The iterable to be check the minimum
+ -> Return:
+ ->   - Maximum value in the iterable.
+<-|
+jcforce jlambda max = max;
+
+|->
+ -> Min:
+ -> This function returns the minimum value in an iterable.
+ ->
+ -> Args:
+ ->   - Iterable: The iterable to be check the minimum
+ -> Return:
+ ->   - Minimum value in the iterable.
+<-|
+jcforce jlambda min = min;
+
+|->
+ -> Reverse:
+ -> This function reverses the order of elements in an iterable.
+ ->
+ -> Args:
+ ->   - Iterable: The iterable to be reverse
+ -> Return:
+ ->   - Reversed iterable.
+<-|
+jcforce jlambda reverse = reverse;
+
+|->
+ -> Round:
+ -> This function rounds a number to the nearest integer.
+ ->
+ -> Args:
+ ->   - Number: The number to be rounded.
+ -> Return:
+ ->   - Rounded integer value.
+<-|
+jcforce jlambda round = round;
+
+|->
+ -> Sum:
+ -> This function returns the sum of values in an iterable.
+ ->
+ -> Args:
+ ->   - Iterable: The iterable to be sum
+ -> Return:
+ ->   - Sum of values in the iterable.
+<-|
+jcforce jlambda sum = sum;
+
+|->
+ -> Join:
+ -> This function joins elements of an iterable into a single string, using the provided separator.
+ ->
+ -> Args: 
+ ->   - Iterable: The iterable to be joined.
+ ->   - Separator: The string used to separate elements.
+ -> Return: 
+ ->   - Joined string.
+<-|
+jcforce jlambda join = join;
+
+|->
+ -> Index:
+ -> This function returns an iterator to search for an element in an iterable.
+ ->
+ -> Args: 
+ ->   - Iterable: The iterable to search within.
+ -> Return: 
+ ->   - Iterator to search for an element.
+<-|
+jcforce jlambda index = index;
+
+|->
+ -> Randint:
+ -> This function generates a random integer between the specified start and end values.
+ ->
+ -> Args: 
+ ->   - Start: The minimum value (inclusive) of the random integer.
+ ->   - End: The maximum value (inclusive) of the random integer.
+ -> Return: 
+ ->   - Random integer between start and end (inclusive).
+<-|
+jcforce jlambda randint = randint;
+
+|->
+ -> Randfloat:
+ -> This function generates a random floating-point number between the specified start and end values.
+ ->
+ -> Args: 
+ ->   - Start: The minimum value (inclusive) of the random float.
+ ->   - End: The maximum value (inclusive) of the random float.
+ -> Return: 
+ ->   - Random float between start and end (inclusive).
+<-|
+jcforce jlambda randfloat = randfloat;
+
+|->
+ -> Filter:
+ -> This function filters elements of an iterable based on a given condition.
+ ->
+ -> Args: 
+ ->   - Iterable: The iterable to be filtered.
+ ->   - Condition: A function that evaluates whether an element should be included.
+ -> Return: 
+ ->   - Filtered iterable containing elements that satisfy the condition.
+<-|
+jcforce jlambda filter = filter;
+
+|->
+ -> Reduce:
+ -> This function reduces an iterable to a single value by applying a binary function cumulatively.
+ ->
+ -> Args: 
+ ->   - Iterable: The iterable to be reduced.
+ ->   - Function: A binary function that combines two elements.
+ -> Return: 
+ ->   - Reduced value.
+<-|
+jcforce jlambda reduce = reduce;
+
+|->
+ -> Sort_if:
+ -> This function sorts an iterable based on a given condition.
+ ->
+ -> Args: 
+ ->   - Iterable: The iterable to be sorted.
+ ->   - Condition: A function that compares two elements for sorting.
+ -> Return: 
+ ->   - Sorted iterable.
+<-|
+jcforce jlambda sort_if = sort_if;
+
+|->
+ -> Map:
+ -> This function applies a given function to all elements of an iterable.
+ ->
+ -> Args: 
+ ->   - Iterable: The iterable to be mapped.
+ ->   - Function: A function to apply to each element.
+ -> Return: 
+ ->   - Mapped iterable.
+<-|
+jcforce jlambda map = map;
+
+|->
+ -> Chain:
+ -> This function concatenates multiple iterables into a single iterable.
+ ->
+ -> Args: 
+ ->   - Iterables: Multiple iterables to be concatenated.
+ -> Return: 
+ ->   - Concatenated iterable.
+<-|
+jcforce jlambda chain = chain;
+

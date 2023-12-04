@@ -8,7 +8,7 @@ public:
 
 public:
 	ListObject(const std::vector<std::shared_ptr<Expression>> &_list = {})
-	: list (_list), VarObjects(TokenType::LIST) { }
+	: list (_list), VarObjects(JDM::TokenType::LIST) { }
 
 	inline const std::string returnStringValue() { return "LIST"; }
 	inline const std::vector<std::shared_ptr<Expression>> returnValue() { return this->list; }
@@ -21,7 +21,7 @@ public:
 
 public:
 	MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map = {})
-	: map (_map), VarObjects(TokenType::MAP) { }
+	: map (_map), VarObjects(JDM::TokenType::MAP) { }
 	inline const std::string returnStringValue() { return "MAP"; }
 
 	inline const std::vector<std::shared_ptr<MapStruct>> returnValue() { return this->map; }
@@ -40,7 +40,7 @@ public:
 		const std::shared_ptr<VarObjects > &_currObject = nullptr,
 		const std::shared_ptr<CallObjects> &_prevObject = nullptr
 		) :
-		VarObjects(TokenType::CALL_OBJ),
+		VarObjects(JDM::TokenType::CALL_OBJ),
 		currObject(_currObject),
 		prevObject(_prevObject) {}
 
@@ -53,7 +53,7 @@ public:
 
 public:
 	ClassObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::CLASS, std::get<2>(tok->token), std::get<3>(tok->token)),
+		: VarObjects(JDM::TokenType::CLASS, std::get<2>(tok->token), std::get<3>(tok->token)),
 		name(std::get<0>(tok->token)) {
 	}
 	inline const std::string returnStringValue() { return this->name; }
@@ -69,7 +69,7 @@ public:
 		DataTypeEnum _datTypeToTurn,
 		const std::shared_ptr<Expression > &_expression = nullptr
 		) :
-		VarObjects   (TokenType::CAST),
+		VarObjects   (JDM::TokenType::CAST),
 		datTypeToTurn(_datTypeToTurn ),
 		expression   (_expression    ) {}
 
@@ -90,7 +90,7 @@ public:
 		const std::vector<std::shared_ptr<Variable  >> &_parameters   = {},
 		const std::shared_ptr<Instruction            > &_blockWillRun = nullptr
 	) :
-	VarObjects(TokenType::LAMBDA),
+	VarObjects(JDM::TokenType::LAMBDA),
 	willCall     (_willCall    ),
 	arguments    (_arguments   ),
 	parameters   (_parameters  ),
@@ -111,7 +111,7 @@ public:
 		const std::vector<std::shared_ptr<Expression>> &_arguments = {}
 		) :
 		name(std::get<0>(tok->token)),
-		VarObjects(TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
+		VarObjects(JDM::TokenType::FUNCTIONS, std::get<2>(tok->token), std::get<3>(tok->token)),
 		arguments (_arguments) {}
 
 	inline const std::string returnStringValue() { return this->name; }
@@ -124,7 +124,7 @@ public:
 
 public:
 	StringObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::STRING, std::get<2>(tok->token), std::get<3>(tok->token)) {
+		: VarObjects(JDM::TokenType::STRING, std::get<2>(tok->token), std::get<3>(tok->token)) {
 		this->value = std::get<0>(tok->token);
 	}
 	inline const std::string returnStringValue() { return this->value; }
@@ -138,7 +138,7 @@ public:
 
 public:
 	IntegerObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::INTEGER, std::get<2>(tok->token), std::get<3>(tok->token)) {
+		: VarObjects(JDM::TokenType::INTEGER, std::get<2>(tok->token), std::get<3>(tok->token)) {
 
 		auto tokenValue = std::get<0>(tok->token);
 		if (tokenValue == "jtrue" || tokenValue == "jfalse")
@@ -157,7 +157,7 @@ public:
 
 public:
 	DoubleObjects(const std::shared_ptr<TokenStruct> &tok)
-		: VarObjects(TokenType::DECIMAL, std::get<2>(tok->token), std::get<3>(tok->token)) {
+		: VarObjects(JDM::TokenType::DOUBLE, std::get<2>(tok->token), std::get<3>(tok->token)) {
 		this->value = std::stod(std::get<0>(tok->token));
 	}
 	inline const std::string returnStringValue() { return std::to_string(this->value); }
@@ -177,7 +177,7 @@ public:
 	) :
 	name(std::get<0>(tok->token)),
 	expression(expr),
-	VarObjects(TokenType::EXPRESSION, std::get<2>(tok->token), std::get<3>(tok->token)) { }
+	VarObjects(JDM::TokenType::EXPRESSION, std::get<2>(tok->token), std::get<3>(tok->token)) { }
 
 	inline const std::string returnStringValue() { return this->name; }
 };

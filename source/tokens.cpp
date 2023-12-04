@@ -5,9 +5,9 @@ JDM_DLL Tokens::Tokens()
 	  __escape_combination ({ '\'', '"', '?', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v' }),
 	  __operator_symbol    ({ '=', '!', '+', '-', '*', '/', '%', '&', '|', '>', '<', '^', '~', '.', ','}),
 	  __tokenMap           ({
-			{"^(-?[0-9]*)$"              , TokenType::INTEGER},
-			{"^(-?[0-9]*\\.[0-9]*)$"     , TokenType::DECIMAL},
-			{"^[a-zA-Z_][a-zA-Z0-9_]*$"  , TokenType::VARIABLE} })
+			{"^(-?[0-9]*)$"              , JDM::TokenType::INTEGER},
+			{"^(-?[0-9]*\\.[0-9]*)$"     , JDM::TokenType::DOUBLE},
+			{"^[a-zA-Z_][a-zA-Z0-9_]*$"  , JDM::TokenType::VARIABLE} })
 {
 	// Data Type
 	this->__dataTypeVector.push_back   ("jany"     );
@@ -18,6 +18,7 @@ JDM_DLL Tokens::Tokens()
 	this->__dataTypeVector.push_back   ("jint"     );
 	this->__dataTypeVector.push_back   ("jboolean" );
 	this->__dataTypeVector.push_back   ("jlambda"  );
+	this->__dataTypeVector.push_back   ("jobject"  );
 
 	this->__dataTypeVector.push_back   ("jconst"   );
 	this->__dataTypeVector.push_back   ("jforce"   );
@@ -52,4 +53,5 @@ JDM_DLL Tokens::Tokens()
 	this->__functionsVector.push_back  ("$sort"     );
 	this->__functionsVector.push_back  ("$clear"    );
 	this->__functionsVector.push_back  ("$sleep"    );
+	this->__functionsVector.push_back  ("$include"  );
 }

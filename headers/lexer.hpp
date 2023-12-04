@@ -108,7 +108,7 @@ private:
 	bool               __candidate_block  ;
 
 	std::ostringstream __stringStream     ;
-	TokenType          __last_toke_type   ;
+	JDM::TokenType     __last_toke_type   ;
 	SharedTokenStruct  __allTokens        ;
 	SharedTokenStruct  __lastTokStruct    ;
 	SharedTokenLink    __currentStruct    ;

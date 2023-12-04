@@ -41,7 +41,8 @@ int main(int argc, char* argv[]) {
     std::string fileBuffer;
     auto start = std::chrono::high_resolution_clock::now();
     try {
-        fileBuffer = getScriptOnFile(filename);
+        fileBuffer  = getScriptOnFile("scripts/__native__.jdm");
+        fileBuffer += getScriptOnFile(filename);
     } catch (const FileNotExistError &error) { // Custom Exception
         std::cout << error.what() << std::endl;
         std::exit(EXIT_SUCCESS);
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Compiler> newCompiler;
 
     try {
-        newTokenizer = std::make_unique<Tokenizer>(filename, getScriptOnFile(filename));
+        newTokenizer = std::make_unique<Tokenizer>(filename, fileBuffer);
         // newTokenizer->analyzeAllTokens(true);
     } catch (const JDMTokenizingHandler& error) {
         std::cerr << error.what() << std::endl;

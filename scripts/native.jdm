@@ -1,0 +1,6 @@
+
+jclass Native => {
+	jpublic => {
+		jfunc sort( arg ) => jreturn native.sort(arg);
+	}
+}

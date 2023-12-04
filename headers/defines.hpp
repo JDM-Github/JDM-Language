@@ -31,7 +31,7 @@
 
 #define SizeT              size_t
 #define CSizeT             const size_t
-#define CTokenType         const TokenType
+#define CTokenType         const JDM::TokenType
 
 #define SpaceString        const std::string&
 
@@ -46,12 +46,12 @@
 #define CVecTokenStr       const VecTokenStr
 #define CVecTokenStrRef    const VecTokenStr&
 
-#define MapTokens          std::unordered_map<TokenStr, TokenType>
+#define MapTokens          std::unordered_map<TokenStr, JDM::TokenType>
 #define CMapTokens         const MapTokens
 
 struct TokenStruct {
-	std::tuple<TokenStr, TokenType, size_t, size_t> token =
-		std::make_tuple("", TokenType::UNDEFINED, 0, 0);
+	std::tuple<TokenStr, JDM::TokenType, size_t, size_t> token =
+		std::make_tuple("", JDM::TokenType::UNDEFINED, 0, 0);
 	std::vector<std::shared_ptr<TokenStruct>> child = {};
 };
 
@@ -137,6 +137,7 @@ namespace JDM {
         {"jint",     DataTypeEnum::DATA_INTEGER},
         {"jboolean", DataTypeEnum::DATA_BOOLEAN},
         {"jlambda",  DataTypeEnum::DATA_LAMBDA},
+        {"jobject",  DataTypeEnum::DATA_OBJECT},
         {"jconst",   DataTypeEnum::DATA_CONST},
         {"jforce",   DataTypeEnum::DATA_FORCE},
         {"jcforce",  DataTypeEnum::DATA_CFORCE},
@@ -158,32 +159,33 @@ namespace JDM {
         {"$gettype", CUSFUNC_GETTYPE},
         {"$sort",    CUSFUNC_SORT},
         {"$clear",   CUSFUNC_CLEAR},
-        {"$sleep",   CUSFUNC_SLEEP}
+        {"$sleep",   CUSFUNC_SLEEP},
+        {"$include", CUSFUNC_INCLUDE}
     };
 
-	constexpr const char *tokenTypeToString(const TokenType type) {
+	constexpr const char *tokenTypeToString(const JDM::TokenType type) {
 		switch (type) {
-			case TokenType::DATA_TYPE                    : return "DATA_TYPE";
-			case TokenType::CONTROL_FLOW                 : return "CONTROL_FLOW";
-			case TokenType::CUSTOM_KEYWORD               : return "CUSTOM_KEYWORD";
-			case TokenType::CUSTOM_FUNCTIONS             : return "CUSTOM_FUNCTIONS";
-			case TokenType::FUNCTIONS                    : return "FUNCTIONS";
-			case TokenType::STRING                       : return "STRING";
-			case TokenType::OPEN_CASES                   : return "OPEN_CASES";
-			case TokenType::CLOSE_CASES                  : return "CLOSE_CASES";
-			case TokenType::ARROW_OPERATOR               : return "ARROW_OPERATOR";
-			case TokenType::COMMA_OPERATOR               : return "COMMA_OPERATOR";
-			case TokenType::DOT_OPERATOR                 : return "DOT_OPERATOR";
-			case TokenType::INCREMENT_DECREMENT_OPERATOR : return "INCREMENT_DECREMENT_OPERATOR";
-			case TokenType::ASSIGNMENT_OPERATOR          : return "ASSIGNMENT_OPERATOR";
-			case TokenType::ARITHMETIC_OPERATOR          : return "ARITHMETIC_OPERATOR";
-			case TokenType::RELATIONAL_OPERATOR          : return "RELATIONAL_OPERATOR";
-			case TokenType::BITWISE_OPERATOR             : return "BITWISE_OPERATOR";
-			case TokenType::INTEGER                      : return "INTEGER";
-			case TokenType::DECIMAL                      : return "DECIMAL";
-			case TokenType::LIST                         : return "LIST";
-			case TokenType::MAP                          : return "MAP";
-			case TokenType::VARIABLE                     : return "VARIABLE";
+			case JDM::TokenType::DATA_TYPE                    : return "DATA_TYPE";
+			case JDM::TokenType::CONTROL_FLOW                 : return "CONTROL_FLOW";
+			case JDM::TokenType::CUSTOM_KEYWORD               : return "CUSTOM_KEYWORD";
+			case JDM::TokenType::CUSTOM_FUNCTIONS             : return "CUSTOM_FUNCTIONS";
+			case JDM::TokenType::FUNCTIONS                    : return "FUNCTIONS";
+			case JDM::TokenType::STRING                       : return "STRING";
+			case JDM::TokenType::OPEN_CASES                   : return "OPEN_CASES";
+			case JDM::TokenType::CLOSE_CASES                  : return "CLOSE_CASES";
+			case JDM::TokenType::ARROW_OPERATOR               : return "ARROW_OPERATOR";
+			case JDM::TokenType::COMMA_OPERATOR               : return "COMMA_OPERATOR";
+			case JDM::TokenType::DOT_OPERATOR                 : return "DOT_OPERATOR";
+			case JDM::TokenType::INCREMENT_DECREMENT_OPERATOR : return "INCREMENT_DECREMENT_OPERATOR";
+			case JDM::TokenType::ASSIGNMENT_OPERATOR          : return "ASSIGNMENT_OPERATOR";
+			case JDM::TokenType::ARITHMETIC_OPERATOR          : return "ARITHMETIC_OPERATOR";
+			case JDM::TokenType::RELATIONAL_OPERATOR          : return "RELATIONAL_OPERATOR";
+			case JDM::TokenType::BITWISE_OPERATOR             : return "BITWISE_OPERATOR";
+			case JDM::TokenType::INTEGER                      : return "INTEGER";
+			case JDM::TokenType::DOUBLE                       : return "DECIMAL";
+			case JDM::TokenType::LIST                         : return "LIST";
+			case JDM::TokenType::MAP                          : return "MAP";
+			case JDM::TokenType::VARIABLE                     : return "VARIABLE";
 			default                                      : return "UNDEFINED";
 		}
 	}

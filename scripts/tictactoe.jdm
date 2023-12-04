@@ -3,9 +3,10 @@ jlist board = [
 	[' ', ' ', ' '],
 	[' ', ' ', ' '],
 ];
+
 jforce jint turn = 0;
 jfunc draw() => {
-	$logn => "Welcome to TIC-TAC-TOE\n";
+	$logn => "Welcome to JD\n";
 	jfor r => 3 => {
 		$log => '    | ';
 		jfor c => 3 =>
@@ -16,8 +17,8 @@ jfunc draw() => {
 }
 
 jfunc checkTurn() => {
-	jint row = jint(input("Row: "));
-	jint col = jint(input("Col: "));
+	jint row = jint(input("Row: ")) - 1;
+	jint col = jint(input("Col: ")) - 1; 
 
 	jif (board[row][col] != ' ') => {
 		$logn => "\nThis is already occupied.";
@@ -43,9 +44,12 @@ jfunc checkWinner() => {
 }
 
 jfunc main() => {
+	jwhile (!checkWinner()) => {
+		$clear;
+		draw();
+		checkTurn();
+	};
 	$clear;
-	jwhile !checkWinner() => { draw(); checkTurn(); $clear; }
 	draw();
-	$logn => "\nThank you for playing.";
 }
 main();

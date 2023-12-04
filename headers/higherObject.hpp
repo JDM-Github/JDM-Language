@@ -1,5 +1,5 @@
 #pragma once
-#include "defines.hpp"
+#include "instruction.hpp"
 
 class HigherObject {
 public:
@@ -12,6 +12,13 @@ public:
 			std::string, std::pair<DataTypeEnum,
 			std::shared_ptr<HigherObject>>> parameters;
 	};
+
+	struct ClassObject {
+		std::string className;
+		std::unordered_map<std::string, std::shared_ptr<HigherObject>> members;
+		std::unordered_map<std::string, std::shared_ptr<FunctionCall>> methods;
+	};
+
 	enum ActiveDataType {
 		NON_NONE,
     	ACTIVE_STRING,
@@ -20,7 +27,8 @@ public:
     	ACTIVE_BOOLEAN,
     	ACTIVE_FUNCTION,
     	ACTIVE_LIST,
-    	ACTIVE_MAP
+    	ACTIVE_MAP,
+    	ACTIVE_OBJECT
 	};
 
 	bool isListSorted = false;
@@ -32,6 +40,7 @@ public:
 	bool isFunc    = false;
 	bool isList    = false;
 	bool isMap     = false;
+	bool isObject  = false;
 
 	ActiveDataType currActive = NON_NONE;
 	bool isForcedConstraint = false;
@@ -46,9 +55,11 @@ public:
 	bool        booleanValue = false;
 
 	std::shared_ptr<FunctionCall> funcValue;
+	std::shared_ptr<ClassObject > objectValue;
 
-	std::vector<std::shared_ptr<HigherObject>>                             listValue = {};
-	std::unordered_map<std::shared_ptr<HigherObject>, std::shared_ptr<HigherObject>> mapValue  = {};
+	std::vector<std::shared_ptr<HigherObject>> listValue = {};
+	std::unordered_map<std::shared_ptr<HigherObject>,
+		std::shared_ptr<HigherObject>> mapValue  = {};
 
 public:
 	HigherObject(const std::string &value ) : stringValue (value), isString (true) { currActive = ACTIVE_STRING; }
@@ -56,6 +67,7 @@ public:
 	HigherObject(const long double value  ) : doubleValue (value), isDecimal(true) { currActive = ACTIVE_DECIMAL; }
 	HigherObject(const bool value         ) : booleanValue(value), isBoolean(true) { currActive = ACTIVE_BOOLEAN; }
 	HigherObject(const std::shared_ptr<FunctionCall> &value) : funcValue(value), isFunc(true) { currActive = ACTIVE_FUNCTION; }
+	HigherObject(const std::shared_ptr<ClassObject > &value) : objectValue(value), isObject(true) { currActive = ACTIVE_OBJECT; }
 	HigherObject(const std::vector<std::shared_ptr<HigherObject>> &value) : listValue(value), isList(true) { currActive = ACTIVE_LIST; }
 	HigherObject(const std::unordered_map<std::shared_ptr<HigherObject>, std::shared_ptr<HigherObject>> &value)
 		: mapValue(value), isMap(true) { currActive = ACTIVE_MAP; }
@@ -67,6 +79,7 @@ public:
 		else if (obj->isDecimal) { this->doubleValue  = obj->doubleValue ; this->isDecimal = true; currActive = ACTIVE_DECIMAL;  }
 		else if (obj->isBoolean) { this->booleanValue = obj->booleanValue; this->isBoolean = true; currActive = ACTIVE_BOOLEAN;  }
 		else if (obj->isFunc   ) { this->funcValue    = obj->funcValue   ; this->isFunc    = true; currActive = ACTIVE_FUNCTION; }
+		else if (obj->isObject ) { this->objectValue  = obj->objectValue ; this->isObject  = true; currActive = ACTIVE_OBJECT;   }
 		else if (obj->isList   ) { this->listValue    = obj->listValue   ; this->isList    = true; currActive = ACTIVE_LIST;     }
 		else if (obj->isMap    ) { this->mapValue     = obj->mapValue    ; this->isMap     = true; currActive = ACTIVE_MAP;      }
 	}
@@ -79,6 +92,7 @@ public:
 			case ACTIVE_DECIMAL : return DataTypeEnum::DATA_DOUBLE;
 			case ACTIVE_BOOLEAN : return DataTypeEnum::DATA_BOOLEAN;
 			case ACTIVE_FUNCTION: return DataTypeEnum::DATA_LAMBDA;
+			case ACTIVE_OBJECT  : return DataTypeEnum::DATA_OBJECT;
 			case ACTIVE_LIST    : return DataTypeEnum::DATA_LIST;
 			case ACTIVE_MAP     : return DataTypeEnum::DATA_MAP;
 		}
@@ -105,6 +119,10 @@ public:
 		else if (isFunc   ) {
 			if (this->funcValue == nullptr) oss << "Function: Invalid.";
 			else oss << "Function: " << funcValue;
+		}
+		else if (isObject ) {
+			if (this->objectValue == nullptr) oss << "Class: Invalid.";
+			else oss << "Class: " << objectValue;
 		}
 		else if (isList   ) {
 			oss << "[ ";
@@ -136,6 +154,7 @@ public:
 		isDecimal = false;
 		isBoolean = false;
 		isFunc    = false;
+		isObject  = false;
 		isList    = false;
 		isMap     = false;
 	}
@@ -205,6 +224,10 @@ public:
 
 		else if (this->currActive == ACTIVE_FUNCTION && this->currActive == obj->currActive)
 			return this->funcValue == obj->funcValue && this->funcValue != nullptr;
+
+		else if (this->currActive == ACTIVE_OBJECT && this->currActive == obj->currActive)
+			return this->objectValue == obj->objectValue && this->objectValue != nullptr;
+
 		else if (this->currActive == ACTIVE_LIST && this->currActive == obj->currActive) {
 			if (this->listValue.size() != obj->listValue.size())
 				return false;
@@ -241,6 +264,7 @@ public:
 		else if (isBoolean) this->stringValue = (booleanValue) ? "jtrue" : "jfalse";
 
 		else if (isFunc   ) this->stringValue = this->_getStringValue();
+		else if (isObject ) this->stringValue = this->_getStringValue();
 		else if (isList   ) this->stringValue = this->_getStringValue();
 		else if (isMap    ) this->stringValue = this->_getStringValue();
 		this->refalseAll();
@@ -260,7 +284,8 @@ public:
 		else if (isDecimal) this->integerValue = static_cast<int>(doubleValue);
 		else if (isBoolean) this->integerValue = (booleanValue) ? 1 : 0;
 
-		else if (isFunc   ) this->integerValue = (this->funcValue != nullptr) ? 1 : 0;
+		else if (isFunc   ) this->integerValue = (this->funcValue   != nullptr) ? 1 : 0;
+		else if (isObject ) this->integerValue = (this->objectValue != nullptr) ? 1 : 0;
 		else if (isList   ) this->integerValue = this->listValue.size();
 		else if (isMap    ) this->integerValue = this->mapValue.size();
 
@@ -280,7 +305,8 @@ public:
 		}
 		else if (isInteger) this->doubleValue = static_cast<double>(integerValue);
 		else if (isBoolean) this->doubleValue = (booleanValue) ? 1.0 : 0.0;
-		else if (isFunc   ) this->doubleValue = (this->funcValue != nullptr) ? 1.0 : 0.0;
+		else if (isFunc   ) this->doubleValue = (this->funcValue   != nullptr) ? 1.0 : 0.0;
+		else if (isObject ) this->doubleValue = (this->objectValue != nullptr) ? 1.0 : 0.0;
 		else if (isList   ) this->doubleValue = this->listValue.size();
 		else if (isMap    ) this->doubleValue = this->mapValue.size();
 
@@ -295,7 +321,8 @@ public:
 		else if (isInteger) this->booleanValue = integerValue > 0;
 		else if (isDecimal) this->booleanValue = doubleValue > 0.0;
 
-		else if (isFunc   ) this->booleanValue = (this->funcValue != nullptr);
+		else if (isFunc   ) this->booleanValue = (this->funcValue   != nullptr);
+		else if (isObject ) this->booleanValue = (this->objectValue != nullptr);
 		else if (isList   ) this->booleanValue = this->listValue.empty();
 		else if (isMap    ) this->booleanValue = this->mapValue.empty();
 
@@ -314,6 +341,15 @@ public:
 		currActive = ACTIVE_FUNCTION;
 	}
 
+	const void castToObject() {
+		if (isObject) return;
+		this->objectValue = std::make_shared<ClassObject>();
+		this->refalseAll();
+
+		isObject = true;
+		currActive = ACTIVE_OBJECT;
+	}
+
 	const void castToList() {
 		if (isList) return;
 
@@ -324,6 +360,7 @@ public:
 		else if (isBoolean) this->listValue.push_back(std::make_shared<HigherObject>(booleanValue));
 
 		else if (isFunc   ) this->listValue.push_back(std::make_shared<HigherObject>(funcValue));
+		else if (isObject ) this->listValue.push_back(std::make_shared<HigherObject>(objectValue));
 		else if (isMap    ) {
 			for (auto it = this->mapValue.begin(); it != this->mapValue.end(); ++it)
 				this->listValue.push_back(it->first);

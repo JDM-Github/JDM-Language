@@ -163,14 +163,14 @@ const void Parser::_predictInstruction(
 	const std::shared_ptr<Block> &block,
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens)
 {
-	TokenType tkType = std::get<1>(tokens[0]->token);
-	if (tkType == TokenType::DATA_TYPE) {
+	JDM::TokenType tkType = std::get<1>(tokens[0]->token);
+	if (tkType == JDM::TokenType::DATA_TYPE) {
 		DataTypeEnum dataType = JDM::dataTypeMap.at(std::get<0>(tokens[0]->token));
 
 		if (dataType == DataTypeEnum::DATA_CONST) {
-			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != TokenType::DATA_TYPE)
+			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jconst'.");
-			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != TokenType::VARIABLE)
+			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
@@ -183,9 +183,9 @@ const void Parser::_predictInstruction(
 			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, true);
 
 		} else if (dataType == DataTypeEnum::DATA_FORCE) {
-			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != TokenType::DATA_TYPE)
+			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jforce'.");
-			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != TokenType::VARIABLE)
+			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
@@ -198,9 +198,9 @@ const void Parser::_predictInstruction(
 			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, false, true);
 
 		} else if (dataType == DataTypeEnum::DATA_CFORCE) {
-			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != TokenType::DATA_TYPE)
+			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jcforce'.");
-			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != TokenType::VARIABLE)
+			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
@@ -213,24 +213,22 @@ const void Parser::_predictInstruction(
 			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, true, true);
 
 		} else {
-			if (tokens.size() == 1 || std::get<1>(tokens[1]->token) != TokenType::VARIABLE)
+			if (tokens.size() == 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 			this->_manageDataType(block, tokens[0], tokens[1], {tokens.begin()+2, tokens.end()});
 		}
-	} else if (tkType == TokenType::VARIABLE) {
+	} else if (tkType == JDM::TokenType::VARIABLE) {
 		this->_manageVariable(block, tokens);
-	} else if (tkType == TokenType::CONTROL_FLOW) {
+	} else if (tkType == JDM::TokenType::CONTROL_FLOW) {
 		this->_manageControlFlow(block, tokens[0], {tokens.begin()+1, tokens.end()});
-	} else if (tkType == TokenType::CUSTOM_FUNCTIONS) {
+	} else if (tkType == JDM::TokenType::CUSTOM_FUNCTIONS) {
 		auto customFunc = JDM::customFunctionMap.at( std::get<0>(tokens[0]->token) );
 		if (customFunc == CUSFUNC_CLEAR) {
-			if (tokens.size() == 1)
-				block->instruction.push_back(std::make_shared<CFunction>(customFunc));
+			if (tokens.size() == 1) block->instruction.push_back(std::make_shared<CFunction>(customFunc));
 			else throw std::runtime_error("SYNTAX ERROR: Invalid clear syntax.");
-
 			return;
 		}
-		if (tokens.size() < 2 || std::get<1>(tokens[1]->token) != TokenType::ARROW_OPERATOR)
+		if (tokens.size() < 2 || std::get<1>(tokens[1]->token) != JDM::TokenType::ARROW_OPERATOR)
 			throw std::runtime_error("SYNTAX ERROR: Expecting '=>' after using Custom Function.");
 
 		if (customFunc == CUSFUNC_LOG || customFunc == CUSFUNC_LOGN) {
@@ -238,9 +236,15 @@ const void Parser::_predictInstruction(
 			this->_manageLogger(block, { tokens.begin()+2, tokens.end() }, expressions);
 			block->instruction.push_back(std::make_shared<Logger>(expressions, (customFunc == CUSFUNC_LOGN)));
 		} else if (customFunc == CUSFUNC_SLEEP) {
-			auto expr = this->_createExpression(
-				this->_transformTokenStruct({ tokens.begin()+2, tokens.end() })
-			)[0]->expression;
+			auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
+			block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
+
+		} else if (customFunc == CUSFUNC_INCLUDE) {
+			if (tokens.size() != 3) throw std::runtime_error("SYNTAX ERROR: Invalid include syntax.");
+			if (std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
+				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
+
+			auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
 			block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
 		}
 	}
@@ -260,7 +264,7 @@ const void Parser::_manageLogger(
 	std::vector<std::shared_ptr<Expression>> &expressions)
 {
 	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
-		return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
 	if (it != tokens.end()) {
 		expressions.push_back(this->_createExpression(
@@ -288,14 +292,14 @@ const void Parser::_manageControlFlow(
 		case ControlFlowEnum::CONTROL_WHILE : this->_manageIfElseWhileStatement(block, tokenS, control); break;
 
 		case ControlFlowEnum::CONTROL_FOR:
-			if (std::get<1>(tokenS[0]->token) != TokenType::VARIABLE) throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
-			if (std::get<1>(tokenS[1]->token) != TokenType::ARROW_OPERATOR) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+			if (std::get<1>(tokenS[0]->token) != JDM::TokenType::VARIABLE) throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
+			if (std::get<1>(tokenS[1]->token) != JDM::TokenType::ARROW_OPERATOR) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 			this->_manageForloop(block, tokenS[0], {tokenS.begin()+2, tokenS.end()});
 			break;
 
 		case ControlFlowEnum::CONTROL_FOREACH: this->_manageForEachLoop(block, tokenS); break;
 		case ControlFlowEnum::CONTROL_FUNC   :
-			if (std::get<1>(tokenS[0]->token) != TokenType::VARIABLE) throw std::runtime_error("SYNTAX ERROR: Expecting FUNCTION NAME");
+			if (std::get<1>(tokenS[0]->token) != JDM::TokenType::VARIABLE) throw std::runtime_error("SYNTAX ERROR: Expecting FUNCTION NAME");
 			this->_manageCreateFunction(block, tokenS[0], {tokenS.begin()+1, tokenS.end()});
 			break;
 
@@ -317,7 +321,7 @@ const void Parser::_manageCreateFunction(
 {
 	if (std::get<0>(tokens[0]->token) != "(") throw std::runtime_error("SYNTAX ERROR: Expecting '()'");
 	if (tokens.size() < 3)                    throw std::runtime_error("SYNTAX ERROR: Expecting Block");
-	if (std::get<1>(tokens[1]->token) != TokenType::ARROW_OPERATOR)
+	if (std::get<1>(tokens[1]->token) != JDM::TokenType::ARROW_OPERATOR)
 		throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 
 	std::vector<std::shared_ptr<Variable>> parameters;
@@ -335,7 +339,7 @@ const void Parser::_manageForEachLoop(
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens)
 {
 	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
-		return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
 	if (it   == tokens.end()) throw std::runtime_error(           "SYNTAX ERROR: Expecting '=>'"        );
 	if (it+1 == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a List | Map | jreverse");
@@ -354,7 +358,7 @@ const void Parser::_manageForEachLoop(
 	// If : jreverse => ... => { ... }
 	auto rev = JDM::customKeywordMap.find(std::get<0>(remainingToken[0]->token));
 	if (rev != JDM::customKeywordMap.end() && rev->second == CustomKeywordEnum::KEYWORD_REVERSE) {
-		if (std::get<1>(remainingToken[1]->token) != TokenType::ARROW_OPERATOR) 
+		if (std::get<1>(remainingToken[1]->token) != JDM::TokenType::ARROW_OPERATOR) 
 			throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 
 		// Remove two token on remainingToken as they already used
@@ -365,7 +369,7 @@ const void Parser::_manageForEachLoop(
 
 	// Find another => on |> ... => { ... }
 	auto it2 = std::find_if(remainingToken.begin(), remainingToken.end(), [](const std::shared_ptr<TokenStruct> &tok){
-		return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
 	if (it2   == remainingToken.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 	if (it2+1 == remainingToken.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
@@ -377,11 +381,11 @@ const void Parser::_manageForEachLoop(
 	remainingToken = { remainingToken.begin(), it2 };
 
 	// Check if token is just a variable
-	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::VARIABLE) {
+	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == JDM::TokenType::VARIABLE) {
 		varToRun = std::make_shared<VariableObjects>(remainingToken[0]);
 	} else {
 		if (remainingToken.size() != 1) throw std::runtime_error("SYNTAX ERROR: Expecting ('jlist' | 'jmap') not Expression");
-		if (std::get<1>(remainingToken[0]->token) != TokenType::OPEN_CASES)
+		if (std::get<1>(remainingToken[0]->token) != JDM::TokenType::OPEN_CASES)
 			throw std::runtime_error("SYNTAX ERROR: Expecting 'jlist' | 'jmap'");
 
 		if (std::get<0>(remainingToken[0]->token) == "[")
@@ -394,7 +398,7 @@ const void Parser::_manageForEachLoop(
 
 	// Return a list of VarObjects
 	remainingToken = { tokens.begin(), it };
-	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES)
+	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == JDM::TokenType::OPEN_CASES)
 		this->_setVarArgs(varArgs, remainingToken[0]->child[0]->child);
 	else
 		this->_setVarArgs(varArgs, remainingToken);
@@ -436,30 +440,14 @@ const void Parser::_manageDataType(
 		block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, nullptr, isConst, isForce ));
 		return;
 	}
-	if (std::get<1>(tokenS[0]->token) != TokenType::ASSIGNMENT_OPERATOR
+	if (std::get<1>(tokenS[0]->token) != JDM::TokenType::ASSIGNMENT_OPERATOR
 	 || std::get<0>(tokenS[0]->token) != "=") throw std::runtime_error("SYNTAX ERROR: Expecting '='");
 
 	std::vector<std::shared_ptr<TokenStruct>> remainingToken = {tokenS.begin() + 1, tokenS.end()};
 	if (remainingToken.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
 	auto transformToken = this->_transformTokenStruct(remainingToken);
 
-	if (currDataType == DataTypeEnum::DATA_LAMBDA) {
-		if (remainingToken.size() == 1) {
-			if (std::get<1>(remainingToken[0]->token) == TokenType::VARIABLE
-			 || std::get<0>(remainingToken[0]->token) == "(")
-				block->instruction.push_back(std::make_shared<Declaration>(
-				dataType, newVar, this->_createExpression(transformToken)[0]->expression, isConst, isForce ));
-			else throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Declaration");
-		} else {
-			std::vector<std::shared_ptr<ExpressionToken>> newVec;
-			this->_findAndReplaceLambdaCall(transformToken, newVec);
-			if (newVec.size() != 1) throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Declaration");
-			else block->instruction.push_back(std::make_shared<Declaration>( dataType, newVar, newVec[0]->expression, isConst, isForce));
-		}
-	} else {
-		block->instruction.push_back(std::make_shared<Declaration>(
-			dataType, newVar, this->_createExpression(transformToken)[0]->expression, isConst, isForce ));
-	}
+	block->instruction.push_back(std::make_shared<Declaration>(dataType, newVar, this->_createExpression(transformToken)[0]->expression, isConst, isForce ));
 }
 
 JDM_DLL
@@ -469,7 +457,7 @@ const void Parser::_manageVariable(
 {
 	if (tokens.empty()) return;
 	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
-		return std::get<1>(tok->token) == TokenType::ASSIGNMENT_OPERATOR;
+		return std::get<1>(tok->token) == JDM::TokenType::ASSIGNMENT_OPERATOR;
 	});
 
 	if (it != tokens.end()) {
@@ -497,7 +485,7 @@ const void Parser::_manageIfElseWhileStatement(
 	ControlFlowEnum control)
 {
 	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
-		return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
 	if (it   == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 	if (it+1 == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
@@ -535,7 +523,7 @@ const void Parser::_manageForloop(
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens)
 {
 	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
-		return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR;
+		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
 	if (it   == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 	if (it+1 == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
@@ -545,7 +533,7 @@ const void Parser::_manageForloop(
 	std::vector<std::shared_ptr<TokenStruct>> remainingToken = { tokens.begin(), it };
 	std::vector<std::shared_ptr<Expression>> arguments;
 
-	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == TokenType::OPEN_CASES) {
+	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == JDM::TokenType::OPEN_CASES) {
 		if (remainingToken[0]->child.empty()) throw std::runtime_error("SYNTAX ERROR: Expecting 'Arguments'");
 		this->_setArguments(arguments, remainingToken[0]->child[0]->child);
 	} else this->_setArguments(arguments, remainingToken);
@@ -577,7 +565,7 @@ const std::shared_ptr<Block> Parser::_createBlockOrLine(
 	std::shared_ptr<Block> blockWillRun = std::make_shared<Block>();
 	if (this->_isBlockCurly(currToken)) {
 		if (tokens.size() != 1 && !isInVec(std::get<1>(tokens[1]->token), {
-			TokenType::DOT_OPERATOR
+			JDM::TokenType::DOT_OPERATOR
 		}))
 			throw std::runtime_error("SYNTAX ERROR: Unexpected Operator at the end of Block");
 		blockWillRun = this->_getBlock(currToken);
@@ -633,8 +621,8 @@ const void Parser::_setVarArgs(
 	const std::vector<std::shared_ptr<TokenStruct>> &trav)
 {
 	for (const auto &tok : trav) {
-		if (std::get<1>(tok->token) == TokenType::COMMA_OPERATOR) continue;
-		if (std::get<1>(tok->token) == TokenType::VARIABLE) vec.push_back(std::make_shared<VariableObjects>(tok));
+		if (std::get<1>(tok->token) == JDM::TokenType::COMMA_OPERATOR) continue;
+		if (std::get<1>(tok->token) == JDM::TokenType::VARIABLE) vec.push_back(std::make_shared<VariableObjects>(tok));
 		else throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 	}
 }
@@ -657,7 +645,7 @@ const void Parser::_setArguments(
 {
 	if (trav.empty()) return;
 	auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
-		return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
+		return std::get<1>(tok->token) == JDM::TokenType::COMMA_OPERATOR; });
 
 	if (it != trav.end()) {
 		vec.push_back(this->_createExpression(this->_transformTokenStruct({ trav.begin(), it }))[0]->expression);
@@ -684,7 +672,7 @@ const void Parser::_setMapArguments(
 {
 	if (trav.empty()) return;
 	auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
-		return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
+		return std::get<1>(tok->token) == JDM::TokenType::COMMA_OPERATOR; });
 
 	if (it != trav.end()) {
 		vec.push_back(this->_createMap({ trav.begin(), it }));
@@ -710,7 +698,7 @@ const void Parser::_setTypeVarArgs(
 {
 	if (trav.empty()) return;
 	auto it = std::find_if(trav.begin(), trav.end(), [](const std::shared_ptr<TokenStruct>& tok) {
-		return std::get<1>(tok->token) == TokenType::COMMA_OPERATOR; });
+		return std::get<1>(tok->token) == JDM::TokenType::COMMA_OPERATOR; });
 
 	if (it != trav.end()) {
 		vec.push_back(this->_createVariable( { trav.begin(), it } ));
@@ -740,7 +728,7 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 	else if (vec.size() == 1) {
 
 		if (vec[0]->expression == nullptr) {
-			if (std::get<1>(vec[0]->token->token) == TokenType::OPEN_CASES) {
+			if (std::get<1>(vec[0]->token->token) == JDM::TokenType::OPEN_CASES) {
 				if (vec[0]->token->child.size() > 1) throw std::runtime_error("SYNTAX ERROR: Unexpected ';'");
 
 				if (std::get<0>(vec[0]->token->token) == "(") {
@@ -762,7 +750,7 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 					} else return { std::make_shared<ExpressionToken>(this->_createMapExpression(vec[0]->token->child[0]->child) ) };
 				}
 
-			} else if (std::get<1>(vec[0]->token->token) == TokenType::CUSTOM_KEYWORD) {
+			} else if (std::get<1>(vec[0]->token->token) == JDM::TokenType::CUSTOM_KEYWORD) {
 				const std::string &value = std::get<0>(vec[0]->token->token);
 				if (value != "jtrue" && value != "jfalse")
 					throw std::runtime_error("SYNTAX ERROR: Unexpected Custom Keyword");
@@ -782,11 +770,11 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 
 	if (checkInvalid) {
 		for (const auto &v : vec) {
-			if (std::get<1>(v->token->token) == TokenType::CONTROL_FLOW)
+			if (std::get<1>(v->token->token) == JDM::TokenType::CONTROL_FLOW)
 				throw std::runtime_error("SYNTAX ERROR: Invalid Expression. Control Flow in Expression is Forbidden");
-			if (std::get<1>(v->token->token) == TokenType::COMMA_OPERATOR)
+			if (std::get<1>(v->token->token) == JDM::TokenType::COMMA_OPERATOR)
 				throw std::runtime_error("SYNTAX ERROR: Invalid Expression. Comma is Forbidden");
-			if (std::get<1>(v->token->token) == TokenType::ASSIGNMENT_OPERATOR)
+			if (std::get<1>(v->token->token) == JDM::TokenType::ASSIGNMENT_OPERATOR)
 				throw std::runtime_error("SYNTAX ERROR: Invalid Expression. Assignment is Forbidden");
 		}
 		checkInvalid = false;
@@ -813,16 +801,16 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 	 || checkFunction(JDM::relOrVec  , relOrBool  ) // RELATIONAL OR
 	) { }
 	else {
-		if (vec[0]->expression == nullptr && std::get<1>(vec[0]->token->token) == TokenType::OPEN_CASES)
+		if (vec[0]->expression == nullptr && std::get<1>(vec[0]->token->token) == JDM::TokenType::OPEN_CASES)
 			throw std::runtime_error("SYNTAX ERROR: Case after case.");
 
 		auto newExpression = std::make_shared<Expression>();
 		// Check If it is a casting Object
 		if (vec.size() == 2 && vec[0]->token != nullptr && vec[1]->token != nullptr
-		 && std::get<1>(vec[0]->token->token) == TokenType::DATA_TYPE) {
+		 && std::get<1>(vec[0]->token->token) == JDM::TokenType::DATA_TYPE) {
 			auto dataTypeEnum = JDM::dataTypeMap.at(std::get<0>(vec[0]->token->token));
 
-			if (std::get<1>(vec[1]->token->token) != TokenType::OPEN_CASES) throw std::runtime_error("SYNTAX ERROR: Casting must be in Cases.");
+			if (std::get<1>(vec[1]->token->token) != JDM::TokenType::OPEN_CASES) throw std::runtime_error("SYNTAX ERROR: Casting must be in Cases.");
 			if (vec[1]->token->child.empty()) throw std::runtime_error("SYNTAX ERROR: Casting on Nothing.");					
 			if (dataTypeEnum == DataTypeEnum::DATA_ANY) throw std::runtime_error("SYNTAX ERROR: Casting on Any.");
 
@@ -852,7 +840,7 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 	const bool isAssigning)
 {
 	if (turnToCallObject.empty()) throw std::runtime_error("SYNTAX ERROR: Empty Object.");
-	if (std::get<1>(turnToCallObject[0]->token->token) != TokenType::VARIABLE
+	if (std::get<1>(turnToCallObject[0]->token->token) != JDM::TokenType::VARIABLE
 	 && std::get<0>(turnToCallObject[0]->token->token) != "("
 	 && std::get<0>(turnToCallObject[0]->token->token) != "[")
 		throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE, FUNCTION, CLASS, MEMBER.");
@@ -860,7 +848,7 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 	auto newFuncObj = std::make_shared<CallObjects>(nullptr, previous);
 
 	int tokUsed = 0;
-	if (std::get<1>(turnToCallObject[0]->token->token) == TokenType::OPEN_CASES) {
+	if (std::get<1>(turnToCallObject[0]->token->token) == JDM::TokenType::OPEN_CASES) {
 		if (std::get<0>(turnToCallObject[0]->token->token) == "(") {
 			if (isAssigning) throw std::runtime_error("SYNTAX ERROR: Cannot Assign on Function Call.");
 			std::vector<std::shared_ptr<Expression>> listVec;
@@ -880,7 +868,7 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 		}
 
 	} else if (turnToCallObject.size() > 1
-		&& std::get<1>(turnToCallObject[1]->token->token) == TokenType::OPEN_CASES) {
+		&& std::get<1>(turnToCallObject[1]->token->token) == JDM::TokenType::OPEN_CASES) {
 
 		if (std::get<0>(turnToCallObject[1]->token->token) == "(") {
 			if (isAssigning) throw std::runtime_error("SYNTAX ERROR: Cannot Assign on Function Call.");
@@ -906,10 +894,10 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 
 	if (previous != nullptr) previous->nextObject = newFuncObj;
 	if (turnToCallObject.size() > 1 + tokUsed) {
-		if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) == TokenType::OPEN_CASES) {
+		if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) == JDM::TokenType::OPEN_CASES) {
 			return this->_createCallObject( { turnToCallObject.begin() + tokUsed + 1, turnToCallObject.end() }, newFuncObj, isAssigning );
 
-		} else if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) != TokenType::DOT_OPERATOR)
+		} else if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) != JDM::TokenType::DOT_OPERATOR)
 			throw std::runtime_error("SYNTAX ERROR: Expecting DOT OPERATOR");
 
 		return this->_createCallObject( { turnToCallObject.begin() + tokUsed + 2, turnToCallObject.end() }, newFuncObj, isAssigning );
@@ -938,7 +926,7 @@ const std::shared_ptr<MapStruct> Parser::_createMap(
 {
 	if (turnToMap.empty()) return nullptr;
 	auto it = std::find_if(turnToMap.begin(), turnToMap.end(), [](const std::shared_ptr<TokenStruct>& tok) {
-		return std::get<1>(tok->token) == TokenType::ARROW_OPERATOR; });
+		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR; });
 
 	if (it == turnToMap.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
 
@@ -976,16 +964,16 @@ const std::shared_ptr<Variable> Parser::_createVariable(
 	int incrementIfDataType = 0;
 
 	// Parse the data type token if it's present.
-	if (std::get<1>(turnToVariable[0]->token) == TokenType::DATA_TYPE)
+	if (std::get<1>(turnToVariable[0]->token) == JDM::TokenType::DATA_TYPE)
 		newVariable->dataType = turnToVariable[incrementIfDataType++];
 
-	if (turnToVariable.size() == incrementIfDataType || std::get<1>(turnToVariable[incrementIfDataType]->token) != TokenType::VARIABLE)
+	if (turnToVariable.size() == incrementIfDataType || std::get<1>(turnToVariable[incrementIfDataType]->token) != JDM::TokenType::VARIABLE)
 		throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 	// Check for optional variable initialization.
 	newVariable->varName = std::make_shared<VariableObjects>(turnToVariable[incrementIfDataType]);
 	if (turnToVariable.size() > 1+incrementIfDataType) {
-		if (std::get<1>(turnToVariable[1+incrementIfDataType]->token) != TokenType::ASSIGNMENT_OPERATOR
+		if (std::get<1>(turnToVariable[1+incrementIfDataType]->token) != JDM::TokenType::ASSIGNMENT_OPERATOR
 		 || std::get<0>(turnToVariable[1+incrementIfDataType]->token) != "=")
 			throw std::runtime_error("SYNTAX ERROR: Expecting '=' or None");
 
@@ -1013,7 +1001,7 @@ const bool Parser::_findAndReplaceLambdaCall(
 	std::vector<std::shared_ptr<ExpressionToken>> &newVec)
 {
 	for (int index = 0; index < vec.size(); index++) {
-		if (vec[index]->token == nullptr || std::get<1>(vec[index]->token->token) != TokenType::ARROW_OPERATOR) continue;
+		if (vec[index]->token == nullptr || std::get<1>(vec[index]->token->token) != JDM::TokenType::ARROW_OPERATOR) continue;
 
 		auto leftTokens  = this->_getAllTokenFromSide(vec, index, true);
 		auto rightTokens = this->_getAllTokenFromSide(vec, index, false);
@@ -1034,7 +1022,7 @@ const bool Parser::_findAndReplaceLambdaCall(
 
 		if (rightTokens.size() == 3) {
 			willCall = true;
-			if (std::get<1>(rightTokens[1]->token->token) != TokenType::ARROW_OPERATOR
+			if (std::get<1>(rightTokens[1]->token->token) != JDM::TokenType::ARROW_OPERATOR
 			 || std::get<0>(rightTokens[2]->token->token) != "(")
 				throw std::runtime_error("SYNTAX ERROR: Invalid Lambda Expression.");
 			if (!rightTokens[2]->token->child.empty()) this->_setArguments(arguments, rightTokens[2]->token->child[0]->child);
@@ -1118,7 +1106,7 @@ const void Parser::_getExpressionFromTokens(
 {
 	if (exprToken.size() == 1) {
 		if (exprToken[0]->expression != nullptr) expression = exprToken[0]->expression;
-		else if (exprToken[0]->token != nullptr && std::get<1>(exprToken[0]->token->token) == TokenType::OPEN_CASES)
+		else if (exprToken[0]->token != nullptr && std::get<1>(exprToken[0]->token->token) == JDM::TokenType::OPEN_CASES)
 			expression = this->_createExpression( { exprToken[0] } )[0]->expression;
 		else this->_setValueObjects(value, exprToken[0]->token);
 	} else 
@@ -1142,11 +1130,11 @@ const void Parser::_setValueObjects(
 	const std::shared_ptr<TokenStruct> &tok)
 {
 	switch (std::get<1>(tok->token)) {
-		case TokenType::VARIABLE: value = std::make_shared<VariableObjects>(tok); return;
-		case TokenType::DECIMAL : value = std::make_shared<DoubleObjects  >(tok); return;
-		case TokenType::INTEGER : value = std::make_shared<IntegerObjects >(tok); return;
-		case TokenType::STRING  : value = std::make_shared<StringObjects  >(tok); return;
-		case TokenType::CUSTOM_KEYWORD :
+		case JDM::TokenType::VARIABLE: value = std::make_shared<VariableObjects>(tok); return;
+		case JDM::TokenType::DOUBLE : value = std::make_shared<DoubleObjects  >(tok); return;
+		case JDM::TokenType::INTEGER : value = std::make_shared<IntegerObjects >(tok); return;
+		case JDM::TokenType::STRING  : value = std::make_shared<StringObjects  >(tok); return;
+		case JDM::TokenType::CUSTOM_KEYWORD :
 			if (std::get<0>(tok->token) != "jtrue" && std::get<0>(tok->token) != "jfalse")
 				throw std::runtime_error("SYNTAX ERROR: Unexpected Custom Keyword");
 			value = std::make_shared<IntegerObjects>(tok); return;

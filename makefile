@@ -8,9 +8,14 @@ OBJ_DIR    = object
 BIN_DIR    = Build
 DLL_DIR    = Build
 
-OTHER_SRC  = tokenizerSource parserSource
-SOURCES    = $(wildcard $(SRC_DIR)/*.cpp) $(foreach D, $(OTHER_SRC), $(wildcard $(SRC_DIR)\$(D)/*.cpp))
-OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
+OTHER_SRC  = library/console
+SOURCES    = $(wildcard $(SRC_DIR)/*.cpp)
+LIBRARY    = $(wildcard $(SRC_DIR)/library/*.cpp)
+CONSOLE    = $(wildcard $(SRC_DIR)/library/console/*.cpp)
+OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES)) \
+			 $(patsubst $(SRC_DIR)/library/%.cpp, $(OBJ_DIR)/library/%.o, $(LIBRARY)) \
+			 $(patsubst $(SRC_DIR)/library/console/%.cpp, $(OBJ_DIR)/library/console/%.o, $(CONSOLE))
+
 INCLUDE    = -I"headers"
 
 EXECUTABLE = $(BIN_DIR)/$(MAIN).exe
@@ -41,6 +46,6 @@ clean:
 	del $(DLL_DIR)\$(DLL_NAME).dll
 
 test:
-	echo $(OBJECTS)
+	@echo $(OBJECTS)
 
 .PHONY: all oclean clean test exec

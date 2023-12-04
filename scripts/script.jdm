@@ -1,25 +1,34 @@
-jcforce jlambda test = ( arg ) => {
-	jreturn arg % 2 == 0;
-};
-$log => [1, 3 ** 3, 3, 4, 5];
+|-> 
+def sumOfNumber(*args):
+	sumOf = 0
+	for e in args:
+		sumOf += e
 
-|->
+	print(sumOf)
 
-TODO
-[/] Create more native function.
-[/] Make assignment with operations work
-[ ] Add string Object native function
-[ ] Make reference work
+current = ''
+new_list = []
+for e in list(input("Enter a number to sum it: ").replace(" ", "")):
+	if e == ',':
+		new_list.append(current)
+		current = ''
+	else: current += e
+new_list.append(current)
 
-[ ] Create new Library for SDL
-[ ] Create new library for Console
-[ ] Create new library handling files
-[ ] Create new library handling json and creating json
-[ ] Create new library handling evaluation. Create own. don't use the system.
-[ ] Create new library handling Random
-[ ] Create new library Regex
-[ ] Create new library handling Thread
-[ ] Create new library handling Exception. Create a new instruction. called try.
-
+sumOfNumber ( *list(map(lambda x : int(x), new_list ) ))
 <-|
 
+jlist list = [];
+jstring temp = "";
+jstring test = input("Enter a word: ");
+
+$logn => [1, 2, 3][0];
+
+jfor i => len(test) => {
+	temp += test[i];
+	jif (test[i] == ' ' || i + 1 == len(test)) => {
+		list.push_back(temp);
+		temp = "";
+	}
+}
+$log => join(reverse(list), " ");
