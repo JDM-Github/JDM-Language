@@ -1,0 +1,7 @@
+$include => Console;
+
+jfunc main() => {
+	$logn => "FILE TEST";
+}
+
+main();

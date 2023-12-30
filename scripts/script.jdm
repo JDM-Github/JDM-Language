@@ -18,17 +18,92 @@ new_list.append(current)
 sumOfNumber ( *list(map(lambda x : int(x), new_list ) ))
 <-|
 
-jlist list = [];
-jstring temp = "";
-jstring test = input("Enter a word: ");
+|> jlist test = ["123", "456"];
+|> jint a = jint(input("Enter the first Number: "));
+|> jint b = jint(input("Enter the second Number: "));
+|> jstring operation = input("Enter Operation: ");
+|> 
+|> jif     (operation == "+") => $logn => a + b;
+|> jelseif (operation == "-") => $logn => a - b;
+|> jelseif (operation == "*") => $logn => a * b;
+|> jelseif (operation == "/") => $logn => a / b;
 
-$logn => [1, 2, 3][0];
+|->
+vector<int> v1 = {1, 2, 3};
+vector<int> v2 = {4, 5, 6};
+vector<int> v3 = {7, 8, 9};
+auto result = chain(v1, v2, v3);
+cout << "Original: " << result << endl;
+cout << "Map: "      << mapf   (result, [](int x) { return pow(x, 2); }) << endl;
+cout << "Reduced: "  << reduced(result, [](int x, int y) { return x + y; }) << endl;
+cout << "Filter: "   << filter (result, [](int x) { return x % 2 == 0; }) << endl;
+cout << castStrToDouble(input("Tell me something: ")) + 90 << endl;
+auto newResult = split(replace(input("Enter something: "), " ", ""), ",");
+cout << "Duplicate: " << sort_if(unique(filter(newResult, [newResult](string x) { return count(newResult, x) != 1; })),
+	[](string x, string y) { return x < y; }) << endl;
+<-|
 
-jfor i => len(test) => {
-	temp += test[i];
-	jif (test[i] == ' ' || i + 1 == len(test)) => {
-		list.push_back(temp);
-		temp = "";
-	}
-}
-$log => join(reverse(list), " ");
+
+
+|> jlist v1 = [1, 2, 3];
+|> jlist v2 = [4, 5, 6];
+|> jlist v3 = [7, 8, 9];
+|> 
+|> jlist result = chain(v1, v2, v3);
+|> 
+|> $log => "Original: " => result => '\n';
+|> $log => "Map: "      => map   (result, (x   ) => { jreturn     x ** 2; }) => '\n';
+|> $log => "Reduced: "  => reduce(result, (x, y) => { jreturn      x + y; }) => '\n';
+|> $log => "Filter: "   => filter(result, (x   ) => { jreturn x % 2 == 0; }) => '\n';
+|> $log => jdouble(input("Tell me something: ")) + 90 => '\n';
+|> 
+|> jany newResult = split(input("Enter something: ").rreplace(" ", ","), ",");
+|> $log => "Duplicate: " => sort(unique(filter( newResult, (x) => { jreturn newResult.count(x) != 1; })));
+
+|> 
+|> auto newResult = split(replace(input("Enter something: "), " ", ""), ",");
+|> cout << "Duplicate: " << sort_if(unique(filter(newResult, [newResult](string x) { return count(newResult, x) != 1; })),
+	|> [](string x, string y) { return x < y; }) << endl;
+|> 
+
+|> $logn => "\";
+
+|> $logn => "Split  : " + test.split();
+|> $logn => "Join   : " + test.rjoin([1, 2, 3, 4], " <-> ");
+|> $logn => "To List: " + test.tolist();
+
+|> $logn => test.size();
+|> $logn => test.size();
+|> jfunc fibonacci(jint n) => {
+	|> jint start = 0;
+	|> jint prev = 1;
+|> 
+	|> $log => "Fibonacci: ";
+	|> jfor i => n => {
+		|> $log => start => " ";
+|> 
+		|> jint next = start + prev;
+		|> start = prev;
+		|> prev  = next;
+	|> }
+|> }
+|> jfunc factorial(jint n) => {
+	|> jint result = 1;
+	|> jfor i => [1, n] => result *= i;
+	|> jreturn result;
+|> }
+|> jfunc reverseStr(jstring str) => {
+	|> jstring reversedString = "";
+	|> jfor i => [ str.size()-1, -1, -1 ] =>
+		|> reversedString += str[i];
+	|> jreturn reversedString;
+|> }
+|> $log => fibonacci(10) => '\n';
+|> $log => "Factorial: " => factorial(5) => '\n';
+|> $log => "Reverse: " => reverseStr("TEST") => '\n';
+|> $log => "Reverse: " => "TEST".rreverse() => '\n';
+|> $logn => testStr.rreplace("t", "e");
+
+|> jlist test = [5,1,1,1,1,2,2,3,4,5];
+|> $logn => test.count(5);
+|> $log => split(input("Enter something: "), ",");

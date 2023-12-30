@@ -6,7 +6,7 @@ jlist board = [
 
 jforce jint turn = 0;
 jfunc draw() => {
-	$logn => "Welcome to JD\n";
+	$logn => "Panget kau lahat haHAHA sobra panget\n";
 	jfor r => 3 => {
 		$log => '    | ';
 		jfor c => 3 =>

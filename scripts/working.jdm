@@ -1,107 +1,110 @@
 |> WORKING
 
 |> Declaration
-jint test = 90;
+|> jint test = 90;
+|> 
+|> 
+|> |> If statement
+|> jif (test + 45) => jint test = 90;   |> 1 LINE IF
+|> jelseif (test) => {
+|> 	jif (test) => {
+|> 		|> Nested
+|> 	}
+|> }
+|> test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
+|> 
+|> |> While Loop
+|> jwhile (condition) => { |-> Comment Block <-| };
+|> 
+|> |> For Loop
+|> 
+|> |> 1 = Start, 45 = Stop, 1 = Step
+|> jfor i => [1, 45, 1] => {}
+|> |> 1 = Start, 45 = Stop
+|> jfor i => 1, 45 => {}
+|> |> 45 = Stop
+|> jfor i => 45 => {}
+|> 
 
-
-|> If statement
-jif (test + 45) => jint test = 90;   |> 1 LINE IF
-jelseif (test) => {
-	jif (test) => {
-		|> Nested
-	}
-}
-test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
-
-|> While Loop
-jwhile (condition) => { |-> Comment Block <-| };
-
-|> For Loop
-
-|> 1 = Start, 45 = Stop, 1 = Step
-jfor i => [1, 45, 1] => {}
-|> 1 = Start, 45 = Stop
-jfor i => 1, 45 => {}
-|> 45 = Stop
-jfor i => 45 => {}
 
 |> Foreach and more complicated stuff
-jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
-	jfor j => [1, 3, 4] => {
-		jstring testString = "test" + 'test2';
-		jif (testString == 'testtest2') => {
-			jmap map = {
-				'1'        => 1,
-				2          => '2',
-				testString => 2.0,
-			};
-			jforeach key, val => map => {
-			}
-		}
-	}
-}
+|> jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
+	|> jfor j => [1, 3, 4] => {
+		|> jstring testString = "test" + 'test2';
+		|> jif (testString == 'testtest2') => {
+			|> jmap map = {
+				|> '1'        => 1,
+				|> 2          => '2',
+				|> testString => 2.0,
+			|> };
+			|> jforeach key, val => map => {
+			|> }
+		|> }
+	|> }
+|> }
 
 |> LIST NATIVE FUNCTIONS
-jlist testList = [2, 0, 4, "test", 4.56];
+jlist testList = [2, 0, 4, "test", 4.56, 2];
 
-$log => "Test Size: ";
-$logn => testList.size();
+$logn => "Test Size: " + testList.size();;
 
 testList.sort();
-$log => "Test Sort: ";
-$logn => testList;
+$logn => "Test Sort: " + testList;
+$logn => "Test Count 2: " + testList.count(2);
+$logn => "Test Search 4: " + testList.search(4);
 
-$log => "Test Search 4: ";
-$logn => testList.search(4);
-
-testList.insert("in Index 2", 2);
-$log => "Test Insert (2): ";
-$logn => testList;
+testList.insert("I will be inserted", 2);
+$logn => "Insert: " + testList;
 
 testList.delete(0);
-$log => "Test Delete (0): ";
-$logn => testList;
-
-$log => "Test At: ";
-$logn => testList.at(3);
+$logn => "Delete: " + testList;
+$logn => "At: " + testList.at(3);
 
 testList.reverse();
-$log => "Test Reverse: ";
-$logn => testList;
+$logn => "Reverse: " + testList;
 
 testList.push_back("in back");
-$log => "Test Push Back: ";
-$logn => testList;
+$logn => "Push Back: " + testList;
 
 testList.push_front("in front");
-$log => "Test Push Front: ";
-$logn => testList;
+$logn => "Push Front: " + testList;
 
 testList.pop_back();
-$log => "Test Pop Back: ";
-$logn => testList;
+$logn => "Pop Back: " + testList;
 
 testList.pop_front();
-$log => "Test Pop Front: ";
-$logn => testList;
+$logn => "Pop Front: " + testList;
+
+jstring test = "Hello, World";
+$logn => "Size   : " + test.size();
+$logn => "Replace: " + test.rreplace("o", "oo");
+$logn => "Concat : " + test.rconcat("!");
+$logn => "Upper  : " + test.rupper();
+$logn => "Lower  : " + test.rlower();
+$logn => "Reverse: " + test.rreverse();
+$logn => "Compare: " + test.compare("Hello, World");
+$logn => "Substr : " + test.rsubstr(7, 5);
+$logn => "Find   : " + test.find("llo");
+$logn => "Count  : " + test.count("o");
+$logn => "Empty  : " + test.empty();
+$logn => "StartsW: " + test.startsw("Hello");
+$logn => "EndsW  : " + test.endsw("World");
+$logn => "Insert : " + test.rinsert(7, "JD's ");
+$logn => "Erase  : " + test.rerase(7, 5);
+$logn => "Trim   : " + test.rtrim(2, 2);
+$logn => "Token  : " + test.tokenize("\\s+|,\\s*");
 
 
 |> TEST NATIVE FUNCTIONS
-jfunc testFilterFunction( arg ) =>
-	jreturn arg % 2 == 0;
-
-jfunc testReduceFunction( arg1, arg2) =>
-	jreturn arg1 + arg2;
-
-jfunc testSortIfFunction( arg1, arg2 ) =>
-	jreturn arg1 < arg2;
-
-jfunc testMapFunction( arg ) =>
-	jreturn arg ** 2;
+jfunc testFilterFunction( arg ) => jreturn arg % 2 == 0;
+jfunc testReduceFunction( arg1, arg2) => jreturn arg1 + arg2;
+jfunc testSortIfFunction( arg1, arg2 ) => jreturn arg1 < arg2;
+jfunc testMapFunction( arg ) => jreturn arg ** 2;
 
 jlist testList = [1, 2, 3, 4, 5];
 $logn
 	=> input    ("Test Input: ")
+	=> split    ("Test-Split", "-")
 	=> len      (testList)
 	=> abs      (-436)
 	=> ceil     (34.3)
