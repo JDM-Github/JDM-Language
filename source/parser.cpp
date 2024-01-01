@@ -246,6 +246,8 @@ const void Parser::_predictInstruction(
 
 			auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
 			block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
+		} else {
+			throw std::runtime_error("SYNTAX ERROR: Invalid Custom Function.");
 		}
 	}
 }
@@ -841,16 +843,17 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 {
 	if (turnToCallObject.empty()) throw std::runtime_error("SYNTAX ERROR: Empty Object.");
 	if (std::get<1>(turnToCallObject[0]->token->token) != JDM::TokenType::VARIABLE
+	 && std::get<1>(turnToCallObject[0]->token->token) != JDM::TokenType::STRING
 	 && std::get<0>(turnToCallObject[0]->token->token) != "("
 	 && std::get<0>(turnToCallObject[0]->token->token) != "[")
-		throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE, FUNCTION, CLASS, MEMBER.");
+		throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE, STRING, FUNCTION, CLASS, MEMBER.");
 
 	auto newFuncObj = std::make_shared<CallObjects>(nullptr, previous);
-
 	int tokUsed = 0;
 	if (std::get<1>(turnToCallObject[0]->token->token) == JDM::TokenType::OPEN_CASES) {
 		if (std::get<0>(turnToCallObject[0]->token->token) == "(") {
 			if (isAssigning) throw std::runtime_error("SYNTAX ERROR: Cannot Assign on Function Call.");
+
 			std::vector<std::shared_ptr<Expression>> listVec;
 			if (!turnToCallObject[0]->token->child.empty())
 				this->_setArguments(listVec, turnToCallObject[0]->token->child[0]->child);
@@ -872,6 +875,7 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 
 		if (std::get<0>(turnToCallObject[1]->token->token) == "(") {
 			if (isAssigning) throw std::runtime_error("SYNTAX ERROR: Cannot Assign on Function Call.");
+
 			std::vector<std::shared_ptr<Expression>> listVec;
 			if (!turnToCallObject[1]->token->child.empty())
 				this->_setArguments(listVec, turnToCallObject[1]->token->child[0]->child);
@@ -886,11 +890,14 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 			 	this->_createExpression(this->_transformTokenStruct(
 			 		turnToCallObject[1]->token->child[0]->child))[0]->expression
 			);
-
 		} else throw std::runtime_error("SYNTAX ERROR: Expecting '(', '[' open case.");
 
 		tokUsed++;
-	} else newFuncObj->currObject = std::make_shared<VariableObjects>(turnToCallObject[0]->token);
+	} else {
+		newFuncObj->currObject = std::make_shared<VariableObjects>(turnToCallObject[0]->token);
+		if (std::get<1>(turnToCallObject[0]->token->token) == JDM::TokenType::STRING)
+			newFuncObj->currObject->setToken(JDM::TokenType::STRING);
+	}
 
 	if (previous != nullptr) previous->nextObject = newFuncObj;
 	if (turnToCallObject.size() > 1 + tokUsed) {
@@ -1050,7 +1057,10 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_getAllTokenFromSide
 	index += (isLeft) ? -1 : 1; // Don't start at the index
 
 	while (index >= 0 && index < vec.size()) {
-		if (vec[index]->token != nullptr && isInVec(std::get<0>(vec[index]->token->token), JDM::operatorCombinedVector)) {
+		if (vec[index]->token != nullptr && (
+				std::get<1>(vec[index]->token->token) != JDM::TokenType::STRING &&
+				isInVec(std::get<0>(vec[index]->token->token), JDM::operatorCombinedVector))
+			) {
 			if (sideVector.empty()) throw std::runtime_error("SYNTAX ERROR: Invalid Expression");
 			break;
 		}
@@ -1068,9 +1078,10 @@ const bool Parser::_findAndReplaceExpression(
 	std::vector<std::shared_ptr<ExpressionToken>> &newVec)
 {
 	for (int index = 0; index < vec.size(); index++) {
-		if (vec[index]->token == nullptr || !isInVec(std::get<0>(vec[index]->token->token), targetString)) continue;
-		if (targetString.size() == 1 && targetString[0] == "!") {
+		if (vec[index]->token == nullptr || !(isInVec(std::get<0>(vec[index]->token->token), targetString))) continue;
+		if (std::get<1>(vec[index]->token->token) == JDM::TokenType::STRING) continue;
 
+		if (targetString.size() == 1 && targetString[0] == "!") {
 			auto rightTokens = this->_getAllTokenFromSide(vec, index, false);
 			std::shared_ptr<Expression> newExpression = std::make_shared<Expression>();
 			this->_getExpressionFromTokens(rightTokens, newExpression->firstExpression, newExpression->firstValue);

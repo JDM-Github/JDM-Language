@@ -266,6 +266,10 @@ CBool Tokenizer::_handle_escape(
 		if (!isInVec(this->__input_buffer[i], this->__escape_combination)) 
 			throw IllegalEscape(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
 		this->__just_added_escape = false;
+
+		// To make the '\' in my string
+		if (this->__input_buffer[i] == '\\') return true;
+		this->__current_token += this->__input_buffer[i];
 		return true;
 	}
 
@@ -585,8 +589,7 @@ CVoid Tokenizer::_getTokens()
 		}
 		else if (this->__is_start_string != 'N') {
 			// Handle the escape '\' character combination
-			if (this->_handle_escape(i))
-				this->__current_token += this->__input_buffer[i];
+			if (this->_handle_escape(i));
 			else this->_handle_string(i);
 		}
 		// Check if it is in ignored character, and if it is not, and also not a comment line, the proceed
@@ -636,9 +639,7 @@ CVoid Tokenizer::_getTokens()
 					throw UnexpectedCharacter(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
 
 				// Handle the escape '\' character combination
-				if (this->_handle_escape(i))
-					this->__current_token += this->__input_buffer[i];
-
+				if (this->_handle_escape(i));
 				// Handle the string, if the token is string
 				else if (!this->_handle_string(i)) {
 					// Handle the the parenthesis or any cases

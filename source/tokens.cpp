@@ -2,7 +2,7 @@
 
 JDM_DLL Tokens::Tokens()
 	: __ignored_keywords   ({ ' ', '\t', '\n' }),
-	  __escape_combination ({ '\'', '"', '?', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v' }),
+	  __escape_combination ({ '\\', '\'', '"', '?', 'a', 'b', 'f', 'n', 'r', 't', 'v' }),
 	  __operator_symbol    ({ '=', '!', '+', '-', '*', '/', '%', '&', '|', '>', '<', '^', '~', '.', ','}),
 	  __tokenMap           ({
 			{"^(-?[0-9]*)$"              , JDM::TokenType::INTEGER},

@@ -39,6 +39,7 @@ protected:
 
 public:
 	inline const char* getStringToken() { return JDM::tokenTypeToString(this->varType); }
+	inline const void setToken(JDM::TokenType varType) { this->varType = varType; }
 	inline const JDM::TokenType getToken() { return this->varType; }
 	virtual const std::string returnStringValue() { return "INVALID"; };
 };

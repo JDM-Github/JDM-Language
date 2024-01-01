@@ -4,6 +4,7 @@
 class NativeFunction {
 public:
 	enum NativeFunctionEnum {
+		NATIVE_SPLIT,
 		NATIVE_INPUT,
 		NATIVE_LENGTH,
 		NATIVE_ABS,
@@ -22,11 +23,17 @@ public:
 		NATIVE_JOIN,
 		NATIVE_INDEX,
 		NATIVE_FILTER,
+		NATIVE_UNIQUE,
 		NATIVE_REDUCE,
 		NATIVE_MAP,
 		NATIVE_CHAIN,
 		NATIVE_PARTIAL,
 		NATIVE_SORT_IF,
+
+		NATIVE_REPLACE,
+		NATIVE_COMPARE,
+		NATIVE_COUNT,
+
 		NATIVE_REFERENCE
 	};
 	static std::unordered_map<std::string, NativeFunctionEnum> allNativeFunction;
@@ -36,7 +43,17 @@ public:
 		const std::vector<std::shared_ptr<HigherObject>> &objects) {
 
 		std::shared_ptr<HigherObject> newReturn;
-		if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_INPUT) {
+		if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_SPLIT) {
+
+			if (objects.size() < 1) throw std::runtime_error("Runtime Error: Expecting atleast 1 argument. Target (jstring).");
+			if (objects.size() > 2) throw std::runtime_error("Runtime Error: Too many arguments. Target (jstring) and sepStr (jstring).");
+
+			if (objects.size() == 2) {
+				objects[1]->castToString();
+				newReturn = NativeFunction::split(objects[0], objects[1]->stringValue);
+			} else newReturn = NativeFunction::split(objects[0]);
+
+		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_INPUT) {
 			newReturn = NativeFunction::input(objects);
 
 		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_LENGTH) {
@@ -123,6 +140,27 @@ public:
 			newReturn = NativeFunction::chain(objects);
 		}
 		return newReturn;
+	}
+
+	static const std::shared_ptr<HigherObject> split(
+		const std::shared_ptr<HigherObject> &obj1, const std::string &stringObj = " ") {
+		if (!obj1->isString) return obj1;
+
+		std::string temp = "";
+
+		std::vector<std::shared_ptr<HigherObject>> objects;
+		for (int i = 0; i < obj1->stringValue.size(); i++) {
+			temp += obj1->stringValue[i];
+
+			bool isEnd = i + 1 >= obj1->stringValue.size();
+    		if (isEnd || (temp.size() >= stringObj.size() && temp.substr(temp.size() - stringObj.size()) == stringObj)) {
+    			if (temp.size() != stringObj.size())
+        			objects.push_back(std::make_shared<HigherObject>(
+        				isEnd ? temp : temp.substr(0, temp.size() - stringObj.size())));
+        		temp.clear();
+    		}
+		}
+		return std::make_shared<HigherObject>(objects);
 	}
 
 	static const std::shared_ptr<HigherObject> input(const std::vector<std::shared_ptr<HigherObject>> &objects) {
@@ -368,6 +406,7 @@ public:
 };
 
 std::unordered_map<std::string, NativeFunction::NativeFunctionEnum> NativeFunction::allNativeFunction = {
+	{"split"    , NATIVE_SPLIT       },
 	{"input"    , NATIVE_INPUT       },
 	{"len"      , NATIVE_LENGTH      },
 	{"abs"      , NATIVE_ABS         },
@@ -386,6 +425,7 @@ std::unordered_map<std::string, NativeFunction::NativeFunctionEnum> NativeFuncti
 	{"join"     , NATIVE_JOIN        },
 	{"index"    , NATIVE_INDEX       },
 	{"filter"   , NATIVE_FILTER      },
+	{"unique"   , NATIVE_UNIQUE      },
 	{"reduce"   , NATIVE_REDUCE      },
 	{"map"      , NATIVE_MAP         },
 	{"chain"    , NATIVE_CHAIN       },

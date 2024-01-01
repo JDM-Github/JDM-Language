@@ -2,16 +2,20 @@
 #include "higherObject.hpp"
 #include "library/nativeObject.hpp"
 #include "library/listObject.hpp"
+#include "library/stringObject.hpp"
 #include "library/mapObject.hpp"
 #include "library/jdm_math.hpp"
+
+#include "library/classes/fileClassObject.hpp"
 // #include "library/console.hpp"
 
 class Compiler {
 private:
 	std::shared_ptr<Block> __mainBlock;
 
-	std::vector<std::string> allNativeClass = {
-		"Console"
+	std::vector<std::string> allInclude;
+	std::unordered_map<std::string, std::shared_ptr<BaseNativeClass>> nativeClassMap = {
+		{ "File", std::make_shared<FileClassFunctions>() }
 	};
 	struct VariableLink {
 		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> variables;
@@ -82,8 +86,8 @@ public:
 				}
 				else if (cfunction->funcType == CUSFUNC_INCLUDE) {
 					auto varName = std::dynamic_pointer_cast<VariableObjects>(cfunction->expression->firstValue)->returnStringValue();
-					auto className = std::find(this->allNativeClass.begin(), this->allNativeClass.end(), varName);
-					if (className != this->allNativeClass.end()) {
+					auto className = this->nativeClassMap.find(varName);
+					if (className != this->nativeClassMap.end()) {
 
 						auto newClass = std::make_shared<HigherObject::ClassObject>();
 						newClass->className = varName;
@@ -92,6 +96,7 @@ public:
 						var->isForcedConstraint = true;
 						var->isConstant = true;
 						this->variable->variables[varName] = std::make_pair(DataTypeEnum::DATA_OBJECT, this->checkVariableConstraint(var, DataTypeEnum::DATA_OBJECT));
+						this->allInclude.push_back(varName);
 
 					} else throw std::runtime_error("Runtime Error: Cannot find the thing you want to included.");
 				}
@@ -237,6 +242,21 @@ private:
 				newList->listValue.end());
 				return newList;
 			}
+		} else if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_UNIQUE) {
+			if (objects.size() != 1) throw std::runtime_error("Runtime Error: Expecting 1 argument. Target ITERABLE");
+
+			if (!objects[0]->isList && !objects[0]->isMap) return objects[0];
+			else {
+				auto newList = std::make_shared<HigherObject>(objects[0]); newList->castToList();
+
+				auto resultList = std::make_shared<HigherObject>(static_cast<int64_t>(0)); resultList->castToList();
+				resultList->listValue.clear();
+
+				for (int i = 0; i < newList->listValue.size(); i++)
+					if (!resultList->isInList(newList->listValue[i]))
+						resultList->listValue.push_back(std::make_shared<HigherObject>(newList->listValue[i]));
+				return resultList;
+			}
 		} else if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_REDUCE) {
 			if (objects.size() != 2) throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
 			if (!objects[1]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'reduce'.");
@@ -304,11 +324,33 @@ private:
 			auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(callObj->currObject);
 			std::shared_ptr<HigherObject::FunctionCall> newFunc;
 
-			// auto variables = this->variable->variables  .find(functionObj->returnStringValue());
+			auto variables = this->variable->variables  .find(functionObj->returnStringValue());
 			auto function  = this->variable->functionMap.find(functionObj->returnStringValue());
 
-				 if (function  != this->variable->functionMap.end()) newFunc = function->second;
-			// else if (variables != this->variable->variables  .end() && variables->second.second->isFunc) newFunc = variables->second.second->funcValue;
+			     if (function  != this->variable->functionMap.end()) newFunc = function->second;
+			// Used to run a lambda
+			else if (variables != this->variable->variables  .end() && variables->second.second->isFunc) newFunc = variables->second.second->funcValue;
+			else if (variables != this->variable->variables  .end() && variables->second.second->isObject) {
+				for (auto &e : this->allInclude) {
+					if (e.compare(variables->second.second->objectValue->className) == 0) {
+						if (!variables->second.second->objectValue->fromMainSource)
+							throw std::runtime_error("Runtime Error: This object is not callable.");
+
+						auto newObj = std::make_shared<HigherObject>();
+						newObj->castToObject();
+						newObj->objectValue->className = variables->second.second->objectValue->className;
+						newObj->objectValue->members   = variables->second.second->objectValue->members;
+						newObj->objectValue->methods   = variables->second.second->objectValue->methods;
+						newObj->objectValue->fromMainSource = false;
+
+						returnValue = this->nativeClassMap[e]->constructor(
+							newObj, this->getVectorHigherObject(functionObj->arguments));
+						return this->manageEndCall(callObj, returnValue, expressionAssign);
+					}
+				}
+
+				throw std::runtime_error("Runtime Error: No CONSTRUCTOR implemented yet.");
+			}
 			else {
 				auto nativeFunc = NativeFunction::allNativeFunction.find(functionObj->returnStringValue());
 				if (nativeFunc != NativeFunction::allNativeFunction.end()) {
@@ -333,8 +375,14 @@ private:
 		} else if (tok == JDM::TokenType::VARIABLE) {
 			auto var = std::dynamic_pointer_cast<VariableObjects>(callObj->currObject);
 			auto variables = this->variable->variables.find(var->returnStringValue());
-			if (variables == this->variable->variables.end()) throw std::runtime_error("Runtime Error: Variable is not declared.");
+
+			if (variables == this->variable->variables.end()) {
+				throw std::runtime_error("Runtime Error: Variable is not declared.");
+			}
 			returnValue = variables->second.second;
+		}
+		else if (tok == JDM::TokenType::STRING) {
+			returnValue = std::make_shared<HigherObject>(callObj->currObject->returnStringValue());
 		}
 		return this->manageEndCall(callObj, returnValue, expressionAssign);
 	}
@@ -361,19 +409,37 @@ private:
 
 			} else if (returnVal->isObject) {
 				if (tok == JDM::TokenType::FUNCTIONS) {
-					throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
+					auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCallObj->currObject);
+
+						auto classFunc = this->nativeClassMap.find(returnVal->objectValue->className);
+						if (classFunc != this->nativeClassMap.end()) {
+							// Will never be true, as recursively call, will handle it, but just in case.
+							if (functionObj->returnStringValue() == "(")
+								newReturn = classFunc->second->constructor( returnVal,
+									this->getVectorHigherObject(functionObj->arguments));
+							else {
+								auto func = classFunc->second->mapFunctions.find(functionObj->returnStringValue());
+								if (func == classFunc->second->mapFunctions.end())
+									throw std::runtime_error("Runtime Error: This method is not a member of class '" + returnVal->objectValue->className + "'.");
+								newReturn = classFunc->second->manageFunction(func->second, returnVal, this->getVectorHigherObject(functionObj->arguments));
+							}
+						} else {
+
+						}
 				} else if (tok == JDM::TokenType::VARIABLE) {
 					
 				}
-				// auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCallObj->currObject);
-				// if (functionObj->returnStringValue() != "(") throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
-				// return this->runFunction(returnVal->funcValue, this->getVectorHigherObject(functionObj->arguments));
+				return this->manageEndCall(newCallObj, newReturn);
 
 			} else if (returnVal->isString) {
-			 	if (tok == JDM::TokenType::EXPRESSION)
-			 		newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+			 	if (tok == JDM::TokenType::EXPRESSION) newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
 				else if (tok == JDM::TokenType::FUNCTIONS) {
-					throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
+					auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCallObj->currObject);
+					if (functionObj->returnStringValue() == "(") throw std::runtime_error("Runtime Error: A List or Map cannot be called.");
+
+					auto func = StringHigherFunctions::stringFunctions.find(functionObj->returnStringValue());
+					if (func == StringHigherFunctions::stringFunctions.end()) throw std::runtime_error("Runtime Error: This function is not a member of class 'jstring'.");
+					newReturn = StringHigherFunctions::manageFunction(func->second, returnVal, this->getVectorHigherObject(functionObj->arguments));
 				}
 				return this->manageEndCall(newCallObj, newReturn);
 
@@ -733,7 +799,7 @@ private:
 				else if (operation == "||") result = firstBool || secondBool;
 				else if (operation == "==") result =  firstVal->compareHigherObject(secondVal);
 				else if (operation == "!=") result = !firstVal->compareHigherObject(secondVal);
-				else throw std::runtime_error("Runtime Error: This operation is not allowed on 'jfunc'.");
+				else throw std::runtime_error("Runtime Error: This operation is not allowed on 'class'.");
 
 				firstVal->castToBoolean();
 				firstVal->booleanValue = result;

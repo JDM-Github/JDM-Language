@@ -20,6 +20,13 @@ JDM_DLL const std::shared_ptr<HigherObject> ListHigherFunctions::manageFunction(
 		newReturn = std::make_shared<HigherObject>(
 			static_cast<int64_t>(ListHigherFunctions::size(obj1)));
 
+	} else if (listFuncType == ListHigherFunctions::ListFunction::list_count) {
+		if (objects.size() != 1) throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
+			newReturn = std::make_shared<HigherObject>(
+				static_cast<int64_t>(ListHigherFunctions::count(obj1,
+				objects[0]
+			)));
+
 	} else if (listFuncType == ListHigherFunctions::ListFunction::list_search) {
 		if (objects.size() != 1) throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
 			newReturn = std::make_shared<HigherObject>(
@@ -64,10 +71,6 @@ JDM_DLL const std::shared_ptr<HigherObject> ListHigherFunctions::manageFunction(
 		if (!objects.empty()) throw std::runtime_error("Runtime Error: Expecting 0 arguments.");
 		ListHigherFunctions::pop_front(obj1);
 
-	} else if (listFuncType == ListHigherFunctions::ListFunction::list_rdup) {
-		if (!objects.empty()) throw std::runtime_error("Runtime Error: Expecting 0 arguments.");
-		ListHigherFunctions::rdup(obj1);
-
 	} else {
 		throw std::runtime_error("Runtime Error: This function is not a member of class 'jlist'.");
 	}
@@ -87,6 +90,17 @@ const int ListHigherFunctions::size(std::shared_ptr<HigherObject> &obj1)
 }
 
 JDM_DLL
+const int ListHigherFunctions::count(
+	std::shared_ptr<HigherObject> &obj1,
+	const std::shared_ptr<HigherObject> &obj2)
+{
+	int countOccurrence = 0;
+	for (const auto &li : obj1->listValue)
+		if (li->compareHigherObject(obj2)) countOccurrence++;
+	return countOccurrence;
+}
+
+JDM_DLL
 const int ListHigherFunctions::search(
 	std::shared_ptr<HigherObject> &obj1,
 	const std::shared_ptr<HigherObject> &obj2)
@@ -101,6 +115,7 @@ const int ListHigherFunctions::search(
 JDM_DLL
 const void ListHigherFunctions::reverse(std::shared_ptr<HigherObject> &obj1)
 {
+	if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
 	std::vector<std::shared_ptr<HigherObject>> result;
 	for (int i = obj1->listValue.size() - 1; i >= 0; i--)
 		result.push_back(obj1->listValue[i]);
@@ -191,6 +206,7 @@ const void ListHigherFunctions::rdup(std::shared_ptr<HigherObject> &obj1)
 std::unordered_map<std::string, ListHigherFunctions::ListFunction> ListHigherFunctions::listFunctions = {
 	{"size"      , ListFunction::list_size      },
 	{"sort"      , ListFunction::list_sort      },
+    {"count"     , ListFunction::list_count     },
     {"search"    , ListFunction::list_search    },
     {"insert"    , ListFunction::list_insert    },
     {"delete"    , ListFunction::list_delete    },
@@ -199,6 +215,5 @@ std::unordered_map<std::string, ListHigherFunctions::ListFunction> ListHigherFun
     {"push_back" , ListFunction::list_push_back },
     {"push_front", ListFunction::list_push_front},
     {"pop_back"  , ListFunction::list_pop_back  },
-    {"pop_front" , ListFunction::list_pop_front },
-    {"rdup"      , ListFunction::list_rdup      }
+    {"pop_front" , ListFunction::list_pop_front }
 };

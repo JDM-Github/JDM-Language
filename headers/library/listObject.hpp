@@ -5,6 +5,7 @@ class JDM_DLL ListHigherFunctions {
 public:
 	enum ListFunction {
     	list_size,
+    	list_count,
     	list_sort,
     	list_search,
     	list_insert,
@@ -15,7 +16,6 @@ public:
     	list_push_front,
     	list_pop_back,
     	list_pop_front,
-    	list_rdup
 	};
 	JDM_DLL static std::unordered_map<std::string, ListFunction> listFunctions;
 	JDM_DLL static const std::shared_ptr<HigherObject> manageFunction(
@@ -24,6 +24,7 @@ public:
 		const std::vector<std::shared_ptr<HigherObject>> &objects);
 
 	JDM_DLL static const int size(std::shared_ptr<HigherObject> &obj1);
+	JDM_DLL static const int count(std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2);
 	JDM_DLL static const int search(std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2);
 
 	JDM_DLL static const void sort(std::shared_ptr<HigherObject> &obj1);

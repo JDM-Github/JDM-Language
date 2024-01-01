@@ -17,6 +17,7 @@ public:
 		std::string className;
 		std::unordered_map<std::string, std::shared_ptr<HigherObject>> members;
 		std::unordered_map<std::string, std::shared_ptr<FunctionCall>> methods;
+		bool fromMainSource = true;
 	};
 
 	enum ActiveDataType {
@@ -62,6 +63,7 @@ public:
 		std::shared_ptr<HigherObject>> mapValue  = {};
 
 public:
+	HigherObject() { }
 	HigherObject(const std::string &value ) : stringValue (value), isString (true) { currActive = ACTIVE_STRING; }
 	HigherObject(const int64_t value      ) : integerValue(value), isInteger(true) { currActive = ACTIVE_INTEGER; }
 	HigherObject(const long double value  ) : doubleValue (value), isDecimal(true) { currActive = ACTIVE_DECIMAL; }
@@ -166,6 +168,14 @@ public:
 				else return it->second;
 		}
 		return nullptr;
+	}
+
+	const bool isInList(const std::shared_ptr<HigherObject> &obj) {
+		for (auto it = this->listValue.begin(); it != this->listValue.end(); ++it) {
+			if (it->get()->compareHigherObject(obj))
+				return true;
+		}
+		return false;
 	}
 
 	const void sortList() {
