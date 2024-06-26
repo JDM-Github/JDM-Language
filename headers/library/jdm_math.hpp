@@ -1,7 +1,8 @@
 #pragma once
 #include "../higherObject.hpp"
 
-class JDMMath {
+class JDMMath 
+{
 public:
     enum MathLibrary {
         Addition,

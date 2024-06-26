@@ -112,6 +112,14 @@ public:
 	returnValue(_returnValue),
 	Instruction(InstructionType::ReturnInstruction) {}
 };
+class Break : public Instruction {
+public:
+	Break() : Instruction(InstructionType::BreakInstruction) {}
+};
+class Continue : public Instruction {
+public:
+	Continue() : Instruction(InstructionType::ContinueInstruction) {}
+};
 
 class CreateFunction : public Instruction {
 public:

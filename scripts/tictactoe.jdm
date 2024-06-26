@@ -5,34 +5,41 @@ jlist board = [
 ];
 
 jforce jint turn = 0;
-jfunc draw() => {
-	$logn => "Panget kau lahat haHAHA sobra panget\n";
-	jfor r => 3 => {
+jfunc draw() =>
+{
+	jfor r => 3 =>
+	{
 		$log => '    | ';
 		jfor c => 3 =>
-		$log => board[r][c] => ' | ';
+			$log => board[r][c] => ' | ';
+
 		$log => '\n';
 	}
 	$log => '\n';
 }
 
-jfunc checkTurn() => {
+jfunc checkTurn() =>
+{
 	jint row = jint(input("Row: ")) - 1;
 	jint col = jint(input("Col: ")) - 1; 
 
-	jif (board[row][col] != ' ') => {
+	jif (board[row][col] != ' ') =>
+	{
 		$logn => "\nThis is already occupied.";
 		checkTurn();
 	}
-	jelse => {
+	jelse =>
+	{
 		jif (turn % 2 == 0) => board[row][col] = 'X';
 		jelse => board[row][col] = 'O';
 		turn = turn + 1;
 	}
 }
 
-jfunc checkWinner() => {
-	jfor r => 3 => {
+jfunc checkWinner() =>
+{
+	jfor r => 3 =>
+	{
 		jif (board[r][0] != ' ') && (board[r][0] == board[r][1]) && (board[r][1] == board[r][2]) => jreturn jtrue;
 		jif (board[0][r] != ' ') && (board[0][r] == board[1][r]) && (board[1][r] == board[2][r]) => jreturn jtrue;
 	}
@@ -43,8 +50,10 @@ jfunc checkWinner() => {
 	jreturn jfalse;
 }
 
-jfunc main() => {
-	jwhile (!checkWinner()) => {
+jfunc main() =>
+{
+	jwhile (!checkWinner()) =>
+	{
 		$clear;
 		draw();
 		checkTurn();

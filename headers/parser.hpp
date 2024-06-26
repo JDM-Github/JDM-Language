@@ -37,7 +37,8 @@ private:
 	Vector<SharedTokenStruct> __blockTokens;
 	SharedPtr<Block         > __mainBlock;
 
-	struct IfStatementLink {
+	struct IfStatementLink
+	{
 		SharedPtr<IfStatement    > current;
 		SharedPtr<IfStatementLink> next;
 		SharedPtr<IfStatementLink> prev;
@@ -60,6 +61,7 @@ private:
  */
 private:
 	JDM_DLL CVoid _manageControlFlow         (CSharedPtrRef<Block> block, CSharedTokenStructRef controlType, CVectorRef<SharedTokenStruct> tokenS);
+	JDM_DLL CVoid _manageCustomKeyword       (CSharedPtrRef<Block> block, CSharedTokenStructRef keywordType, CVectorRef<SharedTokenStruct> tokenS);
 	JDM_DLL CVoid _manageCreateFunction      (CSharedPtrRef<Block> block, CSharedTokenStructRef funcName, CVectorRef<SharedTokenStruct> tokens);
 	JDM_DLL CVoid _manageForEachLoop         (CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens);
 	JDM_DLL CVoid _manageDataType            (CSharedPtrRef<Block> block, CSharedTokenStructRef dataType, CSharedTokenStructRef varName, CVectorRef<SharedTokenStruct> tokenS, CBool isConst = false, CBool isForce = false);

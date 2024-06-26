@@ -7,7 +7,7 @@ Parser::Parser(
 	__rootTokens(tokens)
 {
 	this->__mainBlock = this->_getBlock(this->__rootTokens);
-	// this->analyzeAST(this->__mainBlock);
+	this->analyzeAST(this->__mainBlock);
 }
 
 JDM_DLL
@@ -15,38 +15,49 @@ const void Parser::analyzeAST(
 	const std::shared_ptr<Block> &block,
 	const std::string &space)
 {
-	for (const auto &instruction : block->instruction) {
-		if (instruction->getType() == IfStatementInstruction) {
+	for (const auto &instruction : block->instruction)
+	{
+		if (instruction->getType() == IfStatementInstruction)
+		{
 			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 			auto ifState = std::dynamic_pointer_cast<IfStatement>(instruction);
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(ifState->blockWillRun), space+"    ");
 			this->_analyzeAllIfElse(ifState->elseIf, space);
 
-		} else if (instruction->getType() == DeclarationInstruction) {
+		}
+		else if (instruction->getType() == DeclarationInstruction)
+		{
 			auto declare = std::dynamic_pointer_cast<Declaration>(instruction);
 			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": {\n";
 			this->_printExpression(declare->expression, space+"      ");
 			Log << space << "  }\n";
 
-		} else if (instruction->getType() == ForLoopStatementInstruction) {
+		}
+		else if (instruction->getType() == ForLoopStatementInstruction)
+		{
 			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 			auto forLoop = std::dynamic_pointer_cast<ForLoopStatement>(instruction);
-			if (forLoop->start) {
+			if (forLoop->start)
+			{
 				Log << space << "    START: { ... }\n";
 				// this->_printExpression(forLoop->start, space+"      ");
 			}
-			if (forLoop->stop) {
+			if (forLoop->stop)
+			{
 				Log << space << "    STOP { ... }: \n";
 				// this->_printExpression(forLoop->stop,  space+"      ");
 			}
-			if (forLoop->step) {
+			if (forLoop->step)
+			{
 				Log << space << "    STEP { ... }: \n";
 				// this->_printExpression(forLoop->step,  space+"      ");
 			}
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"    ");
 
 		// CREATE FUNCTION
-		} else if (instruction->getType() == CreateFunctionInstruction) {
+		}
+		else if (instruction->getType() == CreateFunctionInstruction)
+		{
 			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": (\n";
 			auto newFunc = std::dynamic_pointer_cast<CreateFunction>(instruction);
 			for (int i = 0; i < newFunc->parameters.size(); i++)
@@ -55,13 +66,17 @@ const void Parser::analyzeAST(
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(newFunc->blockWillRun), space+"    ");
 
 		// FOREACH LIST
-		} else if (instruction->getType() == ForEachListStatementInstruction) {
+		}
+		else if (instruction->getType() == ForEachListStatementInstruction)
+		{
 			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 			auto forEach = std::dynamic_pointer_cast<ForEachListStatement>(instruction);
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
 
 		// FOREACH MAP
-		} else if (instruction->getType() == ForEachMapStatementInstruction) {
+		}
+		else if (instruction->getType() == ForEachMapStatementInstruction)
+		{
 			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
 			auto forEach = std::dynamic_pointer_cast<ForEachMapStatement>(instruction);
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
@@ -164,17 +179,20 @@ const void Parser::_predictInstruction(
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens)
 {
 	JDM::TokenType tkType = std::get<1>(tokens[0]->token);
-	if (tkType == JDM::TokenType::DATA_TYPE) {
+	if (tkType == JDM::TokenType::DATA_TYPE)
+	{
 		DataTypeEnum dataType = JDM::dataTypeMap.at(std::get<0>(tokens[0]->token));
 
-		if (dataType == DataTypeEnum::DATA_CONST) {
+		if (dataType == DataTypeEnum::DATA_CONST)
+		{
 			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jconst'.");
 			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
-			if (isInVec(nextDataType, {
+			if (isInVec(nextDataType,
+			{
 				DataTypeEnum::DATA_CONST,
 				DataTypeEnum::DATA_FORCE,
 				DataTypeEnum::DATA_CFORCE,
@@ -182,7 +200,9 @@ const void Parser::_predictInstruction(
 
 			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, true);
 
-		} else if (dataType == DataTypeEnum::DATA_FORCE) {
+		}
+		else if (dataType == DataTypeEnum::DATA_FORCE)
+		{
 			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jforce'.");
 			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
@@ -197,7 +217,9 @@ const void Parser::_predictInstruction(
 
 			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, false, true);
 
-		} else if (dataType == DataTypeEnum::DATA_CFORCE) {
+		}
+		else if (dataType == DataTypeEnum::DATA_CFORCE)
+		{
 			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jcforce'.");
 			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
@@ -212,18 +234,29 @@ const void Parser::_predictInstruction(
 
 			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, true, true);
 
-		} else {
+		}
+		else
+		{
 			if (tokens.size() == 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 			this->_manageDataType(block, tokens[0], tokens[1], {tokens.begin()+2, tokens.end()});
 		}
 	} else if (tkType == JDM::TokenType::VARIABLE) {
 		this->_manageVariable(block, tokens);
-	} else if (tkType == JDM::TokenType::CONTROL_FLOW) {
+	}
+	else if (tkType == JDM::TokenType::CONTROL_FLOW)
+	{
 		this->_manageControlFlow(block, tokens[0], {tokens.begin()+1, tokens.end()});
-	} else if (tkType == JDM::TokenType::CUSTOM_FUNCTIONS) {
+	}
+	else if (tkType == JDM::TokenType::CUSTOM_KEYWORD)
+	{
+		this->_manageCustomKeyword(block, tokens[0], {tokens.begin()+1, tokens.end()});
+	}
+	else if (tkType == JDM::TokenType::CUSTOM_FUNCTIONS)
+	{
 		auto customFunc = JDM::customFunctionMap.at( std::get<0>(tokens[0]->token) );
-		if (customFunc == CUSFUNC_CLEAR) {
+		if (customFunc == CUSFUNC_CLEAR)
+		{
 			if (tokens.size() == 1) block->instruction.push_back(std::make_shared<CFunction>(customFunc));
 			else throw std::runtime_error("SYNTAX ERROR: Invalid clear syntax.");
 			return;
@@ -287,7 +320,8 @@ const void Parser::_manageControlFlow(
 {
 	// I can use at since I know I the elements will exist 100%
 	ControlFlowEnum control = JDM::controlFlowMap.at(std::get<0>(controlType->token));
-	switch (control) {
+	switch (control)
+	{
 		case ControlFlowEnum::CONTROL_IF    : this->_manageIfElseWhileStatement(block, tokenS, control); break;
 		case ControlFlowEnum::CONTROL_ELSEIF: this->_manageIfElseWhileStatement(block, tokenS, control); break;
 		case ControlFlowEnum::CONTROL_ELSE  : this->_manageIfElseWhileStatement(block, tokenS, control); break;
@@ -310,9 +344,29 @@ const void Parser::_manageControlFlow(
 			else block->instruction.push_back(std::make_shared<Return>(this->_createExpression(this->_transformTokenStruct(tokenS))[0]->expression));
 			break;
 	}
-
 	if (!isInVec(control, {ControlFlowEnum::CONTROL_IF, ControlFlowEnum::CONTROL_ELSEIF}))
 		this->__currIfLink->current = nullptr;
+}
+
+JDM_DLL
+const void Parser::_manageCustomKeyword(
+	const std::shared_ptr<Block      > &block,
+	const std::shared_ptr<TokenStruct> &keywordType,
+	const std::vector<std::shared_ptr<TokenStruct>>& tokenS)
+{
+	CustomKeywordEnum keyword = JDM::customKeywordMap.at(std::get<0>(keywordType->token));
+	switch (keyword)
+	{
+		case CustomKeywordEnum::KEYWORD_BREAK:
+			if (!tokenS.empty()) throw std::runtime_error("SYNTAX ERROR: Break must not have expression.");
+			block->instruction.push_back(std::make_shared<Break>());
+			return;
+		case CustomKeywordEnum::KEYWORD_CONTINUE :
+			if (!tokenS.empty()) throw std::runtime_error("SYNTAX ERROR: Continue must not have expression.");
+			block->instruction.push_back(std::make_shared<Continue>());
+			return;
+	}
+	throw std::runtime_error("SYNTAX ERROR: The keyword is not appropriate here.");
 }
 
 JDM_DLL
@@ -486,10 +540,17 @@ const void Parser::_manageIfElseWhileStatement(
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens,
 	ControlFlowEnum control)
 {
-	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok){
+	auto it = std::find_if(tokens.begin(), tokens.end(), [](const std::shared_ptr<TokenStruct> &tok)
+	{
 		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
-	if (it   == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+	if (control == ControlFlowEnum::CONTROL_ELSE)
+	{
+		if (std::get<1>(tokens[0]->token) != JDM::TokenType::ARROW_OPERATOR)
+			throw std::runtime_error("SYNTAX ERROR: Expecting '=>' on 'jelse' before the block.");
+	}
+
+	if (it   == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>' on control flow.");
 	if (it+1 == tokens.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
 
 	std::shared_ptr<Expression> condition;

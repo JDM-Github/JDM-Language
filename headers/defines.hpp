@@ -34,6 +34,9 @@
 #define CSizeT             const size_t
 #define CTokenType         const JDM::TokenType
 
+#define StaticCVoid        static const void
+#define StaticCInt         static const int
+
 #define SpaceString        const std::string&
 
 #define TokenStr           std::string
@@ -187,7 +190,7 @@ namespace JDM {
 			case JDM::TokenType::LIST                         : return "LIST";
 			case JDM::TokenType::MAP                          : return "MAP";
 			case JDM::TokenType::VARIABLE                     : return "VARIABLE";
-			default                                      : return "UNDEFINED";
+			default                                           : return "UNDEFINED";
 		}
 	}
 };

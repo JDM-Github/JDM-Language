@@ -44,11 +44,14 @@ public:
 
 		std::shared_ptr<HigherObject> newReturn;
 
-		if (stringFuncType == StringHigherFunctions::StringFunction::string_size) {
-			if (!objects.empty()) throw std::runtime_error("Runtime Error: Expecting 0 argument");
-			newReturn = std::make_shared<HigherObject>(static_cast<int64_t>(StringHigherFunctions::size(obj1)));
+		if (stringFuncType == StringHigherFunctions::StringFunction::string_size)
+		{
+			if (!objects.empty())
+				throw std::runtime_error("Runtime Error: Expecting 0 argument");
 
-		} else if (stringFuncType == StringHigherFunctions::StringFunction::string_is_empty) {
+			newReturn = std::make_shared<HigherObject>(static_cast<int64_t>(StringHigherFunctions::size(obj1)));
+		}
+		else if (stringFuncType == StringHigherFunctions::StringFunction::string_is_empty) {
 			if (!objects.empty()) throw std::runtime_error("Runtime Error: Expecting 0 argument");
 			newReturn = std::make_shared<HigherObject>(StringHigherFunctions::empty(obj1));
 
@@ -469,25 +472,26 @@ public:
 		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
 		std::reverse(obj1->stringValue.begin(), obj1->stringValue.end());
 	}
-	static const std::string rreverse(
-		std::shared_ptr<HigherObject> &obj1) {
+	static const std::string rreverse( std::shared_ptr<HigherObject> &obj1 )
+	{
 		std::string result = obj1->stringValue;
 		std::reverse(result.begin(), result.end());
 		return result;
 	}
-	static const void substr(
-		std::shared_ptr<HigherObject> &obj1,
-		int start, int end) {
-		if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
+	static const void substr( std::shared_ptr<HigherObject> &obj1, int start, int end )
+	{
+		if (obj1->isConstant)
+		{
+			throw std::runtime_error("Runtime Error: Variable is Constant.");
+		}
 		obj1->stringValue = obj1->stringValue.substr(start, end);
 	}
-	static const std::string rsubstr(
-		std::shared_ptr<HigherObject> &obj1,
-		int start, int end) {
+
+	static const std::string rsubstr( std::shared_ptr<HigherObject> &obj1, int start, int end )
+	{
 		std::string result = obj1->stringValue.substr(start, end);
 		return result;
 	}
-	
 };
 
 std::unordered_map<std::string, StringHigherFunctions::StringFunction> StringHigherFunctions::stringFunctions = {

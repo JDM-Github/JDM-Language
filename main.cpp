@@ -2,19 +2,21 @@
 #include "headers/parser.hpp"
 #include "headers/compiler.hpp"
 
-class FileNotExistError : public std::runtime_error {
+using namespace std;
+
+class FileNotExistError : public runtime_error {
 public:
-    FileNotExistError(const std::string& filename)
-        : std::runtime_error("File does not exist: " + filename) {}
+    FileNotExistError(const string& filename)
+        : runtime_error("File does not exist: " + filename) {}
 };
 
-const std::string getScriptOnFile(const std::string &filename) {
-    std::ifstream inputFile(filename);
+const string getScriptOnFile(const string &filename) {
+    ifstream inputFile(filename);
     if (!inputFile) throw FileNotExistError(filename);
 
-    std::string line;
-    std::ostringstream fileString;
-    while (std::getline(inputFile, line))
+    string line;
+    ostringstream fileString;
+    while (getline(inputFile, line))
         fileString << line << '\n';
 
     inputFile.close();
@@ -24,58 +26,71 @@ const std::string getScriptOnFile(const std::string &filename) {
 int main(int argc, char* argv[]) {
 
     if (argc <= 1 || strcmp(argv[1], "__version__") == 0) {
-        std::cout << " >> JDM Language Version 1.0";
-        std::exit(EXIT_SUCCESS);
+        cout << " >> JDM Language Version 1.0";
+        exit(EXIT_SUCCESS);
     }
-    std::string filename = argv[1];
-    const std::string extension = ".jdm";
+    string filename = argv[1];
+    const string extension = ".jdm";
 
     size_t dotPos = filename.find_last_of(".");
-    if (dotPos == std::string::npos) { // If there is no dot
+    if (dotPos == string::npos)
+    {
         if (!(filename.length() >= extension.length() &&
             filename.compare(filename.length() - extension.length(), extension.length(), extension) == 0)) {
             filename += ".jdm";
         }
     }
 
-    std::string fileBuffer;
-    auto start = std::chrono::high_resolution_clock::now();
-    try {
-        fileBuffer  = getScriptOnFile("scripts/__native__.jdm");
+    string fileBuffer;
+    auto start = chrono::high_resolution_clock::now();
+    try
+    {
+        fileBuffer  = getScriptOnFile("C:/JDMWeb/JDM-Language/scripts/__native__.jdm");
         fileBuffer += getScriptOnFile(filename);
-    } catch (const FileNotExistError &error) { // Custom Exception
-        std::cout << error.what() << std::endl;
-        std::exit(EXIT_SUCCESS);
     }
-    std::unique_ptr<Tokenizer> newTokenizer;
-    std::unique_ptr<Parser> newParser;
-    std::unique_ptr<Compiler> newCompiler;
+    catch (const FileNotExistError &error)
+    {
+        cout << error.what() << endl;
+        exit(EXIT_SUCCESS);
+    }
+    unique_ptr<Tokenizer> newTokenizer;
+    unique_ptr<Parser> newParser;
+    unique_ptr<Compiler> newCompiler;
 
-    try {
-        newTokenizer = std::make_unique<Tokenizer>(filename, fileBuffer);
+    try
+    {
+        newTokenizer = make_unique<Tokenizer>(filename, fileBuffer);
         // newTokenizer->analyzeAllTokens(true);
-    } catch (const JDMTokenizingHandler& error) {
-        std::cerr << error.what() << std::endl;
-        std::exit(EXIT_SUCCESS);
+    }
+    catch (const JDMTokenizingHandler& error)
+    {
+        cerr << error.what() << endl;
+        exit(EXIT_SUCCESS);
     }
 
-    // std::cout << "\n\nParse AST:\n";
-    try {
-        newParser = std::make_unique<Parser>(newTokenizer->getTokens());
-    } catch (const std::runtime_error& error) {
-        std::cerr << error.what() << std::endl;
-        std::exit(EXIT_SUCCESS);
+    // cout << "\n\nParse AST:\n";
+    try
+    {
+        newParser = make_unique<Parser>(newTokenizer->getTokens());
+    }
+    catch (const runtime_error& error)
+    {
+        cerr << error.what() << endl;
+        exit(EXIT_SUCCESS);
     }
 
-    // std::cout << "\nCompiler:\n";
-    try {
-        newCompiler = std::make_unique<Compiler>(newParser->getAST());
-    } catch (const std::runtime_error& error) {
-        std::cerr << error.what() << std::endl;
-        std::exit(EXIT_SUCCESS);
+    // cout << "\nCompiler:\n";
+    try
+    {
+        newCompiler = make_unique<Compiler>(newParser->getAST());
+    }
+    catch (const runtime_error& error)
+    {
+        cerr << error.what() << endl;
+        exit(EXIT_SUCCESS);
     }
 
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << "\n\nTime taken by function: " << duration.count() << " milliseconds" << std::endl;
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+    cout << "\n\nTime taken by function: " << duration.count() << " milliseconds" << endl;
 }

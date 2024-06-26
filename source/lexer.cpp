@@ -27,7 +27,8 @@ Tokenizer::Tokenizer(
 	this->__currentStruct     = MSharedTokenLink();
 
 	this->_getTokens();
-	if (!this->__opening_patt.empty()) {
+	if (!this->__opening_patt.empty())
+	{
 		throw UnterminatedCases(
 			this->__filename,
 			this->__last_token,
@@ -44,14 +45,20 @@ CVoid Tokenizer::analyzeAllTokens(
 {
 	this->__stringStream.str("");
 	this->__stringStream << "{\n";
-	for (const auto &tokenStruct : this->__allTokens->child) {
+	for (const auto &tokenStruct : this->__allTokens->child)
+	{
 		this->__stringStream << "  [\n";
 		for (const auto& token : tokenStruct->child)
+		{
 			this->_traverseTokenStruct(token, "    ");
+		}
 		this->__stringStream << "  ],\n";
 	}
 	this->__stringStream << "}\n";
-	if (willPrint) Log << this->__stringStream.str() << '\n';
+	if (willPrint)
+	{
+		Log << this->__stringStream.str() << '\n';
+	}
 }
 
 JDM_DLL
@@ -60,8 +67,9 @@ CVoid Tokenizer::saveTokens(
 {
 	std::ofstream outputFile(filename);
 	if (this->__stringStream.str().size())
+	{
 		this->analyzeAllTokens();
-
+	}
 	outputFile << this->__stringStream.str();
 	outputFile.close();
 }
@@ -96,13 +104,16 @@ CVoid Tokenizer::_traverseTokenStruct(
 		<< space << "  row: "       << std::get<2>(curr->token) << ",\n"
 		<< space << "  col: "       << std::get<3>(curr->token);
 
-	if (!curr->child.empty()) {
+	if (!curr->child.empty())
+	{
 		this->__stringStream << ",\n" << space << "  child: {\n";
-		for (const auto& tokenStruct : curr->child) {
+		for (const auto& tokenStruct : curr->child)
+		{
 			this->__stringStream << space << "    [\n";
 			for (const auto& token : tokenStruct->child)
+			{
 				this->_traverseTokenStruct(token, space + "      ");
-
+			}
 			this->__stringStream << space << "    ],\n";
 		}
 		this->__stringStream << space << "  }";
@@ -123,8 +134,12 @@ CBool Tokenizer::_checkKeyword(
 	CVecTokenStrRef tokens)
 {
 	for (const auto& keyword : tokens)
+	{
 		if (input.compare(keyword) == 0)
+		{
 			return true;
+		}
+	}
 	return false;
 }
 

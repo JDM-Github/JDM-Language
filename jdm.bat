@@ -1,2 +1,2 @@
 @echo OFF
-Build\JDM %1
+C:\JDMWeb\JDM-Language\Build\JDM %1

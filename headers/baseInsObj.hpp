@@ -15,6 +15,8 @@ enum InstructionType {
 	ForEachListStatementInstruction,
 	ForEachMapStatementInstruction,
 	ReturnInstruction,
+	BreakInstruction,
+	ContinueInstruction,
 	CFunctionInstruction
 };
 

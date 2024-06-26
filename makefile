@@ -11,9 +11,11 @@ DLL_DIR    = Build
 OTHER_SRC  = library/console
 SOURCES    = $(wildcard $(SRC_DIR)/*.cpp)
 LIBRARY    = $(wildcard $(SRC_DIR)/library/*.cpp)
+UTILITY    = $(wildcard $(SRC_DIR)/utils/*.cpp)
 CONSOLE    = $(wildcard $(SRC_DIR)/library/console/*.cpp)
 OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES)) \
 			 $(patsubst $(SRC_DIR)/library/%.cpp, $(OBJ_DIR)/library/%.o, $(LIBRARY)) \
+			 $(patsubst $(SRC_DIR)/utils/%.cpp, $(OBJ_DIR)/utils/%.o, $(UTILITY)) \
 			 $(patsubst $(SRC_DIR)/library/console/%.cpp, $(OBJ_DIR)/library/console/%.o, $(CONSOLE))
 
 INCLUDE    = -I"headers"
@@ -33,13 +35,14 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) -c $< -o $@ $(INCLUDE)
 
 $(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+	mkdir $(OBJ_DIR)\library\console
+	mkdir $(OBJ_DIR)\utils
 
 exec:
 	@$(EXECUTABLE)
 
 oclean:
-	del $(OBJ_DIR)\*
+	del $(OBJ_DIR)\* y
 
 clean:
 	del $(BIN_DIR)\$(MAIN).exe

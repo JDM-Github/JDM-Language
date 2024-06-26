@@ -2,31 +2,31 @@
 #include "baseClasses.hpp"
 
 
-class TextFileWrapper {
-public:
-	TextFileWrapper(const std::string& filename, const std::string& mode)
-		: filename(filename), mode(mode) {
-		file.open(filename, mode);
-	}
-	~TextFileWrapper() {
-		if (file.is_open()) {
-			file.close();
-		}
-	}
-	std::ofstream& getFile() {
-		return file;
-	}
+// class TextFileWrapper {
+// public:
+// 	TextFileWrapper(const std::string& filename, const std::string& mode)
+// 		: filename(filename), mode(mode) {
+// 		file.open(filename, mode);
+// 	}
+// 	~TextFileWrapper() {
+// 		if (file.is_open()) {
+// 			file.close();
+// 		}
+// 	}
+// 	std::ofstream& getFile() {
+// 		return file;
+// 	}
 
-	friend std::ostream& operator<<(std::ostream& os, const TextFileWrapper& wrapper) {
-		os << "<TextWrapper name='" << wrapper.filename
-		   << "' mode='" << wrapper.mode << "' encoding='UTF-8'>";
-		return os;
-	}
-private:
-	std::string filename;
-	std::string mode;
-	std::ofstream file;
-};
+// 	friend std::ostream& operator<<(std::ostream& os, const TextFileWrapper& wrapper) {
+// 		os << "<TextWrapper name='" << wrapper.filename
+// 		   << "' mode='" << wrapper.mode << "' encoding='UTF-8'>";
+// 		return os;
+// 	}
+// private:
+// 	std::string filename;
+// 	std::string mode;
+// 	std::ofstream file;
+// };
 
 class FileClassFunctions : public BaseNativeClass {
 public:
