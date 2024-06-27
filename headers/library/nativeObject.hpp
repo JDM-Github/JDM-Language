@@ -34,6 +34,9 @@ public:
 		NATIVE_COMPARE,
 		NATIVE_COUNT,
 
+		NATIVE_GETTYPE,
+		NATIVE_CAST,
+
 		NATIVE_REFERENCE
 	};
 	static std::unordered_map<std::string, NativeFunctionEnum> allNativeFunction;
@@ -53,18 +56,22 @@ public:
 				newReturn = NativeFunction::split(objects[0], objects[1]->stringValue);
 			} else newReturn = NativeFunction::split(objects[0]);
 
-		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_INPUT) {
+		}
+		else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_INPUT)
+		{
 			newReturn = NativeFunction::input(objects);
-
-		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_LENGTH) {
+		}
+		else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_LENGTH)
+		{
 			if (objects.size() != 1) throw std::runtime_error("Runtime Error: Expecting 1 argument. Target (jany).");
 			newReturn = NativeFunction::len(objects[0]);
-
-		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_ABS) {
+		}
+		else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_ABS)
+		{
 			if (objects.size() != 1) throw std::runtime_error("Runtime Error: Expecting 1 argument. Target (NUMBER).");
 			newReturn = NativeFunction::absolute(objects[0]);
-
-		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_CEIL) {
+		}
+		else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_CEIL) {
 			if (objects.size() != 1) throw std::runtime_error("Runtime Error: Expecting 1 argument. Target (jdouble).");
 			newReturn = NativeFunction::ceiling(objects[0]);
 
@@ -135,8 +142,14 @@ public:
 				objects[1]->castToString();
 				newReturn = NativeFunction::joinOperator(objects[0], objects[1]->stringValue);
 			} else newReturn = NativeFunction::joinOperator(objects[0]);
-
-		} else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_CHAIN) {
+		}
+		else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_GETTYPE)
+		{
+			if (objects.size() != 1)
+				throw std::runtime_error("Runtime Error: Expecting 1 argument.");
+    		newReturn = std::make_shared<HigherObject>(objects[0]->getType());
+		}
+		else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_CHAIN) {
 			newReturn = NativeFunction::chain(objects);
 		}
 		return newReturn;
@@ -431,5 +444,7 @@ std::unordered_map<std::string, NativeFunction::NativeFunctionEnum> NativeFuncti
 	{"chain"    , NATIVE_CHAIN       },
 	{"partial"  , NATIVE_PARTIAL     },
 	{"sort_if"  , NATIVE_SORT_IF     },
+	{"gettype"  , NATIVE_GETTYPE     },
+	{"cast"     , NATIVE_CAST        },
 	{"ref"      , NATIVE_REFERENCE   },
 };

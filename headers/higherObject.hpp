@@ -64,7 +64,7 @@ public:
 
 public:
 	HigherObject() { }
-	HigherObject(const std::string &value ) : stringValue (value), isString (true) { currActive = ACTIVE_STRING; }
+	HigherObject(const std::string &value ) : stringValue (value), isString (true) { currActive = ACTIVE_STRING;  }
 	HigherObject(const int64_t value      ) : integerValue(value), isInteger(true) { currActive = ACTIVE_INTEGER; }
 	HigherObject(const long double value  ) : doubleValue (value), isDecimal(true) { currActive = ACTIVE_DECIMAL; }
 	HigherObject(const bool value         ) : booleanValue(value), isBoolean(true) { currActive = ACTIVE_BOOLEAN; }
@@ -74,7 +74,14 @@ public:
 	HigherObject(const std::unordered_map<std::shared_ptr<HigherObject>, std::shared_ptr<HigherObject>> &value)
 		: mapValue(value), isMap(true) { currActive = ACTIVE_MAP; }
 
-	HigherObject(const std::shared_ptr<HigherObject> &obj) {
+	HigherObject(const std::shared_ptr<HigherObject> &obj)
+	{
+		this->setHigherObject(obj);
+	}
+	virtual ~HigherObject() {}
+
+	const void setHigherObject(const std::shared_ptr<HigherObject> &obj)
+	{
 		this->refalseAll();
 		if      (obj->isString ) { this->stringValue  = obj->stringValue ; this->isString  = true; currActive = ACTIVE_STRING;   }
 		else if (obj->isInteger) { this->integerValue = obj->integerValue; this->isInteger = true; currActive = ACTIVE_INTEGER;  }
@@ -84,8 +91,9 @@ public:
 		else if (obj->isObject ) { this->objectValue  = obj->objectValue ; this->isObject  = true; currActive = ACTIVE_OBJECT;   }
 		else if (obj->isList   ) { this->listValue    = obj->listValue   ; this->isList    = true; currActive = ACTIVE_LIST;     }
 		else if (obj->isMap    ) { this->mapValue     = obj->mapValue    ; this->isMap     = true; currActive = ACTIVE_MAP;      }
+		this->isForcedConstraint = obj->isForcedConstraint;
+		this->isConstant         = obj->isConstant;
 	}
-	virtual ~HigherObject() {}
 
 	const DataTypeEnum getDatatypeEnum() {
 		switch (currActive) {
@@ -99,6 +107,19 @@ public:
 			case ACTIVE_MAP     : return DataTypeEnum::DATA_MAP;
 		}
 		return DataTypeEnum::DATA_ANY;
+	}
+
+	const std::string getType()
+	{
+		if      (this->isString ) return "STRING";
+		else if (this->isInteger) return "INTEGER";
+		else if (this->isDecimal) return "DECIMAL";
+		else if (this->isBoolean) return "BOOLEAN";
+		else if (this->isFunc   ) return "FUNCTION";
+		else if (this->isObject ) return "OBJECT";
+		else if (this->isList   ) return "LIST";
+		else if (this->isMap    ) return "MAP";
+		else                      return "UNKNOWN";
 	}
 
 	const void logValue() {

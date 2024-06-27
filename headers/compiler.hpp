@@ -134,6 +134,11 @@ public:
 					timeML->castToInteger();
 					std::this_thread::sleep_for(std::chrono::milliseconds(timeML->integerValue));
 				}
+				// else if (cfunction->funcType == CUSFUNC_GETTYPE)
+				// {
+				// 	auto expressionType = this->evaluateExpression(cfunction->expression);
+				// 	return std::make_shared<HigherObject>(expressionType->getType());
+				// }
 
 				// TO DO WILL CREATE INCLDUE ON STRING
 				// FOR PATH, IT MIGHT BECOME IMPORT BUT WHO KNOWS
@@ -446,6 +451,7 @@ private:
 		{
 			if (objects.size() < 1 ) throw std::runtime_error("Runtime Error: Expecting atleast 1 argument. Target Function.");
 			if (!objects[0]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'partial'.");
+
 			auto newFunction              = std::make_shared<HigherObject::FunctionCall>();
 			newFunction->funcName         = objects[0]->funcValue->funcName;
 			newFunction->varNameAccesible = objects[0]->funcValue->varNameAccesible;
@@ -453,7 +459,6 @@ private:
 			newFunction->parameters       = objects[0]->funcValue->parameters;
 			newFunction->preArgs          = { objects.begin()+1, objects.end() };
 			return std::make_shared<HigherObject>(newFunction);
-
 		}
 		else
 			return NativeFunction::manageFunction( nativeType, objects );
@@ -517,7 +522,18 @@ private:
 				auto nativeFunc = NativeFunction::allNativeFunction.find(functionObj->returnStringValue());
 				if (nativeFunc != NativeFunction::allNativeFunction.end())
 				{
-					returnValue = this->handleNativeFunction(nativeFunc->second, this->getVectorHigherObject(functionObj->arguments));
+					if (nativeFunc->second == NativeFunction::NativeFunctionEnum::NATIVE_REFERENCE)
+					{
+						if (functionObj->arguments.size() != 1)
+							throw std::runtime_error("Runtime Error: Reference expect L value.");
+
+						if (callObj->nextObject != nullptr)
+							throw std::runtime_error("Runtime Error: Reference can't have recursive call.");
+
+						returnValue = getVariableObject(functionObj->arguments[0]);
+					}
+					else
+						returnValue = this->handleNativeFunction(nativeFunc->second, this->getVectorHigherObject(functionObj->arguments));
 					return this->manageEndCall( callObj, returnValue, expressionAssign );
 				}
 				else throw std::runtime_error("Runtime Error: Function is not declared.");
@@ -527,7 +543,6 @@ private:
 				throw std::runtime_error("Runtime Error: Invalid Function.");
 			}
 			returnValue = this->runFunction(newFunc, this->getVectorHigherObject(functionObj->arguments));
-
 		}
 		else if (tok == JDM::TokenType::EXPRESSION)
 		{
@@ -536,19 +551,13 @@ private:
 
 			auto variables = this->variable->variables.find(exprObj->returnStringValue());
 			if (variables == this->variable->variables.end())
-			{
 				throw std::runtime_error("Runtime Error: Variable is not declared.");
-			}
 
 			auto varList = variables->second.second;
 			if (varList->isList || varList->isMap || varList->isString)
-			{
 				returnValue = this->manageCallBrackets(callObj, varList, expressionAssign);
-			}
 			else
-			{
 				throw std::runtime_error("Runtime Error: Variable is not a String, List or a Map.");
-			}
 		}
 		else if (tok == JDM::TokenType::VARIABLE)
 		{
@@ -556,9 +565,8 @@ private:
 			auto variables = this->variable->variables.find(var->returnStringValue());
 
 			if (variables == this->variable->variables.end())
-			{
 				throw std::runtime_error("Runtime Error: Variable is not declared.");
-			}
+
 			returnValue = variables->second.second;
 		}
 		else if (tok == JDM::TokenType::STRING)
@@ -973,7 +981,18 @@ private:
 		}
 		var->isConstant         = isConst;
 		var->isForcedConstraint = isForce;
-		this->variable->variables[varName] = std::make_pair(dataT, this->checkVariableConstraint(var, dataT));
+		var = this->checkVariableConstraint(var, dataT);
+
+		// Get the old Variable and just set it's new value to this
+		auto oldVar  = this->variable->variables.find(varName);
+		if (oldVar != this->variable->variables.end())
+		{
+			// Use the setHigherObject to set the value of variable to var
+			oldVar->second.second->setHigherObject(var);
+			this->variable->variables[varName] = std::make_pair(dataT, oldVar->second.second);
+			return;
+		}
+		this->variable->variables[varName] = std::make_pair(dataT, var);
 	}
 
 	const std::pair<DataTypeEnum, std::shared_ptr<HigherObject>> returnVariable(
@@ -1272,7 +1291,7 @@ private:
 			{
 				return std::make_shared<HigherObject>(static_cast<int64_t>(0));
 			}
-			return std::make_shared<HigherObject>(result);
+			return result;
 		}
 
 		// If the expression is a Lambda Expression
@@ -1310,6 +1329,29 @@ private:
 			return this->castVariable(castObj->expression, castObj->datTypeToTurn, false);
 		}
 		return nullptr;
+	}
+
+	JDM_DLL std::shared_ptr<HigherObject> &getVariableObject(const std::shared_ptr<Expression> &expr)
+	{
+		if (!expr || expr->firstValue == nullptr)
+			throw std::runtime_error("Runtime Error: Expecting a Variable.");
+
+		if (expr->opWillUse)
+			throw std::runtime_error("Runtime Error: Expecting L Value not R Value.");
+
+		auto Value = expr->firstValue;
+		JDM::TokenType type = Value->getToken();
+
+		if (type != JDM::TokenType::VARIABLE)
+			throw std::runtime_error("Runtime Error: Expecting a Variable.");
+
+		auto varName = std::dynamic_pointer_cast<VariableObjects>(Value)->returnStringValue();
+		auto var = this->variable->variables.find(varName);
+		if (var != this->variable->variables.end())
+		{
+			return var->second.second;
+		}
+		throw std::runtime_error("Runtime Error: Variable is not declared.");
 	}
 
 	JDM_DLL std::shared_ptr<HigherObject> evaluateExpression(

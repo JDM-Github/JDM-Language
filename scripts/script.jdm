@@ -3,12 +3,25 @@
 |> $logn => join(reverse(split(input("INPUT: "))), " ");
 |> 
 |> $logn => "PROBLEM 2";
-jfor i => 1, 10 => {
-	jif     (i % 3 == 0 && i % 5 == 0) => $logn => "DCI";
-	jelseif (i % 3 == 0) => $logn => "Silver";
-	jelseif (i % 5 == 0) => $logn => "Vikings";
-	jelse => $logn => i;
-};
+|> jfor i => 1, 10 => {
+	|> jif     (i % 3 == 0 && i % 5 == 0) => $logn => "DCI";
+	|> jelseif (i % 3 == 0) => $logn => "Silver";
+	|> jelseif (i % 5 == 0) => $logn => "Vikings";
+	|> jelse => $logn => i;
+|> }
+
+jfunc getType(jany type) => {
+	jreturn ref(type) + 10;
+}
+jfunc anotherFunc(jany type) => {
+	$logn => type;
+}
+
+jstring test = "TEST";
+jany test2 = ref(test) + "TETS";
+test = "TEST";
+
+$log => test2;
 
 |> 
 |> 

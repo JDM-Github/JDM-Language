@@ -48,9 +48,9 @@ JDM_DLL Tokens::Tokens()
 
 	this->__functionsVector.push_back  ("$log"      );
 	this->__functionsVector.push_back  ("$logn"     );
-	this->__functionsVector.push_back  ("$cast"     );
-	this->__functionsVector.push_back  ("$getType"  );
-	this->__functionsVector.push_back  ("$sort"     );
+	// this->__functionsVector.push_back  ("$cast"     );
+	// this->__functionsVector.push_back  ("$gettype"  );
+	// this->__functionsVector.push_back  ("$sort"     );
 	this->__functionsVector.push_back  ("$clear"    );
 	this->__functionsVector.push_back  ("$sleep"    );
 	this->__functionsVector.push_back  ("$include"  );

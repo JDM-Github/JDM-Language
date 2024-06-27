@@ -159,9 +159,9 @@ namespace JDM {
     const std::unordered_map<std::string, CustomFunctionEnum> customFunctionMap = {
         {"$log",     CUSFUNC_LOG},
         {"$logn",    CUSFUNC_LOGN},
-        {"$cast",    CUSFUNC_CAST},
-        {"$gettype", CUSFUNC_GETTYPE},
-        {"$sort",    CUSFUNC_SORT},
+        // {"$cast",    CUSFUNC_CAST},
+        // {"$gettype", CUSFUNC_GETTYPE},
+        // {"$sort",    CUSFUNC_SORT},
         {"$clear",   CUSFUNC_CLEAR},
         {"$sleep",   CUSFUNC_SLEEP},
         {"$include", CUSFUNC_INCLUDE}

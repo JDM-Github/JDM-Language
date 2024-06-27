@@ -7,7 +7,7 @@ Parser::Parser(
 	__rootTokens(tokens)
 {
 	this->__mainBlock = this->_getBlock(this->__rootTokens);
-	this->analyzeAST(this->__mainBlock);
+	// this->analyzeAST(this->__mainBlock);
 }
 
 JDM_DLL
@@ -257,29 +257,44 @@ const void Parser::_predictInstruction(
 		auto customFunc = JDM::customFunctionMap.at( std::get<0>(tokens[0]->token) );
 		if (customFunc == CUSFUNC_CLEAR)
 		{
-			if (tokens.size() == 1) block->instruction.push_back(std::make_shared<CFunction>(customFunc));
-			else throw std::runtime_error("SYNTAX ERROR: Invalid clear syntax.");
+			if (tokens.size() == 1)
+				block->instruction.push_back(std::make_shared<CFunction>(customFunc));
+			else
+				throw std::runtime_error("SYNTAX ERROR: Invalid clear syntax.");
 			return;
 		}
 		if (tokens.size() < 2 || std::get<1>(tokens[1]->token) != JDM::TokenType::ARROW_OPERATOR)
 			throw std::runtime_error("SYNTAX ERROR: Expecting '=>' after using Custom Function.");
 
-		if (customFunc == CUSFUNC_LOG || customFunc == CUSFUNC_LOGN) {
+		if (customFunc == CUSFUNC_LOG || customFunc == CUSFUNC_LOGN)
+		{
 			std::vector<std::shared_ptr<Expression>> expressions;
 			this->_manageLogger(block, { tokens.begin()+2, tokens.end() }, expressions);
 			block->instruction.push_back(std::make_shared<Logger>(expressions, (customFunc == CUSFUNC_LOGN)));
-		} else if (customFunc == CUSFUNC_SLEEP) {
+		}
+		else if (customFunc == CUSFUNC_SLEEP)
+		{
 			auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
 			block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
+		}
+		// else if (customFunc == CUSFUNC_GETTYPE)
+		// {
+		// 	auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
+		// 	block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
+		// }
+		else if (customFunc == CUSFUNC_INCLUDE)
+		{
+			if (tokens.size() != 3)
+				throw std::runtime_error("SYNTAX ERROR: Invalid include syntax.");
 
-		} else if (customFunc == CUSFUNC_INCLUDE) {
-			if (tokens.size() != 3) throw std::runtime_error("SYNTAX ERROR: Invalid include syntax.");
 			if (std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
 			block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
-		} else {
+		}
+		else
+		{
 			throw std::runtime_error("SYNTAX ERROR: Invalid Custom Function.");
 		}
 	}
