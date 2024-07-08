@@ -9,13 +9,14 @@ using namespace std;
 
 class FileNotExistError : public runtime_error {
 public:
-    FileNotExistError(const string& filename)
-        : runtime_error("File does not exist: " + filename) {}
+    FileNotExistError(const string& filename, bool important)
+        : runtime_error(((important) ? string("[ IMPORTANT FILE MISSING ]: ") : string(""))
+            + "File does not exist: " + filename) {}
 };
 
-const string getScriptOnFile(const string &filename) {
+const string getScriptOnFile(const string &filename, bool important=false) {
     ifstream inputFile(filename);
-    if (!inputFile) throw FileNotExistError(filename);
+    if (!inputFile) throw FileNotExistError(filename, important);
 
     string line;
     ostringstream fileString;
@@ -67,7 +68,7 @@ int main(int argc, char* argv[])
     if (argc <= 1 || args.version_flag || args.filename.compare("") == 0)
     {
         cout << " >> JDM Language Version 1.0" << endl;
-        cout << "Executable path: " << args.location << "\\JDM.exe" endl;
+        cout << "Executable path: " << args.location << "\\JDM.exe" << endl;
         exit(EXIT_SUCCESS);
     }
 
@@ -89,7 +90,7 @@ int main(int argc, char* argv[])
     auto start = chrono::high_resolution_clock::now();
     try
     {
-        fileBuffer  = getScriptOnFile(args.location + "/__native__.jdm");
+        fileBuffer  = getScriptOnFile(args.location + "/scripts/__native__.jdm", true);
         fileBuffer += getScriptOnFile(filename);
     }
     catch (const FileNotExistError &error)
