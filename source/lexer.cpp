@@ -1,4 +1,6 @@
 #include "lexer.hpp"
+#include <fstream>
+#include <filesystem>
 
 JDM_DLL
 Tokenizer::Tokenizer(
@@ -55,10 +57,25 @@ CVoid Tokenizer::analyzeAllTokens(
 		this->__stringStream << "  ],\n";
 	}
 	this->__stringStream << "}\n";
+
 	if (willPrint)
 	{
 		Log << this->__stringStream.str() << '\n';
 	}
+
+	std::string logFilePath = "logs/token.log";
+
+	std::ofstream logFile(logFilePath, std::ios::trunc);
+	if (!logFile.is_open())
+	{
+		std::cerr << "Unable to open log file: " << logFilePath << std::endl;
+		exit(EXIT_SUCCESS);
+	}
+	logFile.close();
+
+	logFile.open(logFilePath, std::ios::app);
+	logFile << this->__stringStream.str() << '\n';
+	logFile.close();
 }
 
 JDM_DLL
@@ -84,7 +101,10 @@ Tokenizer Private Class Method
 */
 
 JDM_DLL
-CSharedTokenStruct Tokenizer::getTokens() { return this->__allTokens; }
+CSharedTokenStruct Tokenizer::getTokens()
+{
+	return this->__allTokens;
+}
 
 /**
  * @brief Traverses the token structure recursively and performs a specific task.
@@ -151,7 +171,10 @@ CBool Tokenizer::_checkKeyword(
  */
 JDM_DLL
 CBool Tokenizer::_isNextTokenInIgnored(
-	SizeT _index) { return isInVec(this->__input_buffer[_index], this->__ignored_keywords); }
+	SizeT _index)
+{
+	return isInVec(this->__input_buffer[_index], this->__ignored_keywords);
+}
 
 /**
  * @brief Determines the token type of the given input token.
@@ -173,7 +196,8 @@ CTokenType Tokenizer::_determineTokenType(
 	||  (token.size() >= 2 && (token.front() == '\'' && token.back() == '\'')))
 		return JDM::TokenType::STRING;
 
-	if (token == "->" || token == "=>")  return JDM::TokenType::ARROW_OPERATOR;
+	if (token == "->" || token == "=>")
+		return JDM::TokenType::ARROW_OPERATOR;
 
 	if (token == "="  || token == "+=" || token == "-="
 	 || token == "*=" || token == "/=" || token == "%=") 
@@ -196,7 +220,8 @@ CTokenType Tokenizer::_determineTokenType(
 	 || token == "~"  || token == "<<" || token == ">>")
 		return JDM::TokenType::BITWISE_OPERATOR;
 
-	for (const auto& entry : this->__tokenMap) {
+	for (const auto& entry : this->__tokenMap)
+	{
 		std::regex pattern(entry.first);
 		if (std::regex_match(token, pattern))
 			return entry.second;
@@ -220,10 +245,12 @@ CBool Tokenizer::_checkNextToken(
 {
 	// Mainly use for checking double instance of Token.
 	// Example ++, --, etc
-	if (this->__current_token.compare(compStr) == 0) {
+	if (this->__current_token.compare(compStr) == 0)
+	{
 		this->__just_added_token = false;
 
-		if (isInVec(this->__input_buffer[i], vecCharacters)) {
+		if (isInVec(this->__input_buffer[i], vecCharacters))
+		{
 			this->__current_token += this->__input_buffer[i];
 			this->_addToken();
 			return true;
@@ -244,20 +271,27 @@ CBool Tokenizer::_checkIfNextTokenIsOperatorStart(
 	CSizeT i,
 	CBool willAdd)
 {
-	if (this->__input_buffer.size() > i+1) {
-		if (isInVec(this->__input_buffer[i+1], {'(', '[', '{'})) {
-			if (willAdd) this->_addToken();
+	if (this->__input_buffer.size() > i+1)
+	{
+		if (isInVec(this->__input_buffer[i+1], {'(', '[', '{'}))
+		{
+			if (willAdd)
+				this->_addToken();
 			this->__just_added_token = false;
 			return true;
 		}
 
 		if (this->__input_buffer[i+1] == '.')
+		{
 			if (std::regex_match(this->__current_token, std::regex("^(-?[0-9]*)$")))
 				return true;
+		}
 
 		if (!isInVec(this->__input_buffer[i],   this->__operator_symbol)
-			&&  isInVec(this->__input_buffer[i+1], this->__operator_symbol)) {
-			if (willAdd) this->_addToken();
+			&&  isInVec(this->__input_buffer[i+1], this->__operator_symbol))
+		{
+			if (willAdd)
+				this->_addToken();
 			this->__just_added_token = false;
 			return true;
 		}
@@ -275,22 +309,28 @@ JDM_DLL
 CBool Tokenizer::_handle_escape(
 	CSizeT i)
 {
-	if (this->__just_added_escape) {
+	if (this->__just_added_escape)
+	{
 		// If just added escape then not in escape combination. throw error
 		// Example: /q is not a valid escape sequence
 		if (!isInVec(this->__input_buffer[i], this->__escape_combination)) 
 			throw IllegalEscape(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
+
 		this->__just_added_escape = false;
 
 		// To make the '\' in my string
-		if (this->__input_buffer[i] == '\\') return true;
+		if (this->__input_buffer[i] == '\\')
+			return true;
+
 		this->__current_token += this->__input_buffer[i];
 		return true;
 	}
 
-	else if (this->__input_buffer[i] == '\\') {
+	else if (this->__input_buffer[i] == '\\')
+	{
 		if (this->__is_start_string == 'N') 
 			throw IllegalEscape(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
+
 		this->__just_added_escape = true;
 	}
 	return false;
@@ -307,11 +347,14 @@ JDM_DLL
 CBool Tokenizer::_handle_string(
 	CSizeT i)
 {
-	if (this->__is_start_string != 'N') {
-		if (this->__input_buffer[i] == this->__is_start_string) {
+	if (this->__is_start_string != 'N')
+	{
+		if (this->__input_buffer[i] == this->__is_start_string)
+		{
 			this->__is_start_string = 'N';
 			this->__current_token += this->__input_buffer[i];
-			if (!this->_checkIfNextTokenIsOperatorStart(i)) {
+			if (!this->_checkIfNextTokenIsOperatorStart(i))
+			{
 				this->_addToken();
 				this->__just_added_token = true;
 			}
@@ -320,8 +363,10 @@ CBool Tokenizer::_handle_string(
 		this->__current_token += this->__input_buffer[i];
 		return true;
 	}
-	else if (this->__input_buffer[i] == '\'' || this->__input_buffer[i] == '"') {
-		if (!this->__current_token.empty()) {
+	else if (this->__input_buffer[i] == '\'' || this->__input_buffer[i] == '"')
+	{
+		if (!this->__current_token.empty())
+		{
 			throw UnexpectedCharacter(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
 		}
 		this->__is_start_string = this->__input_buffer[i];
@@ -359,7 +404,8 @@ CBool Tokenizer::_handle_paren(
 			JDM::TokenType::ARITHMETIC_OPERATOR,
 			JDM::TokenType::ASSIGNMENT_OPERATOR,
 			JDM::TokenType::RELATIONAL_OPERATOR,
-		}))) {
+		})))
+	{
 		this->_addToken(); // Add the last Token
 
 		this->__opening_patt.push_back(second);
@@ -371,9 +417,9 @@ CBool Tokenizer::_handle_paren(
 		this->__currentStruct->next->prev    = this->__currentStruct;
 		this->__currentStruct                = this->__currentStruct->next;
 		return true;
-
-	} else if (this->__input_buffer[i] == second) {
-
+	}
+	else if (this->__input_buffer[i] == second)
+	{
 		this->__just_added_token = false;
 		int last_index           = this->__opening_patt.size() - 1;
 
@@ -397,7 +443,8 @@ CBool Tokenizer::_handle_paren(
 		this->__last_toke_type  = JDM::TokenType::CLOSE_CASES;
 		this->__last_token      = second;
 
-		if (!this->__is_in_paren) {
+		if (!this->__is_in_paren)
+		{
 			this->__just_added_token = false;
 			this->__candidate_block  = true;
 		}
@@ -414,13 +461,15 @@ CBool Tokenizer::_handle_paren(
 JDM_DLL
 CBool Tokenizer::_addToken()
 {
-	if (!this->__current_token.empty()) {
+	if (!this->__current_token.empty())
+	{
 		if (this->__is_start_string != 'N')
 			throw UnterminatedString(this->__filename, this->__last_token, this->__current_token, this->__track_row, this->__track_column);
 
 		JDM::TokenType tokenType = this->_determineTokenType(this->__current_token);
 
-		if (this->__candidate_block) {
+		if (this->__candidate_block)
+		{
 			if (!isInVec(tokenType, {
 				JDM::TokenType::ASSIGNMENT_OPERATOR,
 				JDM::TokenType::ARROW_OPERATOR,
@@ -429,7 +478,8 @@ CBool Tokenizer::_addToken()
 				JDM::TokenType::BITWISE_OPERATOR,
 				JDM::TokenType::ARITHMETIC_OPERATOR,
 				JDM::TokenType::RELATIONAL_OPERATOR
-			})) this->_lineBreak();
+			}))
+				this->_lineBreak();
 		}
 		this->__candidate_block = false;
 		this->__last_toke_type  = tokenType;
@@ -470,15 +520,18 @@ JDM_DLL
 CBool Tokenizer::_isComment(
 	CSizeT i)
 {
-	if (this->__current_token == "|") {
-
-		if (this->__input_buffer[i] == '>') {
+	if (this->__current_token == "|")
+	{
+		if (this->__input_buffer[i] == '>')
+		{
 			this->__is_comment_line = true;
 			return true;
 		}
-		if (this->__input_buffer[i] == '-') {
+		if (this->__input_buffer[i] == '-')
+		{
 			if (this->__input_buffer.size() > i+1)
-				if (this->__input_buffer[i+1] == '>') {
+				if (this->__input_buffer[i+1] == '>')
+				{
 					this->__is_comment_block = true;
 					return true;
 				}
@@ -539,21 +592,24 @@ CVoid Tokenizer::_getTokens()
 	this->__currentStruct->current = this->__allTokens;
 	this->__currentStruct->currTokens.clear();
 
-	for (SizeT i = 0; i < this->__input_buffer.size(); i++) {
+	for (SizeT i = 0; i < this->__input_buffer.size(); i++)
+	{
 		this->__is_in_paren = this->_isInParen();
 
-		if (this->__input_buffer[i] == '\n') {
+		if (this->__input_buffer[i] == '\n')
+		{
 			this->__track_row++;
 		}
 		// If current Token is empty, Just keep the current Tracker updated
-		if (this->__current_token.empty()) {
+		if (this->__current_token.empty())
+		{
 			this->__current_column = this->__track_column;
 			this->__current_row    = this->__track_row;
 		}
 
 		// If the input is line break and it is not a comment, Add the token if there is, and make new currentTokens list
-		if (this->__input_buffer[i] == EndLine && !this->__is_comment_line && !this->__is_comment_block) {
-
+		if (this->__input_buffer[i] == EndLine && !this->__is_comment_line && !this->__is_comment_block)
+		{
 			this->__candidate_block = false;
 			this->_addToken();
 			if (isInVec(this->__last_toke_type, {
@@ -568,28 +624,30 @@ CVoid Tokenizer::_getTokens()
 				JDM::TokenType::RELATIONAL_OPERATOR,
 				JDM::TokenType::FUNCTIONS,
 				JDM::TokenType::DATA_TYPE,
-			})) {
+			}))
+			{
 				throw UnexpectedCharacter(
 					this->__filename, this->__last_token,
 					this->__current_token, this->__track_row, this->__track_column);
 			}
-
 			this->__track_column++;
 			this->_lineBreak();
 			continue;
 		}
 		//  Check if it is comment block
-		if (this->__is_comment_block) {
-
+		if (this->__is_comment_block)
+		{
 			// Add all of in current_token for testing
 			if (isInVec(this->__input_buffer[i], {'<', '-', '|'}))
 				this->__current_token += this->__input_buffer[i];
 			else
 				this->__current_token.clear();
 
-			if (this->__current_token.size() >= 3) {
+			if (this->__current_token.size() >= 3)
+			{
 				// Means the comment block is ended
-				if (this->__current_token == "<-|") {
+				if (this->__current_token == "<-|")
+				{
 					this->__is_comment_block = false;
 					this->__current_token.clear();
 				}
@@ -602,16 +660,19 @@ CVoid Tokenizer::_getTokens()
 					this->__current_token.clear();
 			}
 		}
-		else if (this->__is_start_string != 'N') {
+		else if (this->__is_start_string != 'N')
+		{
 			// Handle the escape '\' character combination
 			if (this->_handle_escape(i));
 			else this->_handle_string(i);
 		}
 		// Check if it is in ignored character, and if it is not, and also not a comment line, the proceed
-		else if (!this->_isNextTokenInIgnored(i) && !this->__is_comment_line) {
-
+		else if (!this->_isNextTokenInIgnored(i) && !this->__is_comment_line)
+		{
 			// Check if it will be a comment
-			if (this->_isComment(i)) this->__current_token.clear();
+			if (this->_isComment(i))
+				this->__current_token.clear();
+
 			// Check inidividual token that might have a double pattern, example ++ -- eg.
 			else if (!this->_checkNextToken(i, "=", {'=', '>', '<'})
 				  && !this->_checkNextToken(i, "+", {'='          })
@@ -624,9 +685,11 @@ CVoid Tokenizer::_getTokens()
 				  && !this->_checkNextToken(i, ">", {'=', '>'     })
 				  && !this->_checkNextToken(i, "<", {'=', '<'     })
 				  && !this->_checkNextToken(i, "!", {'=',         })
-			) {
+			)
+			{
 				// Check if the token is operator, example + - . , eg.
-				if (this->__current_token.size() == 1 && isInVec(this->__current_token[0], this->__operator_symbol)) {
+				if (this->__current_token.size() == 1 && isInVec(this->__current_token[0], this->__operator_symbol))
+				{
 					if (!(
 					   (this->__current_token[0] == '-' ||
 						this->__current_token[0] == '.') &&
@@ -641,7 +704,8 @@ CVoid Tokenizer::_getTokens()
 							JDM::TokenType::ASSIGNMENT_OPERATOR,
 							JDM::TokenType::RELATIONAL_OPERATOR,
 							JDM::TokenType::INCREMENT_DECREMENT_OPERATOR,
-						})))) {
+						}))))
+					{
 						this->_addToken();
 					}
 				}
@@ -656,21 +720,26 @@ CVoid Tokenizer::_getTokens()
 				// Handle the escape '\' character combination
 				if (this->_handle_escape(i));
 				// Handle the string, if the token is string
-				else if (!this->_handle_string(i)) {
+				else if (!this->_handle_string(i))
+				{
 					// Handle the the parenthesis or any cases
 					if (!this->_handle_paren(i, '(', ')')
 					 && !this->_handle_paren(i, '[', ']')
 					 && !this->_handle_paren(i, '{', '}')
-					 ) {
+					 )
+					{
 						// Proceed as the token is not a string, might be a variable
 						this->__current_token += this->__input_buffer[i];
 						this->_checkIfNextTokenIsOperatorStart(i);
 					}
 				}
 			}
-		} else {
+		}
+		else
+		{
 			// If not, then it must be whitespace or any ignored character
-			if (this->__input_buffer[i] == '\n') {
+			if (this->__input_buffer[i] == '\n')
+			{
 				this->__is_comment_line = false;
 				this->__track_column = 0;
 			}
@@ -682,7 +751,8 @@ CVoid Tokenizer::_getTokens()
 		this->__track_column++;
 	}
 	// Check the last token and token Collections
-	if (this->__current_token.size() || this->__currentStruct->currTokens.size()) {
+	if (this->__current_token.size() || this->__currentStruct->currTokens.size())
+	{
 		this->_addToken();
 		this->_insertTokenStruct();
 	}

@@ -2,5 +2,6 @@
 tokens/
 object/
 Assembly/
+logs/
 test.cpp
 Build/test.exe

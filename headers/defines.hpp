@@ -18,8 +18,12 @@
 #include <cstring>
 #include <random>
 #include <functional>
-
 #include "enums.hpp"
+
+
+
+
+
 
 #define JDM_DLL            __declspec(dllexport)
 #define EndLine            ';'
@@ -36,11 +40,22 @@
 
 #define StaticCVoid        static const void
 #define StaticCInt         static const int
+#define StaticCBool        static const bool
 
 #define SpaceString        const std::string&
+#define CStringRef         const std::string&
+#define CString            const std::string
+#define StringStd          std::string
 
 #define TokenStr           std::string
 #define CTokenStrRef       const TokenStr&
+
+struct TokenStruct
+{
+	std::tuple<TokenStr, JDM::TokenType, size_t, size_t> token =
+		std::make_tuple("", JDM::TokenType::UNDEFINED, 0, 0);
+	std::vector<std::shared_ptr<TokenStruct>> child = {};
+};
 
 #define VecChar            std::vector<char>
 #define CVecChar           const VecChar
@@ -53,18 +68,13 @@
 #define MapTokens          std::unordered_map<TokenStr, JDM::TokenType>
 #define CMapTokens         const MapTokens
 
-struct TokenStruct {
-	std::tuple<TokenStr, JDM::TokenType, size_t, size_t> token =
-		std::make_tuple("", JDM::TokenType::UNDEFINED, 0, 0);
-	std::vector<std::shared_ptr<TokenStruct>> child = {};
-};
-
 #define SharedTokenStruct     std::shared_ptr<TokenStruct>
 #define MSharedTokenStruct    std::make_shared<TokenStruct>
 #define CSharedTokenStruct    const SharedTokenStruct
 #define CSharedTokenStructRef const SharedTokenStruct&
 
-struct TokenCurrentLink {
+struct TokenCurrentLink
+{
 	std::shared_ptr<TokenCurrentLink> next;
 	std::shared_ptr<TokenCurrentLink> prev;
 	SharedTokenStruct current;
@@ -91,83 +101,82 @@ template <class T> using VecSharedPtrRef  = std::vector<std::shared_ptr<T>>&;
 template <class T> using CVecSharedPtr    = const std::vector<std::shared_ptr<T>>;
 template <class T> using CVecSharedPtrRef = const std::vector<std::shared_ptr<T>>&;
 
-
 template <class _TypeClass>
-	CBool isInVec(const _TypeClass &e, const std::vector<_TypeClass> eList) {
-	for (SizeT i = 0; i < eList.size(); i++) if (e == eList[i]) return true;
+	CBool isInVec(const _TypeClass &e, const std::vector<_TypeClass> eList)
+{
+	for (SizeT i = 0; i < eList.size(); i++) if (e == eList[i])
+		return true;
 	return false;
 }
 
-namespace JDM {
+namespace JDM
+{
+	CVector<StringStd> powerVec   = { "**"                             };
+	CVector<StringStd> multDivVec = { "*", "/", "//", "%"              };
+	CVector<StringStd> addSubVec  = { "+", "-"                         };
+	CVector<StringStd> notVec     = { "~"                              };
+	CVector<StringStd> shiftVec   = { "<<", ">>"                       };
+	CVector<StringStd> andVec     = { "&"                              };
+	CVector<StringStd> xorVec     = { "^"                              };
+	CVector<StringStd> orVec      = { "|"                              };
+	CVector<StringStd> logicalVec = { "<", ">", "<=", ">=", "==", "!=" };
+	CVector<StringStd> relNotVec  = { "!"                              };
+	CVector<StringStd> relAndVec  = { "&&"                             };
+	CVector<StringStd> relOrVec   = { "||"                             };
 
-	const std::vector<std::string> powerVec   = { "**"                             };
-	const std::vector<std::string> multDivVec = { "*", "/", "//", "%"              };
-	const std::vector<std::string> addSubVec  = { "+", "-"                         };
-	const std::vector<std::string> notVec     = { "~"                              };
-	const std::vector<std::string> shiftVec   = { "<<", ">>"                       };
-	const std::vector<std::string> andVec     = { "&"                              };
-	const std::vector<std::string> xorVec     = { "^"                              };
-	const std::vector<std::string> orVec      = { "|"                              };
-	const std::vector<std::string> logicalVec = { "<", ">", "<=", ">=", "==", "!=" };
-	const std::vector<std::string> relNotVec  = { "!"                              };
-	const std::vector<std::string> relAndVec  = { "&&"                             };
-	const std::vector<std::string> relOrVec   = { "||"                             };
-
-	const std::vector<std::string> operatorCombinedVector = {
+	const std::vector<StringStd> operatorCombinedVector = {
 		"**", "*", "/", "//", "%", "+", "-", "~", "<<", ">>", "&",
 		"^", "|", "<", ">", "<=", ">=", "==", "!=", "!", "&&", "||"
 	};
 
-	const std::unordered_map<std::string, ControlFlowEnum> controlFlowMap = {
-        {"jif",      ControlFlowEnum::CONTROL_IF},
-        {"jelseif",  ControlFlowEnum::CONTROL_ELSEIF},
-        {"jelse",    ControlFlowEnum::CONTROL_ELSE},
-        {"jfor",     ControlFlowEnum::CONTROL_FOR},
+	const std::unordered_map<StringStd, ControlFlowEnum> controlFlowMap = {
+        {"jif"     , ControlFlowEnum::CONTROL_IF     },
+        {"jelseif" , ControlFlowEnum::CONTROL_ELSEIF },
+        {"jelse"   , ControlFlowEnum::CONTROL_ELSE   },
+        {"jfor"    , ControlFlowEnum::CONTROL_FOR    },
         {"jforeach", ControlFlowEnum::CONTROL_FOREACH},
-        {"jwhile",   ControlFlowEnum::CONTROL_WHILE},
-        {"jswitch",  ControlFlowEnum::CONTROL_SWITCH},
-        {"jcase",    ControlFlowEnum::CONTROL_CASE},
-        {"jfunc",    ControlFlowEnum::CONTROL_FUNC},
-        {"jreturn",  ControlFlowEnum::CONTROL_RETURN},
-        {"jthen",    ControlFlowEnum::CONTROL_THEN}
+        {"jwhile"  , ControlFlowEnum::CONTROL_WHILE  },
+        {"jswitch" , ControlFlowEnum::CONTROL_SWITCH },
+        {"jcase"   , ControlFlowEnum::CONTROL_CASE   },
+        {"jfunc"   , ControlFlowEnum::CONTROL_FUNC   },
+        {"jreturn" , ControlFlowEnum::CONTROL_RETURN },
+        {"jthen"   , ControlFlowEnum::CONTROL_THEN   }
     };
 
-    const std::unordered_map<std::string, DataTypeEnum> dataTypeMap = {
-        {"jany",     DataTypeEnum::DATA_ANY},
-        {"jmap",     DataTypeEnum::DATA_MAP},
-        {"jlist",    DataTypeEnum::DATA_LIST},
-        {"jstring",  DataTypeEnum::DATA_STRING},
-        {"jdouble",  DataTypeEnum::DATA_DOUBLE},
-        {"jint",     DataTypeEnum::DATA_INTEGER},
+    const std::unordered_map<StringStd, DataTypeEnum> dataTypeMap = {
+        {"jany"    , DataTypeEnum::DATA_ANY    },
+        {"jmap"    , DataTypeEnum::DATA_MAP    },
+        {"jlist"   , DataTypeEnum::DATA_LIST   },
+        {"jstring" , DataTypeEnum::DATA_STRING },
+        {"jdouble" , DataTypeEnum::DATA_DOUBLE },
+        {"jint"    , DataTypeEnum::DATA_INTEGER},
         {"jboolean", DataTypeEnum::DATA_BOOLEAN},
-        {"jlambda",  DataTypeEnum::DATA_LAMBDA},
-        {"jobject",  DataTypeEnum::DATA_OBJECT},
-        {"jconst",   DataTypeEnum::DATA_CONST},
-        {"jforce",   DataTypeEnum::DATA_FORCE},
-        {"jcforce",  DataTypeEnum::DATA_CFORCE},
+        {"jlambda" , DataTypeEnum::DATA_LAMBDA },
+        {"jobject" , DataTypeEnum::DATA_OBJECT },
+        {"jconst"  , DataTypeEnum::DATA_CONST  },
+        {"jforce"  , DataTypeEnum::DATA_FORCE  },
+        {"jcforce" , DataTypeEnum::DATA_CFORCE },
     };
 
-    const std::unordered_map<std::string, CustomKeywordEnum> customKeywordMap = {
-        {"jreverse",  CustomKeywordEnum::KEYWORD_REVERSE},
-        {"jbreak",    CustomKeywordEnum::KEYWORD_BREAK},
+    const std::unordered_map<StringStd, CustomKeywordEnum> customKeywordMap = {
+        {"jreverse" , CustomKeywordEnum::KEYWORD_REVERSE },
+        {"jbreak"   , CustomKeywordEnum::KEYWORD_BREAK   },
         {"jcontinue", CustomKeywordEnum::KEYWORD_CONTINUE},
-        {"jdefault",  CustomKeywordEnum::KEYWORD_DEFAULT},
-        {"jtrue",     CustomKeywordEnum::KEYWORD_TRUE},
-        {"jfalse",    CustomKeywordEnum::KEYWORD_FALSE}
+        {"jdefault" , CustomKeywordEnum::KEYWORD_DEFAULT },
+        {"jtrue"    , CustomKeywordEnum::KEYWORD_TRUE    },
+        {"jfalse"   , CustomKeywordEnum::KEYWORD_FALSE   }
     };
 
-    const std::unordered_map<std::string, CustomFunctionEnum> customFunctionMap = {
-        {"$log",     CUSFUNC_LOG},
-        {"$logn",    CUSFUNC_LOGN},
-        // {"$cast",    CUSFUNC_CAST},
-        // {"$gettype", CUSFUNC_GETTYPE},
-        // {"$sort",    CUSFUNC_SORT},
-        {"$clear",   CUSFUNC_CLEAR},
-        {"$sleep",   CUSFUNC_SLEEP},
+    const std::unordered_map<StringStd, CustomFunctionEnum> customFunctionMap = {
+        {"$log"    , CUSFUNC_LOG    },
+        {"$logn"   , CUSFUNC_LOGN   },
+        {"$clear"  , CUSFUNC_CLEAR  },
+        {"$sleep"  , CUSFUNC_SLEEP  },
         {"$include", CUSFUNC_INCLUDE}
     };
 
-	constexpr const char *tokenTypeToString(const JDM::TokenType type) {
+	constexpr const char *tokenTypeToString(const JDM::TokenType type)
+	{
 		switch (type) {
 			case JDM::TokenType::DATA_TYPE                    : return "DATA_TYPE";
 			case JDM::TokenType::CONTROL_FLOW                 : return "CONTROL_FLOW";

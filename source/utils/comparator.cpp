@@ -1,3 +1,4 @@
+#include "higherObject.hpp"
 #include "utils/comparator.hpp"
 
 JDM_DLL const bool Comparator::DoOperationString(

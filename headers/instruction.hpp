@@ -200,65 +200,31 @@ public:
 	Instruction (InstructionType::WhileStatementInstruction) {}
 };
 
-class ForEachListStatement : public Instruction {
-public:
-	bool isReverse = false;
-	std::shared_ptr<Block          > blockWillRun;
-	std::shared_ptr<VariableObjects> variable;
-	std::shared_ptr<ListObject     > listToRun;
-	std::shared_ptr<VariableObjects> varToRun;
-
-public:
-	ForEachListStatement(
-		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
-		const std::shared_ptr<VariableObjects> &_variable     = nullptr,
-		const std::shared_ptr<ListObject     > &_listToRun    = nullptr,
-		const bool _reverse = false
-	) :
-	blockWillRun(_blockWillRun),
-	variable    (_variable    ),
-	listToRun   (_listToRun   ),
-	isReverse   (_reverse     ),
-	Instruction(InstructionType::ForEachListStatementInstruction) {}
-
-	ForEachListStatement(
-		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
-		const std::shared_ptr<VariableObjects> &_variable     = nullptr,
-		const std::shared_ptr<VariableObjects> &_varToRun     = nullptr,
-		const bool _reverse = false
-	) :
-	blockWillRun(_blockWillRun),
-	variable    (_variable    ),
-	varToRun    (_varToRun    ),
-	isReverse   (_reverse     ),
-	Instruction(InstructionType::ForEachListStatementInstruction) {}
-};
-
-class ForEachMapStatement : public Instruction {
+class ForEachStatement : public Instruction {
 public:
 	bool isReverse = false;
 	std::shared_ptr<Block          > blockWillRun;
 	std::shared_ptr<VariableObjects> varKey;
 	std::shared_ptr<VariableObjects> varVal;
-	std::shared_ptr<MapObject      > mapToRun;
 	std::shared_ptr<VariableObjects> varToRun;
+	std::shared_ptr<Expression     > expression;
 
 public:
-	ForEachMapStatement(
+	ForEachStatement(
 		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
 		const std::shared_ptr<VariableObjects> &_varKey       = nullptr,
 		const std::shared_ptr<VariableObjects> &_varVal       = nullptr,
-		const std::shared_ptr<MapObject      > &_mapToRun     = nullptr,
+		const std::shared_ptr<Expression     > &_expression   = nullptr,
 		const bool _reverse = false
 	) :
 	blockWillRun(_blockWillRun),
 	varKey      (_varKey      ),
 	varVal      (_varVal      ),
-	mapToRun    (_mapToRun    ),
+	expression  (_expression  ),
 	isReverse   (_reverse     ),
-	Instruction(InstructionType::ForEachMapStatementInstruction) {}
+	Instruction(InstructionType::ForEachStatementInstruction) {}
 
-	ForEachMapStatement(
+	ForEachStatement(
 		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
 		const std::shared_ptr<VariableObjects> &_varKey       = nullptr,
 		const std::shared_ptr<VariableObjects> &_varVal       = nullptr,
@@ -270,5 +236,5 @@ public:
 	varVal      (_varVal      ),
 	varToRun    (_varToRun    ),
 	isReverse   (_reverse     ),
-	Instruction(InstructionType::ForEachMapStatementInstruction) {}
+	Instruction(InstructionType::ForEachStatementInstruction) {}
 };

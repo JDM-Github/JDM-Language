@@ -1,5 +1,6 @@
 #include "parser.hpp"
 
+
 JDM_DLL
 Parser::Parser(
 	const std::shared_ptr<TokenStruct> &tokens)
@@ -7,49 +8,48 @@ Parser::Parser(
 	__rootTokens(tokens)
 {
 	this->__mainBlock = this->_getBlock(this->__rootTokens);
-	// this->analyzeAST(this->__mainBlock);
+	this->__stringStream.str("");
 }
 
 JDM_DLL
 const void Parser::analyzeAST(
 	const std::shared_ptr<Block> &block,
 	const std::string &space)
-{
+{ 
 	for (const auto &instruction : block->instruction)
 	{
 		if (instruction->getType() == IfStatementInstruction)
 		{
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
 			auto ifState = std::dynamic_pointer_cast<IfStatement>(instruction);
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(ifState->blockWillRun), space+"    ");
 			this->_analyzeAllIfElse(ifState->elseIf, space);
-
 		}
 		else if (instruction->getType() == DeclarationInstruction)
 		{
 			auto declare = std::dynamic_pointer_cast<Declaration>(instruction);
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": {\n";
-			this->_printExpression(declare->expression, space+"      ");
-			Log << space << "  }\n";
+			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": {\n";
+			this->_printExpression(declare->expression, space+"    ");
+			this->__stringStream << space << "}\n";
 
 		}
 		else if (instruction->getType() == ForLoopStatementInstruction)
 		{
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
+			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
 			auto forLoop = std::dynamic_pointer_cast<ForLoopStatement>(instruction);
 			if (forLoop->start)
 			{
-				Log << space << "    START: { ... }\n";
+				this->__stringStream << space << "  START: { ... }\n";
 				// this->_printExpression(forLoop->start, space+"      ");
 			}
 			if (forLoop->stop)
 			{
-				Log << space << "    STOP { ... }: \n";
+				this->__stringStream << space << "  STOP { ... }: \n";
 				// this->_printExpression(forLoop->stop,  space+"      ");
 			}
 			if (forLoop->step)
 			{
-				Log << space << "    STEP { ... }: \n";
+				this->__stringStream << space << "  STEP { ... }: \n";
 				// this->_printExpression(forLoop->step,  space+"      ");
 			}
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"    ");
@@ -58,32 +58,46 @@ const void Parser::analyzeAST(
 		}
 		else if (instruction->getType() == CreateFunctionInstruction)
 		{
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": (\n";
+			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": (\n";
 			auto newFunc = std::dynamic_pointer_cast<CreateFunction>(instruction);
 			for (int i = 0; i < newFunc->parameters.size(); i++)
-				Log << space << "    " << newFunc->parameters[i]->varName->returnStringValue() << '\n';
-			Log << space << "  " << ")\n";
+				this->__stringStream << space << "  " << newFunc->parameters[i]->varName->returnStringValue() << '\n';
+			this->__stringStream << space << ")\n";
 			this->analyzeAST(std::dynamic_pointer_cast<Block>(newFunc->blockWillRun), space+"    ");
 
 		// FOREACH LIST
 		}
-		else if (instruction->getType() == ForEachListStatementInstruction)
-		{
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
-			auto forEach = std::dynamic_pointer_cast<ForEachListStatement>(instruction);
-			this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
+		// else if (instruction->getType() == ForEachListStatementInstruction)
+		// {
+		// 	this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
+		// 	auto forEach = std::dynamic_pointer_cast<ForEachListStatement>(instruction);
+		// 	this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
 
-		// FOREACH MAP
-		}
-		else if (instruction->getType() == ForEachMapStatementInstruction)
-		{
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": \n";
-			auto forEach = std::dynamic_pointer_cast<ForEachMapStatement>(instruction);
-			this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
-		}
+		// // FOREACH MAP
+		// }
+		// else if (instruction->getType() == ForEachMapStatementInstruction)
+		// {
+		// 	this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
+		// 	auto forEach = std::dynamic_pointer_cast<ForEachMapStatement>(instruction);
+		// 	this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
+		// }
 		else
-			Log << space << "  " << this->_instructionToString(instruction->getType()) << ": { ... }\n";
+			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": { ... }\n";
 	}
+
+	std::string logFilePath = "logs/parser.log";
+
+	std::ofstream logFile(logFilePath, std::ios::trunc);
+	if (!logFile.is_open())
+	{
+		std::cerr << "Unable to open log file: " << logFilePath << std::endl;
+		exit(EXIT_SUCCESS);
+	}
+	logFile.close();
+
+	logFile.open(logFilePath, std::ios::app);
+	logFile << this->__stringStream.str() << '\n';
+	logFile.close();
 }
 
 /**
@@ -98,8 +112,8 @@ const void Parser::_analyzeAllIfElse(
 {
 	if (instruction == nullptr) return;
 	std::string typeStr = (instruction->condition == nullptr) ? "ELSE" : "ELSE IF";
-	Log << space << "  " << typeStr << ": \n";
-	this->analyzeAST(std::dynamic_pointer_cast<Block>(instruction->blockWillRun), space+"    ");
+	this->__stringStream << space << typeStr << ": \n";
+	this->analyzeAST(std::dynamic_pointer_cast<Block>(instruction->blockWillRun), space+"  ");
 	this->_analyzeAllIfElse(instruction->elseIf, space);
 }
 
@@ -113,8 +127,8 @@ const char *Parser::_instructionToString(InstructionType instruction)
 		case IfStatementInstruction          : return "IF";
 		case ForLoopStatementInstruction     : return "FOR";
 		case WhileStatementInstruction       : return "WHILE";
-		case ForEachListStatementInstruction : return "FOREACH-LIST";
-		case ForEachMapStatementInstruction  : return "FOREACH-MAP";
+		// case ForEachListStatementInstruction : return "FOREACH-LIST";
+		// case ForEachMapStatementInstruction  : return "FOREACH-MAP";
 		case CreateFunctionInstruction       : return "CREATE FUNCTION";
 	}
 	return "Invalid Instruction";
@@ -127,27 +141,34 @@ const void Parser::_printExpression(
 	int depth)
 {
 	if (!expr) return;
-	if (depth == 0) Log << space << "EXPRESSION: {\n";
+	if (depth == 0) this->__stringStream << space << "EXPRESSION: {\n";
 
-	if (expr->firstValue) {
-		Log << space << "  Value 1: " << expr->firstValue->returnStringValue() << '\n';
-	} else {
-		Log << space << "  Value in Paren 1: {\n";
+	if (expr->firstValue)
+	{
+		this->__stringStream << space << "  Value 1: " << expr->firstValue->returnStringValue() << '\n';
+	}
+	else
+	{
+		this->__stringStream << space << "  Value in Paren 1: {\n";
 		this->_printExpression(expr->firstExpression, space+"  ", depth+1);
-		Log << space << "  }\n";
+		this->__stringStream << space << "}\n";
 	}
 
-	if (expr->opWillUse) {
-		Log << space << "  Operator: " << std::get<0>(expr->opWillUse->token) << '\n';
-		if (expr->secondValue) {
-			Log << space << "  Value 2: " << expr->secondValue->returnStringValue() << '\n';
-		} else if (expr->secondExpression) {
-			Log << space << "  Value in Paren 2: {\n";
+	if (expr->opWillUse)
+	{
+		this->__stringStream << space << "  Operator: " << std::get<0>(expr->opWillUse->token) << '\n';
+		if (expr->secondValue)
+		{
+			this->__stringStream << space << "  Value 2: " << expr->secondValue->returnStringValue() << '\n';
+		}
+		else if (expr->secondExpression)
+		{
+			this->__stringStream << space << "  Value in Paren 2: {\n";
 			this->_printExpression(expr->secondExpression, space+"  ", depth+1);
-			Log << space << "  }\n";
+			this->__stringStream << space << "}\n";
 		}
 	}
-	if (depth == 0) Log << space << "}\n";
+	if (depth == 0) this->__stringStream << space << "}\n";
 }
 
 JDM_DLL
@@ -241,7 +262,9 @@ const void Parser::_predictInstruction(
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 			this->_manageDataType(block, tokens[0], tokens[1], {tokens.begin()+2, tokens.end()});
 		}
-	} else if (tkType == JDM::TokenType::VARIABLE) {
+	}
+	else if (tkType == JDM::TokenType::VARIABLE)
+	{
 		this->_manageVariable(block, tokens);
 	}
 	else if (tkType == JDM::TokenType::CONTROL_FLOW)
@@ -277,11 +300,6 @@ const void Parser::_predictInstruction(
 			auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
 			block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
 		}
-		// else if (customFunc == CUSFUNC_GETTYPE)
-		// {
-		// 	auto expr = this->_createExpression(this->_transformTokenStruct({ tokens.begin()+2, tokens.end() }))[0]->expression;
-		// 	block->instruction.push_back(std::make_shared<CFunction>(customFunc, expr));
-		// }
 		else if (customFunc == CUSFUNC_INCLUDE)
 		{
 			if (tokens.size() != 3)
@@ -419,8 +437,9 @@ const void Parser::_manageForEachLoop(
 	std::vector<std::shared_ptr<Expression     >> listArgs      ;
 	std::vector<std::shared_ptr<MapStruct      >> mapArgs       ;
 	std::vector<std::shared_ptr<TokenStruct    >> remainingToken;
-	            std::shared_ptr<VariableObjects > varToRun      ;
-	            std::shared_ptr<Block           > blockWillRun  ;
+				std::shared_ptr<VariableObjects > varToRun      ;
+				std::shared_ptr<Block           > blockWillRun  ;
+				std::shared_ptr<Expression      > expressions   ;
 
 	bool isReverse = false;
 	bool isMap     = false;
@@ -439,11 +458,15 @@ const void Parser::_manageForEachLoop(
 	}
 
 	// Find another => on |> ... => { ... }
-	auto it2 = std::find_if(remainingToken.begin(), remainingToken.end(), [](const std::shared_ptr<TokenStruct> &tok){
+	auto it2 = std::find_if(remainingToken.begin(), remainingToken.end(), [](const std::shared_ptr<TokenStruct> &tok)
+	{
 		return std::get<1>(tok->token) == JDM::TokenType::ARROW_OPERATOR;
 	});
-	if (it2   == remainingToken.end()) throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
-	if (it2+1 == remainingToken.end()) throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
+
+	if (it2   == remainingToken.end())
+		throw std::runtime_error("SYNTAX ERROR: Expecting '=>'");
+	if (it2+1 == remainingToken.end())
+		throw std::runtime_error("SYNTAX ERROR: Expecting a BLOCK");
 
 	// Create the BLOCK
 	blockWillRun = this->_createBlockOrLine(*(it2+1), {it2+1, remainingToken.end()});
@@ -452,19 +475,15 @@ const void Parser::_manageForEachLoop(
 	remainingToken = { remainingToken.begin(), it2 };
 
 	// Check if token is just a variable
-	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == JDM::TokenType::VARIABLE) {
+	if (remainingToken.size() == 1 && std::get<1>(remainingToken[0]->token) == JDM::TokenType::VARIABLE)
 		varToRun = std::make_shared<VariableObjects>(remainingToken[0]);
-	} else {
-		if (remainingToken.size() != 1) throw std::runtime_error("SYNTAX ERROR: Expecting ('jlist' | 'jmap') not Expression");
-		if (std::get<1>(remainingToken[0]->token) != JDM::TokenType::OPEN_CASES)
-			throw std::runtime_error("SYNTAX ERROR: Expecting 'jlist' | 'jmap'");
+	else
+	{
+		if (remainingToken.size() < 1)
+			throw std::runtime_error("SYNTAX ERROR: Expecting ('jlist' | 'jmap' | Expression)");
 
-		if (std::get<0>(remainingToken[0]->token) == "[")
-			this->_setArguments(listArgs, remainingToken[0]->child[0]->child);
-		else if (std::get<0>(remainingToken[0]->token) == "{") {
-			isMap = true;
-			this->_setMapArguments(mapArgs, remainingToken[0]->child[0]->child);
-		} else std::runtime_error("SYNTAX ERROR: Expecting 'jlist' | 'jmap'");
+		auto transformToken = this->_transformTokenStruct(remainingToken);
+		expressions = this->_createExpression(transformToken)[0]->expression;
 	}
 
 	// Return a list of VarObjects
@@ -474,25 +493,35 @@ const void Parser::_manageForEachLoop(
 	else
 		this->_setVarArgs(varArgs, remainingToken);
 
-	if (varToRun != nullptr) {
-		if (varArgs.size() == 2) {
-			block->instruction.push_back(std::make_shared<ForEachMapStatement>(
+	if (varToRun != nullptr)
+	{
+		if (varArgs.size() == 2)
+		{
+			block->instruction.push_back(std::make_shared<ForEachStatement>(
 				blockWillRun, varArgs[0], varArgs[1], varToRun, isReverse));
-		} else if (varArgs.size() == 1) {
-			block->instruction.push_back(std::make_shared<ForEachListStatement>(
-				blockWillRun, varArgs[0], varToRun, isReverse));
-		} else throw std::runtime_error("SYNTAX ERROR: Cannot determine if 'jlist' | 'jmap'");
-
-	} else if (isMap) {
-		if (varArgs.size() < 2)  throw std::runtime_error("SYNTAX ERROR: Missing 'key' | 'value'");
-		if (varArgs.size() >= 3) throw std::runtime_error("SYNTAX ERROR: Too many varArgs.");
-		block->instruction.push_back(std::make_shared<ForEachMapStatement>(
-			blockWillRun, varArgs[0], varArgs[1], std::make_shared<MapObject> (mapArgs), isReverse));
-	} else {
-		if (varArgs.size() < 1)  throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE.");
-		if (varArgs.size() >= 2) throw std::runtime_error("SYNTAX ERROR: Too many varArgs.");
-		block->instruction.push_back(std::make_shared<ForEachListStatement>(
-			blockWillRun, varArgs[0], std::make_shared<ListObject>(listArgs), isReverse));
+		}
+		else if (varArgs.size() == 1)
+		{
+			block->instruction.push_back(std::make_shared<ForEachStatement>(
+				blockWillRun, varArgs[0], nullptr, varToRun, isReverse));
+		}
+		else
+			throw std::runtime_error("SYNTAX ERROR: Cannot determine if 'jlist' | 'jmap'");
+	}
+	else
+	{
+		if (varArgs.size() == 2)
+		{
+			block->instruction.push_back(std::make_shared<ForEachStatement>(
+				blockWillRun, varArgs[0], varArgs[1], expressions, isReverse));
+		}
+		else if (varArgs.size() == 1)
+		{
+			block->instruction.push_back(std::make_shared<ForEachStatement>(
+				blockWillRun, varArgs[0], nullptr, expressions, isReverse));
+		}
+		else
+			throw std::runtime_error("SYNTAX ERROR: Cannot determine if 'jlist' | 'jmap'");
 	}
 }
 
@@ -828,13 +857,16 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 					} else return { std::make_shared<ExpressionToken>(this->_createMapExpression(vec[0]->token->child[0]->child) ) };
 				}
 
-			} else if (std::get<1>(vec[0]->token->token) == JDM::TokenType::CUSTOM_KEYWORD) {
+			}
+			else if (std::get<1>(vec[0]->token->token) == JDM::TokenType::CUSTOM_KEYWORD)
+			{
+				// Custom Keyword only accept Boolean
 				const std::string &value = std::get<0>(vec[0]->token->token);
 				if (value != "jtrue" && value != "jfalse")
 					throw std::runtime_error("SYNTAX ERROR: Unexpected Custom Keyword");
 
 				auto newExpression = std::make_shared<Expression>();
-				newExpression->firstValue = std::make_shared<IntegerObjects>(vec[0]->token);
+				newExpression->firstValue = std::make_shared<BooleanObjects>(vec[0]->token);
 				vec[0]->expression = newExpression;
 
 			} else {
@@ -846,8 +878,10 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 		return vec;
 	}
 
-	if (checkInvalid) {
-		for (const auto &v : vec) {
+	if (checkInvalid)
+	{
+		for (const auto &v : vec)
+		{
 			if (std::get<1>(v->token->token) == JDM::TokenType::CONTROL_FLOW)
 				throw std::runtime_error("SYNTAX ERROR: Invalid Expression. Control Flow in Expression is Forbidden");
 			if (std::get<1>(v->token->token) == JDM::TokenType::COMMA_OPERATOR)
@@ -878,14 +912,16 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 	 || checkFunction(JDM::relAndVec , relAndBool ) // RELATIONAL AND
 	 || checkFunction(JDM::relOrVec  , relOrBool  ) // RELATIONAL OR
 	) { }
-	else {
+	else
+	{
 		if (vec[0]->expression == nullptr && std::get<1>(vec[0]->token->token) == JDM::TokenType::OPEN_CASES)
 			throw std::runtime_error("SYNTAX ERROR: Case after case.");
 
 		auto newExpression = std::make_shared<Expression>();
 		// Check If it is a casting Object
 		if (vec.size() == 2 && vec[0]->token != nullptr && vec[1]->token != nullptr
-		 && std::get<1>(vec[0]->token->token) == JDM::TokenType::DATA_TYPE) {
+		 && std::get<1>(vec[0]->token->token) == JDM::TokenType::DATA_TYPE)
+		{
 			auto dataTypeEnum = JDM::dataTypeMap.at(std::get<0>(vec[0]->token->token));
 
 			if (std::get<1>(vec[1]->token->token) != JDM::TokenType::OPEN_CASES) throw std::runtime_error("SYNTAX ERROR: Casting must be in Cases.");
@@ -900,7 +936,9 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 			} else
 				newExpression->firstValue = std::make_shared<CastObjects>( dataTypeEnum,
 					this->_createExpression(this->_transformTokenStruct( vec[1]->token->child[0]->child ))[0]->expression);
-		} else newExpression->firstValue = this->_createCallObject(vec, nullptr, false);
+		}
+		else
+			newExpression->firstValue = this->_createCallObject(vec, nullptr, false);
 
 		return { std::make_shared<ExpressionToken>(newExpression) };
 	}
@@ -926,8 +964,10 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 
 	auto newFuncObj = std::make_shared<CallObjects>(nullptr, previous);
 	int tokUsed = 0;
-	if (std::get<1>(turnToCallObject[0]->token->token) == JDM::TokenType::OPEN_CASES) {
-		if (std::get<0>(turnToCallObject[0]->token->token) == "(") {
+	if (std::get<1>(turnToCallObject[0]->token->token) == JDM::TokenType::OPEN_CASES)
+	{
+		if (std::get<0>(turnToCallObject[0]->token->token) == "(")
+		{
 			if (isAssigning) throw std::runtime_error("SYNTAX ERROR: Cannot Assign on Function Call.");
 
 			std::vector<std::shared_ptr<Expression>> listVec;
@@ -936,20 +976,23 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 
 			newFuncObj->currObject = std::make_shared<FunctionObjects>(turnToCallObject[0]->token, listVec);
 		}
-		else {
+		else
+		{
 			if (turnToCallObject[0]->token->child.empty())
 				throw std::runtime_error("SYNTAX ERROR: Expecting a index integer");
 
 			newFuncObj->currObject = std::make_shared<ExpressionObjects>(turnToCallObject[0]->token,
-			 	this->_createExpression(this->_transformTokenStruct(
-			 		turnToCallObject[0]->token->child[0]->child))[0]->expression
+				this->_createExpression(this->_transformTokenStruct(
+					turnToCallObject[0]->token->child[0]->child))[0]->expression
 			);
 		}
 
-	} else if (turnToCallObject.size() > 1
-		&& std::get<1>(turnToCallObject[1]->token->token) == JDM::TokenType::OPEN_CASES) {
-
-		if (std::get<0>(turnToCallObject[1]->token->token) == "(") {
+	}
+	else if (turnToCallObject.size() > 1
+		&& std::get<1>(turnToCallObject[1]->token->token) == JDM::TokenType::OPEN_CASES)
+	{
+		if (std::get<0>(turnToCallObject[1]->token->token) == "(")
+		{
 			if (isAssigning) throw std::runtime_error("SYNTAX ERROR: Cannot Assign on Function Call.");
 
 			std::vector<std::shared_ptr<Expression>> listVec;
@@ -958,30 +1001,38 @@ const std::shared_ptr<CallObjects> Parser::_createCallObject(
 
 			newFuncObj->currObject = std::make_shared<FunctionObjects>(turnToCallObject[0]->token, listVec);
 
-		} else if (std::get<0>(turnToCallObject[1]->token->token) == "[") {
+		}
+		else if (std::get<0>(turnToCallObject[1]->token->token) == "[")
+		{
 			if (turnToCallObject[1]->token->child.empty())
 				throw std::runtime_error("SYNTAX ERROR: Expecting a index integer");
 
 			newFuncObj->currObject = std::make_shared<ExpressionObjects>(turnToCallObject[0]->token,
-			 	this->_createExpression(this->_transformTokenStruct(
-			 		turnToCallObject[1]->token->child[0]->child))[0]->expression
+				this->_createExpression(this->_transformTokenStruct(
+					turnToCallObject[1]->token->child[0]->child))[0]->expression
 			);
-		} else throw std::runtime_error("SYNTAX ERROR: Expecting '(', '[' open case.");
+		}
+		else
+			throw std::runtime_error("SYNTAX ERROR: Expecting '(', '[' open case.");
 
 		tokUsed++;
-	} else {
+	}
+	else
+	{
 		newFuncObj->currObject = std::make_shared<VariableObjects>(turnToCallObject[0]->token);
 		if (std::get<1>(turnToCallObject[0]->token->token) == JDM::TokenType::STRING)
 			newFuncObj->currObject->setToken(JDM::TokenType::STRING);
 	}
 
 	if (previous != nullptr) previous->nextObject = newFuncObj;
-	if (turnToCallObject.size() > 1 + tokUsed) {
-		if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) == JDM::TokenType::OPEN_CASES) {
+	if (turnToCallObject.size() > 1 + tokUsed)
+	{
+		if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) == JDM::TokenType::OPEN_CASES)
+		{
 			return this->_createCallObject( { turnToCallObject.begin() + tokUsed + 1, turnToCallObject.end() }, newFuncObj, isAssigning );
-
-		} else if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) != JDM::TokenType::DOT_OPERATOR)
-			throw std::runtime_error("SYNTAX ERROR: Expecting DOT OPERATOR");
+		}
+		else if (std::get<1>(turnToCallObject[1 + tokUsed]->token->token) != JDM::TokenType::DOT_OPERATOR)
+			throw std::runtime_error("SYNTAX ERROR: Expecting DOT OPERATOR NOT AN EXPRESSION");
 
 		return this->_createCallObject( { turnToCallObject.begin() + tokUsed + 2, turnToCallObject.end() }, newFuncObj, isAssigning );
 	}
@@ -1218,13 +1269,13 @@ const void Parser::_setValueObjects(
 {
 	switch (std::get<1>(tok->token)) {
 		case JDM::TokenType::VARIABLE: value = std::make_shared<VariableObjects>(tok); return;
-		case JDM::TokenType::DOUBLE : value = std::make_shared<DoubleObjects  >(tok); return;
+		case JDM::TokenType::DOUBLE  : value = std::make_shared<DoubleObjects  >(tok); return;
 		case JDM::TokenType::INTEGER : value = std::make_shared<IntegerObjects >(tok); return;
 		case JDM::TokenType::STRING  : value = std::make_shared<StringObjects  >(tok); return;
 		case JDM::TokenType::CUSTOM_KEYWORD :
 			if (std::get<0>(tok->token) != "jtrue" && std::get<0>(tok->token) != "jfalse")
 				throw std::runtime_error("SYNTAX ERROR: Unexpected Custom Keyword");
-			value = std::make_shared<IntegerObjects>(tok); return;
+			value = std::make_shared<BooleanObjects>(tok); return;
 
 		default: throw std::runtime_error("SYNTAX ERROR: Invalid Value");
 	}

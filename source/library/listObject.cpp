@@ -1,6 +1,25 @@
+#include "higherObject.hpp"
 #include "library/listObject.hpp"
 
-JDM_DLL const std::shared_ptr<HigherObject> ListHigherFunctions::manageFunction(
+JDM_DLL
+std::unordered_map<std::string, ListHigherFunctions::ListFunction> ListHigherFunctions::listFunctions = {
+	{"size"      , ListFunction::list_size      },
+	{"sort"      , ListFunction::list_sort      },
+    {"count"     , ListFunction::list_count     },
+    {"search"    , ListFunction::list_search    },
+    {"insert"    , ListFunction::list_insert    },
+    {"delete"    , ListFunction::list_delete    },
+    {"at"        , ListFunction::list_at        },
+    {"reverse"   , ListFunction::list_reverse   },
+    {"push_back" , ListFunction::list_push_back },
+    {"push_front", ListFunction::list_push_front},
+    {"pop_back"  , ListFunction::list_pop_back  },
+    {"pop_front" , ListFunction::list_pop_front }
+};
+
+
+JDM_DLL
+const std::shared_ptr<HigherObject> ListHigherFunctions::manageFunction(
 	ListHigherFunctions::ListFunction listFuncType,
 	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
@@ -203,17 +222,3 @@ const void ListHigherFunctions::rdup(std::shared_ptr<HigherObject> &obj1)
 	if (obj1->isConstant) throw std::runtime_error("Runtime Error: Variable is Constant.");
 }
 
-std::unordered_map<std::string, ListHigherFunctions::ListFunction> ListHigherFunctions::listFunctions = {
-	{"size"      , ListFunction::list_size      },
-	{"sort"      , ListFunction::list_sort      },
-    {"count"     , ListFunction::list_count     },
-    {"search"    , ListFunction::list_search    },
-    {"insert"    , ListFunction::list_insert    },
-    {"delete"    , ListFunction::list_delete    },
-    {"at"        , ListFunction::list_at        },
-    {"reverse"   , ListFunction::list_reverse   },
-    {"push_back" , ListFunction::list_push_back },
-    {"push_front", ListFunction::list_push_front},
-    {"pop_back"  , ListFunction::list_pop_back  },
-    {"pop_front" , ListFunction::list_pop_front }
-};

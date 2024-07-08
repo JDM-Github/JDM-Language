@@ -1,7 +1,8 @@
 #pragma once
 #include "defines.hpp"
 
-enum InstructionType {
+enum InstructionType
+{
 	DefaultInstruction,
 	LoggerInstruction,
 	DeclarationInstruction,
@@ -12,15 +13,15 @@ enum InstructionType {
 	CallInstruction,
 	ForLoopStatementInstruction,
 	WhileStatementInstruction,
-	ForEachListStatementInstruction,
-	ForEachMapStatementInstruction,
+	ForEachStatementInstruction,
 	ReturnInstruction,
 	BreakInstruction,
 	ContinueInstruction,
 	CFunctionInstruction
 };
 
-class Instruction {
+class Instruction
+{
 protected:
 	InstructionType _instructType;
 	Instruction(InstructionType type) : _instructType(type) {}
@@ -30,7 +31,8 @@ public:
 	inline const InstructionType getType() { return this->_instructType; }
 };
 
-class VarObjects {
+class VarObjects
+{
 protected:
 	size_t row, col;
 	JDM::TokenType varType = JDM::TokenType::UNDEFINED;
@@ -46,7 +48,8 @@ public:
 	virtual const std::string returnStringValue() { return "INVALID"; };
 };
 
-class VariableObjects : public VarObjects {
+class VariableObjects : public VarObjects
+{
 public:
 	std::string name;
 
@@ -56,7 +59,8 @@ public:
 	inline const std::string returnStringValue() { return this->name; }
 };
 
-struct Expression {
+struct Expression
+{
 	std::shared_ptr<VarObjects > firstValue;
 	std::shared_ptr<VarObjects > secondValue;
 	std::shared_ptr<Expression > firstExpression;
@@ -64,18 +68,21 @@ struct Expression {
 	std::shared_ptr<Expression > secondExpression;
 };
 
-struct MapStruct {
+struct MapStruct
+{
 	std::shared_ptr<Expression> key;
 	std::shared_ptr<Expression> value;
 };
 
-struct Variable {
+struct Variable
+{
 	std::shared_ptr<TokenStruct    > dataType;
 	std::shared_ptr<VariableObjects> varName;
 	std::shared_ptr<Expression     > varValue;
 };
 
-struct ExpressionToken {
+struct ExpressionToken
+{
 	std::shared_ptr<Expression> expression;
 	std::shared_ptr<TokenStruct> token;
 	ExpressionToken(

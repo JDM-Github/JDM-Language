@@ -1,7 +1,9 @@
 #pragma once
 
-namespace JDM {
-	enum TokenType {
+namespace JDM
+{
+	enum TokenType
+	{
 		UNDEFINED,
 		DATA_TYPE, 
 		CONTROL_FLOW,
@@ -21,6 +23,7 @@ namespace JDM {
 		STRING,
 		INTEGER,
 		DOUBLE,
+		BOOLED,
 		VARIABLE,
 		LIST,
 		MAP,
@@ -32,7 +35,8 @@ namespace JDM {
 	};
 };
 
-enum DataTypeEnum {
+enum DataTypeEnum
+{
 	DATA_ANY,
 	DATA_MAP,
 	DATA_LIST,
@@ -47,7 +51,8 @@ enum DataTypeEnum {
 	DATA_CFORCE
 };
 
-enum ControlFlowEnum {
+enum ControlFlowEnum
+{
 	CONTROL_IF,
 	CONTROL_ELSEIF,
 	CONTROL_ELSE,
@@ -61,7 +66,8 @@ enum ControlFlowEnum {
 	CONTROL_THEN
 };
 
-enum CustomKeywordEnum {
+enum CustomKeywordEnum
+{
 	KEYWORD_REVERSE,
 	KEYWORD_BREAK,
 	KEYWORD_CONTINUE,
@@ -70,13 +76,12 @@ enum CustomKeywordEnum {
 	KEYWORD_FALSE
 };
 
-enum CustomFunctionEnum {
+enum CustomFunctionEnum
+{
 	CUSFUNC_LOG,
 	CUSFUNC_LOGN,
-	// CUSFUNC_CAST,
-	// CUSFUNC_GETTYPE,
-	// CUSFUNC_SORT,
 	CUSFUNC_CLEAR,
 	CUSFUNC_SLEEP,
 	CUSFUNC_INCLUDE
 };
+

@@ -1,5 +1,4 @@
 #pragma once
-#include "../higherObject.hpp"
 
 class JDM_DLL ListHigherFunctions {
 public:

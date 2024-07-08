@@ -30,13 +30,18 @@ THE SOFTWARE.
 #include "objects.hpp"
 #include "instruction.hpp"
 #include "error_handler.hpp"
+#include <fstream>
 
 class JDM_DLL Parser {
 private:
+	std::ostringstream        __stringStream;
 	SharedTokenStruct         __rootTokens;
 	Vector<SharedTokenStruct> __blockTokens;
 	SharedPtr<Block         > __mainBlock;
 
+	// Like it said, If Statement link
+	// This is used to create a nested If Statement
+	// Remember that if statement can be nested and expand to elseif or else
 	struct IfStatementLink
 	{
 		SharedPtr<IfStatement    > current;
