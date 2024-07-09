@@ -8,17 +8,14 @@ OBJ_DIR    = object
 BIN_DIR    = Build
 DLL_DIR    = Build
 
-OTHER_SRC  = library/console
-SOURCES    = $(wildcard $(SRC_DIR)/*.cpp)
-LIBRARY    = $(wildcard $(SRC_DIR)/library/*.cpp)
-UTILITY    = $(wildcard $(SRC_DIR)/utils/*.cpp)
-COMPILER   = $(wildcard $(SRC_DIR)/compiler/*.cpp)
-CONSOLE    = $(wildcard $(SRC_DIR)/library/console/*.cpp)
-OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES)) \
-			 $(patsubst $(SRC_DIR)/library/%.cpp, $(OBJ_DIR)/library/%.o, $(LIBRARY)) \
-			 $(patsubst $(SRC_DIR)/utils/%.cpp, $(OBJ_DIR)/utils/%.o, $(UTILITY)) \
-			 $(patsubst $(SRC_DIR)/compiler/%.cpp, $(OBJ_DIR)/compiler/%.o, $(COMPILER)) \
-			 $(patsubst $(SRC_DIR)/library/console/%.cpp, $(OBJ_DIR)/library/console/%.o, $(CONSOLE))
+SRC_DIRS   = $(SRC_DIR) \
+			 $(SRC_DIR)/library \
+			 $(SRC_DIR)/utils \
+			 $(SRC_DIR)/compiler \
+			 $(SRC_DIR)/library/console
+
+SOURCES    = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.cpp))
+OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 
 INCLUDE    = -I"headers"
 
@@ -30,55 +27,54 @@ comp: oclean clean $(EXECUTABLE) exec
 
 $(EXECUTABLE): $(DLL)
 	@echo ===================================================
-	@echo Compiling the Main executable...
+	@echo - Compiling the Main executable...
 	@$(CXX) main.cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME) $(INCLUDE)
-	@echo [SUCCESS] Main executable compiled: $(EXECUTABLE)
+	@echo - [SUCCESS] Main executable compiled: $(EXECUTABLE)
 
 $(DLL): $(OBJECTS)
 	@echo ===================================================
-	@echo Creating DLL...
+	@echo - Creating DLL...
 	@$(CXX) -shared -o $(DLL) $(OBJECTS) $(INCLUDE)
-	@echo [SUCCESS] DLL created: $(DLL)
+	@echo - [SUCCESS] DLL created: $(DLL)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	@echo ---------------------------------------------------
-	@echo Compiling source file: $< ...
+	@echo - Compiling source file: $< ...
 	@$(CXX) -c $< -o $@ $(INCLUDE)
-	@echo [SUCCESS] Compiled: $< to $@
+	@echo - [SUCCESS] Compiled: $@
 
 $(OBJ_DIR):
 	@echo ---------------------------------------------------
-	@echo Creating Object Directories...
+	@echo - Creating Object Directories...
 	@echo ---------------------------------------------------
-	@echo [INFO] Making Directory: $(OBJ_DIR)\library\console...
+	@echo - [INFO] Making Directory: $(OBJ_DIR)\library\console...
 	@mkdir $(OBJ_DIR)\library\console
-	@echo [INFO] Making Directory: $(OBJ_DIR)\compiler...
+	@echo - [INFO] Making Directory: $(OBJ_DIR)\compiler...
 	@mkdir $(OBJ_DIR)\compiler
-	@echo [INFO] Making Directory: $(OBJ_DIR)\utils...
+	@echo - [INFO] Making Directory: $(OBJ_DIR)\utils...
 	@mkdir $(OBJ_DIR)\utils
-	@echo [SUCCESS] Object directories created
+	@echo - [SUCCESS] Object directories created
 
 exec:
 	@echo ===================================================
-	@echo Running the executable...
+	@echo - Running the executable...
 	@echo ===================================================
 	@jdm
 
 oclean:
 	@echo ---------------------------------------------------
-	@echo Deleting Object Directory...
-	@del /Q $(OBJ_DIR)\*
-	@rmdir /S /Q $(OBJ_DIR)
-	@echo [SUCCESS] Object directory deleted
+	@echo - Deleting Object Directory...
+	@if exist $(OBJ_DIR)\* del /Q $(OBJ_DIR)\*
+	@if exist $(OBJ_DIR) rmdir /S /Q $(OBJ_DIR)
+	@echo - [SUCCESS] Object directory deleted
 
 clean:
 	@cls
 	@echo ---------------------------------------------------
-	@echo Cleaning the Directory...
+	@echo - Cleaning the Directory...
 	@if exist $(BIN_DIR)\$(MAIN).exe del $(BIN_DIR)\$(MAIN).exe
 	@if exist $(DLL_DIR)\$(DLL_NAME).dll del $(DLL_DIR)\$(DLL_NAME).dll
 	
-	@echo [SUCCESS] Cleaning completed
-
+	@echo - [SUCCESS] Cleaning completed
 
 .PHONY: all oclean clean test exec
