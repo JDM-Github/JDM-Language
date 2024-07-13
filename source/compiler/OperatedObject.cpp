@@ -1,4 +1,4 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 std::shared_ptr<HigherObject> Compiler::newOperatedObject(

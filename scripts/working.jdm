@@ -110,7 +110,7 @@ $logn
 	=> "filter   : " + jstring(filter   (testList, testFilterFunction))
 	=> "reduce   : " + jstring(reduce   (testList, testReduceFunction))
 	=> "sort_if  : " + jstring(sort_if  (testList, testSortIfFunction))
-	=> "map      : " + jstring(map      (testList, testMapFunction   ))
+	=> "map      : " + jstring(map      (testList, ( arg ) => { jreturn arg ** 2 } ))
 	=> "chain    : " + jstring(chain    (testList, testList, testList))
 ;
 
