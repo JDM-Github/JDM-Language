@@ -21,12 +21,16 @@ std::shared_ptr<HigherObject> Compiler::newOperatedObject(
 		return firstVal;
 	}
 	// Handle different types of firstVal based on its type
-	if      (firstVal->isString) this->handleNewOperatedString(firstVal, operation, secondVal);
-	else if (firstVal->isList  ) this->handleNewOperatedList  (firstVal, operation, secondVal);
-	else if (firstVal->isMap   ) this->handleNewOperatedMap   (firstVal, operation, secondVal);
-	else if (firstVal->isFunc  ) this->handleNewOperatedFunc  (firstVal, operation, secondVal);
-	else if (firstVal->isObject) this->handleNewOperatedObject(firstVal, operation, secondVal);
-	else if (firstVal->isInteger || firstVal->isDecimal || firstVal->isBoolean)
+
+	auto cActive = firstVal->getCurrActive();
+	if      (cActive == ACTIVE_STRING  ) this->handleNewOperatedString(firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_LIST    ) this->handleNewOperatedList  (firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_MAP     ) this->handleNewOperatedMap   (firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_FUNCTION) this->handleNewOperatedFunc  (firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_OBJECT  ) this->handleNewOperatedObject(firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_INTEGER
+		  || cActive == ACTIVE_DECIMAL
+		  || cActive == ACTIVE_BOOLEAN)
 		// Handle number types (integer, decimal, boolean)
 		this->handleNewOperatedNumber(firstVal, operation, secondVal);
 
@@ -40,6 +44,7 @@ void Compiler::handleNewOperatedString(
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
 {
+	auto cActive = secondVal->getCurrActive();
 	if (operation == "+")
 	{
 		secondVal->castToString();
@@ -47,7 +52,7 @@ void Compiler::handleNewOperatedString(
 	}
 	else if (operation == "*")
 	{
-		if (!secondVal->isInteger && !secondVal->isDecimal)
+		if (cActive != ACTIVE_INTEGER && cActive != ACTIVE_DECIMAL)
 			throw std::runtime_error("Runtime Error: Must be a Number to multiply to String.");
 
 		secondVal->castToInteger();
@@ -60,7 +65,7 @@ void Compiler::handleNewOperatedString(
 	}
 	else
 	{
-		if (!secondVal->isString)
+		if (cActive != ACTIVE_STRING)
 			throw std::runtime_error("Runtime Error: Cannot do operation on String and not String.");
 
 		bool result = Comparator::DoOperationString(
@@ -90,7 +95,7 @@ void Compiler::handleNewOperatedList(
 	}
 	else
 	{
-		if (!secondVal->isList)
+		if (secondVal->getCurrActive() != ACTIVE_LIST)
 			throw std::runtime_error("Runtime Error: Cannot do operation on List and not List.");
 
 		bool result = Comparator::DoOperationList(
@@ -109,7 +114,7 @@ void Compiler::handleNewOperatedMap(
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
 {
-	if (!secondVal->isMap)
+	if (secondVal->getCurrActive() != ACTIVE_MAP)
 		throw std::runtime_error("Runtime Error: Cannot do operation on 'jmap' and not 'jmap'.");
 
 	if (operation == "+")
@@ -141,7 +146,7 @@ void Compiler::handleNewOperatedFunc(
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
 {
-	if (!secondVal->isFunc)
+	if (secondVal->getCurrActive() != ACTIVE_FUNCTION)
 		throw std::runtime_error("Runtime Error: Cannot do operation on 'jfunc' and not 'jfunc'.");
 
 	bool result = Comparator::DoOperationFunc(
@@ -160,16 +165,16 @@ void Compiler::handleNewOperatedNumber(
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
 {
-	if (secondVal->isString) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jstring'.");
-	if (secondVal->isObject) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jobject'.");
-	if (secondVal->isFunc  ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'func'.");
-	if (secondVal->isList  ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jlist.");
-	if (secondVal->isMap   ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jmap'.");
+	auto cActive = secondVal->getCurrActive();
+	if (cActive == ACTIVE_STRING  ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jstring'.");
+	if (cActive == ACTIVE_OBJECT  ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jobject'.");
+	if (cActive == ACTIVE_FUNCTION) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'func'.");
+	if (cActive == ACTIVE_LIST    ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jlist.");
+	if (cActive == ACTIVE_MAP     ) throw std::runtime_error("Runtime Error: Cannot do operation on Number and 'jmap'.");
 
 	DataTypeEnum varType = firstVal->getDatatypeEnum();
 	firstVal ->castToDecimal();
 	secondVal->castToDecimal();
-
 
 	if      (operation == "+" ) firstVal->doubleValue += secondVal->doubleValue;
 	else if (operation == "-" ) firstVal->doubleValue -= secondVal->doubleValue;
@@ -205,7 +210,7 @@ void Compiler::handleNewOperatedObject(
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
 {
-	if (!secondVal->isObject)
+	if (secondVal->getCurrActive() != ACTIVE_OBJECT)
 		throw std::runtime_error("Runtime Error: Cannot do operation on 'jobject' and not 'jobject'.");
 
 	bool result = Comparator::DoOperationObject(

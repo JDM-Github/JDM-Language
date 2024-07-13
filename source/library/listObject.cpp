@@ -1,5 +1,5 @@
-#include "higherObject.hpp"
-#include "library/listObject.hpp"
+#include "utils/HigherObject.hpp"
+#include "library/ListObject.hpp"
 
 JDM_DLL
 std::unordered_map<std::string, ListHigherFunctions::ListFunction> ListHigherFunctions::listFunctions = {

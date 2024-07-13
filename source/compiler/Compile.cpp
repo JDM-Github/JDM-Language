@@ -1,11 +1,11 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 const std::shared_ptr<HigherObject> Compiler::compile(
 	const std::shared_ptr<Block> &block,
 	const std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_variables,
 	const std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_AdditionalVariables,
-	const std::unordered_map<std::string, std::shared_ptr<HigherObject::FunctionCall>> &_functionsAvail)
+	const std::unordered_map<std::string, std::shared_ptr<FunctionCall>> &_functionsAvail)
 {
 	// Use for scoping
 	if (this->variable == nullptr)
@@ -29,7 +29,8 @@ const std::shared_ptr<HigherObject> Compiler::compile(
 	for (const auto &instruction : block->instruction)
 	{
 		// Reset the break and continue
-		this->breakLoop = false;
+		this->breakLoop   = false;
+		this->isAssigning = false;
 		if      (instruction->getType() == DeclarationInstruction   ) this->doDeclarationInstruction(instruction);
 		else if (instruction->getType() == AssignmentInstruction    ) this->doAssignmentInstruction(instruction);
 		else if (instruction->getType() == LoggerInstruction        ) this->doLoggerInstruction(instruction);

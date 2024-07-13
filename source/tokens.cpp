@@ -1,4 +1,4 @@
-#include "lexer.hpp"
+#include "Lexer.hpp"
 
 JDM_DLL Tokens::Tokens()
 	: __ignored_keywords   ({ ' ', '\t', '\n' }),

@@ -1,6 +1,4 @@
-#include "lexer.hpp"
-#include <fstream>
-#include <filesystem>
+#include "Lexer.hpp"
 
 JDM_DLL
 Tokenizer::Tokenizer(

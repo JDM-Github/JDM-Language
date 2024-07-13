@@ -3,6 +3,7 @@ tokens/
 object/
 Assembly/
 logs/
-jdm-setup.exe
 test.cpp
+test.exe
 Build/test.exe
+message.txt

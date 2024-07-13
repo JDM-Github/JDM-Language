@@ -100,17 +100,11 @@ public:
 		std::shared_ptr<HigherObject> &obj1,
 		const std::vector<std::shared_ptr<HigherObject>> &objects);
 
-	JDM_DLL static const void to_lower(
-		std::shared_ptr<HigherObject> &obj1);
-	JDM_DLL static const std::string rto_lower(
-		std::shared_ptr<HigherObject> &obj1);
-	JDM_DLL static const void to_upper(
-		std::shared_ptr<HigherObject> &obj1);
-	JDM_DLL static const std::string rto_upper(
-		std::shared_ptr<HigherObject> &obj1);
-	JDM_DLL static const bool compare(
-		std::shared_ptr<HigherObject> &obj1,
-		const std::vector<std::shared_ptr<HigherObject>> &objects);
+	JDM_DLL static const void        to_lower(std::shared_ptr<HigherObject> &obj1);
+	JDM_DLL static const std::string rto_lower(std::shared_ptr<HigherObject> &obj1);
+	JDM_DLL static const void        to_upper(std::shared_ptr<HigherObject> &obj1);
+	JDM_DLL static const std::string rto_upper(std::shared_ptr<HigherObject> &obj1);
+	JDM_DLL static const bool        compare(std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 
 	JDM_DLL static const void reverse(
 		std::shared_ptr<HigherObject> &obj1);

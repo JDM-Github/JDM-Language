@@ -26,8 +26,8 @@ THE SOFTWARE.
 */
 
 #pragma once
-#include "defines.hpp"
-#include "error_handler.hpp"
+#include "utils/Setup.hpp"
+#include "utils/ErrorHandler.hpp"
 
 /**
  * Creator: JDM
@@ -37,7 +37,8 @@ THE SOFTWARE.
  * - It provides access to various token-related data, including ignored keywords,
  *   escape combinations, operator symbols, and token mappings.
  */
-class JDM_DLL Tokens {
+class JDM_DLL Tokens
+{
 protected:
 	CVecChar    __ignored_keywords  ;
 	CVecChar    __escape_combination;
@@ -58,7 +59,8 @@ protected:
  *   in tokenization tasks. It uses the token mappings and properties defined in Tokens
  *   to identify and categorize tokens in the input text.
  */
-class JDM_DLL Tokenizer : public Tokens {
+class JDM_DLL Tokenizer : public Tokens
+{
 public:
 	/**
      * @brief Constructor for the Tokenizer class.

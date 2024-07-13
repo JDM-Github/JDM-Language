@@ -1,4 +1,4 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 std::shared_ptr<HigherObject> Compiler::getHigherObject(
@@ -29,7 +29,7 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 		auto nativeFunc = NativeFunction::allNativeFunction.find(varName);
 		if (nativeFunc != NativeFunction::allNativeFunction.end())
 		{
-			auto newFunction = std::make_shared<HigherObject::FunctionCall>();
+			auto newFunction = std::make_shared<FunctionCall>();
 			// If it is a native function rename it to add native, this is useful
 			// For me check what is native and what is not.
 			newFunction->funcName = "$native-" + varName;
@@ -74,6 +74,15 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 					break;
 				}
 			}
+			if (value->getCurrActive() != ACTIVE_STRING
+			 && value->getCurrActive() != ACTIVE_INTEGER
+			 && value->getCurrActive() != ACTIVE_DECIMAL
+			 && value->getCurrActive() != ACTIVE_BOOLEAN)
+				std::runtime_error("Runtime Error: Only 'jstring', 'jint', 'jdouble' and 'jboolean' is allowed to be a key.");
+
+			if (value->getIsReferenced())
+				throw std::runtime_error("Runtime Error: Referenced cannot be a key.");
+
 			// Used to create key and value using evaluateExpression
 			mapList[value] = this->evaluateExpression(expr->value);
 		}
@@ -84,11 +93,13 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 	{
 		// Get the root of CallObjects and get the result using recursivelyCall
 		auto callObjRoot = std::dynamic_pointer_cast<CallObjects>(Value);
+		int index = 0;
 		while (callObjRoot->prevObject != nullptr)
 			callObjRoot = callObjRoot->prevObject;
+
 		auto result = this->recursivelyCall(callObjRoot);
-		if (result == nullptr)
-			return std::make_shared<HigherObject>(static_cast<int64_t>(0));
+		// if (result == nullptr)
+		// 	return std::make_shared<HigherObject>(static_cast<int64_t>(0));
 		return result;
 	}
 	// If the expression is a Lambda Expression
@@ -96,7 +107,7 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 	if (type == JDM::TokenType::LAMBDA)
 	{
 		auto lambdaObj   = std::dynamic_pointer_cast<LambdaObjects>(Value);
-		auto newFunction = std::make_shared<HigherObject::FunctionCall>();
+		auto newFunction = std::make_shared<FunctionCall>();
 		for (const auto &var : lambdaObj->parameters)
 		{
 			if (var->dataType != nullptr)
@@ -130,14 +141,15 @@ std::shared_ptr<HigherObject> &Compiler::getVariableObject(
 	const std::shared_ptr<Expression> &expr)
 {
 	if (!expr || expr->firstValue == nullptr)
-		throw std::runtime_error("Runtime Error: Expecting a Variable.");
+		throw std::runtime_error("Runtime Error: Expecting a Variable to reference.");
+
 	if (expr->opWillUse)
 		throw std::runtime_error("Runtime Error: Expecting L Value not R Value.");
 
 	auto Value = expr->firstValue;
 	JDM::TokenType type = Value->getToken();
 	if (type != JDM::TokenType::VARIABLE)
-		throw std::runtime_error("Runtime Error: Expecting a Variable.");
+		throw std::runtime_error("Runtime Error: Expecting a Variable to reference.");
 
 	auto varName = std::dynamic_pointer_cast<VariableObjects>(Value)->returnStringValue();
 	auto var = this->variable->variables.find(varName);
@@ -160,10 +172,16 @@ std::shared_ptr<HigherObject> Compiler::evaluateExpression(
 
 	if (expr->opWillUse)
 	{
+		if (firstVal->getIsReferenced())
+			throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
+
 		if (expr->secondValue || expr->secondExpression)
 		{
 			auto second = this->getHigherObject  (expr->secondValue, expr->secondExpression);
-			firstVal    = this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), second);
+			if (second->getIsReferenced())
+				throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
+
+			firstVal = this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), second);
 		}
 		else
 			firstVal = this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), nullptr);

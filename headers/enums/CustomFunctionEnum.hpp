@@ -1,0 +1,10 @@
+#pragma once
+
+enum CustomFunctionEnum
+{
+	CUSFUNC_LOG,
+	CUSFUNC_LOGN,
+	CUSFUNC_CLEAR,
+	CUSFUNC_SLEEP,
+	CUSFUNC_INCLUDE
+};

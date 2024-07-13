@@ -1,8 +1,8 @@
- #include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 const std::shared_ptr<HigherObject> Compiler::runFunction(
-	const std::shared_ptr<HigherObject::FunctionCall> &newFunc,
+	const std::shared_ptr<FunctionCall> &newFunc,
 	const std::vector<std::shared_ptr<HigherObject>> &arguments)
 {
 	std::vector<std::shared_ptr<HigherObject>> newArgVec = { arguments.begin(), arguments.end() };

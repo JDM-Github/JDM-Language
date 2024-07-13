@@ -1,5 +1,5 @@
-#include "higherObject.hpp"
-#include "library/stringObject.hpp"
+#include "utils/HigherObject.hpp"
+#include "library/StringObject.hpp"
 
 JDM_DLL
 std::unordered_map<std::string, StringHigherFunctions::StringFunction> StringHigherFunctions::stringFunctions = {
@@ -141,7 +141,7 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 
 		if (objects.size() == 1)
 		{
-			if (objects[0]->isInteger || objects[0]->isDecimal)
+			if (objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
 			{
 				objects[0]->castToInteger();
 				StringHigherFunctions::substr(obj1, 0, objects[0]->integerValue);
@@ -151,8 +151,8 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 		}
 		else
 		{
-			if ((objects[0]->isInteger || objects[0]->isDecimal)
-			 && (objects[1]->isInteger || objects[1]->isDecimal))
+			if ((objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
+			 && (objects[1]->getCurrActive() == ACTIVE_INTEGER || objects[1]->getCurrActive() == ACTIVE_DECIMAL))
 			{
 				objects[0]->castToInteger();
 				objects[1]->castToInteger();
@@ -171,7 +171,7 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 
 		if (objects.size() == 1)
 		{
-			if (objects[0]->isInteger || objects[0]->isDecimal)
+			if (objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
 			{
 				objects[0]->castToInteger();
 				newReturn = std::make_shared<HigherObject>(StringHigherFunctions::rsubstr(obj1, 0, objects[0]->integerValue));
@@ -181,8 +181,8 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 		}
 		else
 		{
-			if ((objects[0]->isInteger || objects[0]->isDecimal)
-			 && (objects[1]->isInteger || objects[1]->isDecimal))
+			if ((objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
+			 && (objects[1]->getCurrActive() == ACTIVE_INTEGER || objects[1]->getCurrActive() == ACTIVE_DECIMAL))
 			{
 				objects[0]->castToInteger();
 				objects[1]->castToInteger();
@@ -214,7 +214,7 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
-		if (!(objects[0]->isInteger || objects[0]->isDecimal))
+		if (!(objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL))
 			throw std::runtime_error("Runtime Error: Expecting first argument to be a NUMBER.");
 
 		objects[0]->castToInteger();
@@ -224,7 +224,7 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
-		if (!(objects[0]->isInteger || objects[0]->isDecimal))
+		if (!(objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL))
 			throw std::runtime_error("Runtime Error: Expecting first argument to be a NUMBER.");
 
 		objects[0]->castToInteger();
@@ -234,7 +234,8 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
-		if (!(objects[0]->isInteger || objects[0]->isDecimal) || !(objects[1]->isInteger || objects[1]->isDecimal))
+		if (!(objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
+		 || !(objects[1]->getCurrActive() == ACTIVE_INTEGER || objects[1]->getCurrActive() == ACTIVE_DECIMAL))
 			throw std::runtime_error("Runtime Error: Expecting arguments to be a NUMBER.");
 
 		objects[0]->castToInteger();
@@ -245,7 +246,8 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
-		if (!(objects[0]->isInteger || objects[0]->isDecimal) || !(objects[1]->isInteger || objects[1]->isDecimal))
+		if (!(objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
+		 || !(objects[1]->getCurrActive() == ACTIVE_INTEGER || objects[1]->getCurrActive() == ACTIVE_DECIMAL))
 			throw std::runtime_error("Runtime Error: Expecting arguments to be a NUMBER.");
 
 		objects[0]->castToInteger();
@@ -256,7 +258,8 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
-		if (!(objects[0]->isInteger || objects[0]->isDecimal) || !(objects[1]->isInteger || objects[1]->isDecimal))
+		if (!(objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
+		 || !(objects[1]->getCurrActive() == ACTIVE_INTEGER || objects[1]->getCurrActive() == ACTIVE_DECIMAL))
 			throw std::runtime_error("Runtime Error: Expecting arguments to be a NUMBER.");
 
 		objects[0]->castToInteger();
@@ -267,7 +270,8 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments.");
-		if (!(objects[0]->isInteger || objects[0]->isDecimal) || !(objects[1]->isInteger || objects[1]->isDecimal))
+		if (!(objects[0]->getCurrActive() == ACTIVE_INTEGER || objects[0]->getCurrActive() == ACTIVE_DECIMAL)
+		 || !(objects[1]->getCurrActive() == ACTIVE_INTEGER || objects[1]->getCurrActive() == ACTIVE_DECIMAL))
 			throw std::runtime_error("Runtime Error: Expecting arguments to be a NUMBER.");
 
 		objects[0]->castToInteger();
@@ -283,7 +287,7 @@ const std::shared_ptr<HigherObject> StringHigherFunctions::manageFunction(
 			newReturn = std::make_shared<HigherObject>(StringHigherFunctions::tokenize(obj1));
 		else
 		{
-			if (!objects[0]->isString)
+			if (objects[0]->getCurrActive() != ACTIVE_STRING)
 				throw std::runtime_error("Runtime Error: Expecting a 'jstring' argument.");
 			newReturn = std::make_shared<HigherObject>(StringHigherFunctions::tokenize(obj1, objects[0]->stringValue));
 		}

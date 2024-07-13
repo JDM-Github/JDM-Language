@@ -1,4 +1,4 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 // This is the return value on what you call. Example the return value of function is list.
 // Then you can still do operation because. you know, you can?.
@@ -24,7 +24,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 	// Get the next object
 	auto newCurrObj = newCallObj->currObject;
 	auto tok        = newCurrObj->getToken();
-	if (returnVal->isFunc)
+	if (returnVal->getCurrActive() == ACTIVE_FUNCTION)
 	{
 		if (tok != JDM::TokenType::FUNCTIONS)
 			// This will happen because, example a function has been return
@@ -41,12 +41,13 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 		if (functionObj->returnStringValue() != "(")
 			throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
 
+		this->isAssigning = true;
 		return this->runFunction(returnVal->funcValue, this->getVectorHigherObject(functionObj->arguments));
 	}
 	// This thing is still not properly coded or implemented.
 	// I will do this bit later or next time
 	// TO DO
-	else if (returnVal->isObject)
+	else if (returnVal->getCurrActive() == ACTIVE_OBJECT)
 	{
 		if (tok == JDM::TokenType::FUNCTIONS)
 		{
@@ -63,6 +64,8 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 					auto func = classFunc->second->mapFunctions.find(functionObj->returnStringValue());
 					if (func == classFunc->second->mapFunctions.end())
 						throw std::runtime_error("Runtime Error: This method is not a member of class '" + returnVal->objectValue->className + "'.");
+
+					this->isAssigning = true;
 					newReturn = classFunc->second->manageFunction(func->second, returnVal, this->getVectorHigherObject(functionObj->arguments));
 				}
 			}
@@ -76,7 +79,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 		}
 	}
 	// If the return value is string, do something, make it act like a string
-	else if (returnVal->isString)
+	else if (returnVal->getCurrActive() == ACTIVE_STRING)
 	{
 		if (tok == JDM::TokenType::EXPRESSION)
 			// If the next token is like this
@@ -87,6 +90,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 			$log => test()[0];
 			*/
 			newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+
 		else if (tok == JDM::TokenType::FUNCTIONS)
 		{
 			// If the next token is something like this
@@ -106,6 +110,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 				$logn => test()();
 				*/
 				throw std::runtime_error("Runtime Error: A String cannot be called.");
+
 			auto func = StringHigherFunctions::stringFunctions.find(functionObj->returnStringValue());
 			if (func == StringHigherFunctions::stringFunctions.end())
 				// If the return value is string then you call it and the function is not member or valid func.
@@ -116,24 +121,30 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 				$logn => test().test();
 				*/
 				throw std::runtime_error("Runtime Error: This function is not a member of class 'jstring'.");
+
+			this->isAssigning = true;
 			newReturn = StringHigherFunctions::manageFunction(
 				func->second, returnVal,
 				this->getVectorHigherObject(functionObj->arguments)
 			);
 		}
 	}
-	else if (returnVal->isList || returnVal->isMap)
+	else if (returnVal->getCurrActive() == ACTIVE_LIST || returnVal->getCurrActive() == ACTIVE_MAP)
 	{
 		if (tok == JDM::TokenType::EXPRESSION)
+		{
 			// This will manage when you want to know the index of something
 			newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+		}
+
 		else if (tok == JDM::TokenType::FUNCTIONS)
 		{
 			auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCurrObj);
-			if (returnVal->isList)
+			if (returnVal->getCurrActive() == ACTIVE_LIST)
 			{
 				if (functionObj->returnStringValue() == "(")
 					throw std::runtime_error("Runtime Error: A 'jlist' cannot be called.");
+
 				// jlist native function. Acts like a class.
 				auto func = ListHigherFunctions::listFunctions.find(functionObj->name);						
 				if (func == ListHigherFunctions::listFunctions.end())
@@ -145,6 +156,8 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 					$log => test().test();
 					*/
 					throw std::runtime_error("Runtime Error: This function is not a member of class 'jlist'.");
+
+				this->isAssigning = true;
 				newReturn = ListHigherFunctions::manageFunction(
 					func->second, returnVal,
 					this->getVectorHigherObject(functionObj->arguments)
@@ -154,6 +167,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 			{
 				if (functionObj->returnStringValue() == "(")
 					throw std::runtime_error("Runtime Error: A 'jmap' cannot be called.");
+
 				// jmap native function. Acts like a class.
 				auto func = MapHigherFunctions::mapFunctions.find(functionObj->name);						
 				if (func == MapHigherFunctions::mapFunctions.end())
@@ -165,6 +179,8 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 					$log => test().test();
 					*/
 					throw std::runtime_error("Runtime Error: This function is not a member of class 'jmap'.");
+
+				this->isAssigning = true;
 				newReturn = MapHigherFunctions::manageFunction(
 					func->second, returnVal,
 					this->getVectorHigherObject(functionObj->arguments)
@@ -177,6 +193,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 		// This soon will be remove, because after I add native for other data type
 		// Example I add on integer, float or boolean
 		throw std::runtime_error("Runtime Error: Return Value cannot be called or act like class.");
+
 	// Return the new Value calculated above
 	return this->manageEndCall(newCallObj, newReturn);
 }

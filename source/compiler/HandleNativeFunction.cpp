@@ -1,4 +1,4 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
@@ -7,9 +7,14 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 {
 	if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_FILTER)
 	{
-		if (objects.size() != 2) throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
-		if (!objects[1]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'filter'.");
-		if (!objects[0]->isList && !objects[0]->isMap)
+		if (objects.size() != 2)
+			throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
+
+		if (objects[1]->getCurrActive() != ACTIVE_FUNCTION)
+			throw std::runtime_error("Runtime Error: Invalid Function arguments on 'filter'.");
+
+		if (objects[0]->getCurrActive() != ACTIVE_LIST
+		 && objects[0]->getCurrActive() != ACTIVE_MAP)
 			return objects[0];
 		else
 		{
@@ -28,7 +33,8 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 	{
 		if (objects.size() != 1)
 			throw std::runtime_error("Runtime Error: Expecting 1 argument. Target ITERABLE");
-		if (!objects[0]->isList && !objects[0]->isMap)
+
+		if (objects[0]->getCurrActive() != ACTIVE_LIST && objects[0]->getCurrActive() != ACTIVE_MAP)
 			return objects[0];
 		else
 		{
@@ -47,15 +53,18 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 	{
 		if (objects.size() != 2)
 			throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
-		if (!objects[1]->isFunc)
+
+		if (objects[1]->getCurrActive() != ACTIVE_FUNCTION)
 			throw std::runtime_error("Runtime Error: Invalid Function arguments on 'reduce'.");
-		if (!objects[0]->isList && !objects[0]->isMap)
+
+		if (objects[0]->getCurrActive() != ACTIVE_LIST && objects[0]->getCurrActive() != ACTIVE_MAP)
 			return objects[0];
 		else
 		{
 			auto newList = std::make_shared<HigherObject>(objects[0]); newList->castToList();
 			if (newList->listValue.empty())
 				throw std::runtime_error("Runtime Error: Using 'reduce' on empty ITERABLE.");
+
 			auto result = newList->listValue[0];
 			for (int i = 1; i < newList->listValue.size(); i++)
 				result = this->runFunction(objects[1]->funcValue, { result, newList->listValue[i] });
@@ -64,9 +73,14 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 	}
 	else if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_MAP)
 	{
-		if (objects.size() != 2) throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
-		if (!objects[1]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'reduce'.");
-		if (!objects[0]->isList && !objects[0]->isMap)
+		if (objects.size() != 2)
+			throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
+
+		if (objects[1]->getCurrActive() != ACTIVE_FUNCTION)
+			throw std::runtime_error("Runtime Error: Invalid Function arguments on 'reduce'.");
+
+		if (objects[0]->getCurrActive() != ACTIVE_LIST
+		 && objects[0]->getCurrActive() != ACTIVE_MAP)
 			return objects[0];
 		else
 		{
@@ -78,9 +92,14 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 	}
 	else if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_SORT_IF)
 	{
-		if (objects.size() != 2) throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
-		if (!objects[1]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'reduce'.");
-		if (!objects[0]->isList && !objects[0]->isMap)
+		if (objects.size() != 2)
+			throw std::runtime_error("Runtime Error: Expecting 2 arguments. Target ITERABLE and Function.");
+
+		if (objects[1]->getCurrActive() != ACTIVE_FUNCTION)
+			throw std::runtime_error("Runtime Error: Invalid Function arguments on 'reduce'.");
+
+		if (objects[0]->getCurrActive() != ACTIVE_LIST
+		 && objects[0]->getCurrActive() != ACTIVE_MAP)
 			return objects[0];
 		else
 		{
@@ -96,9 +115,13 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 	}
 	else if (nativeType == NativeFunction::NativeFunctionEnum::NATIVE_PARTIAL)
 	{
-		if (objects.size() < 1 ) throw std::runtime_error("Runtime Error: Expecting atleast 1 argument. Target Function.");
-		if (!objects[0]->isFunc) throw std::runtime_error("Runtime Error: Invalid Function arguments on 'partial'.");
-		auto newFunction              = std::make_shared<HigherObject::FunctionCall>();
+		if (objects.size() < 1)
+			throw std::runtime_error("Runtime Error: Expecting atleast 1 argument. Target Function.");
+
+		if (objects[0]->getCurrActive() != ACTIVE_FUNCTION)
+			throw std::runtime_error("Runtime Error: Invalid Function arguments on 'partial'.");
+
+		auto newFunction              = std::make_shared<FunctionCall>();
 		newFunction->funcName         = objects[0]->funcValue->funcName;
 		newFunction->varNameAccesible = objects[0]->funcValue->varNameAccesible;
 		newFunction->blockWillRun     = objects[0]->funcValue->blockWillRun;
@@ -108,5 +131,6 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 	}
 	else
 		return NativeFunction::manageFunction( nativeType, objects );
+
 	return nullptr;
 }

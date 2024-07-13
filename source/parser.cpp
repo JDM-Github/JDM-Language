@@ -1,5 +1,4 @@
-#include "parser.hpp"
-
+#include "Parser.hpp"
 
 JDM_DLL
 Parser::Parser(
@@ -22,16 +21,15 @@ const void Parser::analyzeAST(
 		{
 			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
 			auto ifState = std::dynamic_pointer_cast<IfStatement>(instruction);
-			this->analyzeAST(std::dynamic_pointer_cast<Block>(ifState->blockWillRun), space+"    ");
+			this->analyzeAST(std::dynamic_pointer_cast<Block>(ifState->blockWillRun), space+"  ");
 			this->_analyzeAllIfElse(ifState->elseIf, space);
 		}
 		else if (instruction->getType() == DeclarationInstruction)
 		{
 			auto declare = std::dynamic_pointer_cast<Declaration>(instruction);
 			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": {\n";
-			this->_printExpression(declare->expression, space+"    ");
+			this->_printExpression(declare->expression, space+"  ");
 			this->__stringStream << space << "}\n";
-
 		}
 		else if (instruction->getType() == ForLoopStatementInstruction)
 		{
@@ -40,22 +38,22 @@ const void Parser::analyzeAST(
 			if (forLoop->start)
 			{
 				this->__stringStream << space << "  START: { ... }\n";
-				// this->_printExpression(forLoop->start, space+"      ");
+				this->_printExpression(forLoop->start, space+"    ");
 			}
 			if (forLoop->stop)
 			{
 				this->__stringStream << space << "  STOP { ... }: \n";
-				// this->_printExpression(forLoop->stop,  space+"      ");
+				this->_printExpression(forLoop->stop,  space+"    ");
 			}
 			if (forLoop->step)
 			{
 				this->__stringStream << space << "  STEP { ... }: \n";
-				// this->_printExpression(forLoop->step,  space+"      ");
+				this->_printExpression(forLoop->step,  space+"    ");
 			}
-			this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"    ");
+			this->analyzeAST(std::dynamic_pointer_cast<Block>(forLoop->blockWillRun), space+"  ");
+		}
 
 		// CREATE FUNCTION
-		}
 		else if (instruction->getType() == CreateFunctionInstruction)
 		{
 			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": (\n";
@@ -63,24 +61,16 @@ const void Parser::analyzeAST(
 			for (int i = 0; i < newFunc->parameters.size(); i++)
 				this->__stringStream << space << "  " << newFunc->parameters[i]->varName->returnStringValue() << '\n';
 			this->__stringStream << space << ")\n";
-			this->analyzeAST(std::dynamic_pointer_cast<Block>(newFunc->blockWillRun), space+"    ");
-
-		// FOREACH LIST
+			this->analyzeAST(std::dynamic_pointer_cast<Block>(newFunc->blockWillRun), space+"  ");
 		}
-		// else if (instruction->getType() == ForEachListStatementInstruction)
-		// {
-		// 	this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
-		// 	auto forEach = std::dynamic_pointer_cast<ForEachListStatement>(instruction);
-		// 	this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
 
-		// // FOREACH MAP
-		// }
-		// else if (instruction->getType() == ForEachMapStatementInstruction)
-		// {
-		// 	this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
-		// 	auto forEach = std::dynamic_pointer_cast<ForEachMapStatement>(instruction);
-		// 	this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"    ");
-		// }
+		// FOREACH
+		else if (instruction->getType() == ForEachStatementInstruction)
+		{
+			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": \n";
+			auto forEach = std::dynamic_pointer_cast<ForEachStatement>(instruction);
+			this->analyzeAST(std::dynamic_pointer_cast<Block>(forEach->blockWillRun), space+"  ");
+		}
 		else
 			this->__stringStream << space << this->_instructionToString(instruction->getType()) << ": { ... }\n";
 	}
@@ -127,8 +117,7 @@ const char *Parser::_instructionToString(InstructionType instruction)
 		case IfStatementInstruction          : return "IF";
 		case ForLoopStatementInstruction     : return "FOR";
 		case WhileStatementInstruction       : return "WHILE";
-		// case ForEachListStatementInstruction : return "FOREACH-LIST";
-		// case ForEachMapStatementInstruction  : return "FOREACH-MAP";
+		case ForEachStatementInstruction     : return "FOREACH";
 		case CreateFunctionInstruction       : return "CREATE FUNCTION";
 	}
 	return "Invalid Instruction";
@@ -195,6 +184,30 @@ const std::shared_ptr<Block> Parser::_getBlock(
 }
 
 JDM_DLL
+const void Parser::_checkAndManageDataType(
+	const std::shared_ptr<Block> &block,
+	const std::vector<std::shared_ptr<TokenStruct>>& tokens,
+	const std::string &keyword,
+	size_t dataIndex,
+	size_t varIndex,
+	bool isConst,
+	bool isForce)
+{
+    if (tokens.size() <= dataIndex || std::get<1>(tokens[dataIndex]->token) != JDM::TokenType::DATA_TYPE)
+        throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after " + keyword);
+
+    if (tokens.size() <= varIndex || std::get<1>(tokens[varIndex]->token) != JDM::TokenType::VARIABLE)
+        throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE after " + keyword);
+
+    DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[dataIndex]->token));
+    if (isInVec(nextDataType, { DataTypeEnum::DATA_CONST, DataTypeEnum::DATA_FORCE, DataTypeEnum::DATA_CFORCE }))
+        throw std::runtime_error("SYNTAX ERROR: Invalid Data Type after " + keyword);
+
+    this->_manageDataType(block, tokens[dataIndex], tokens[varIndex],
+    	{tokens.begin() + varIndex + 1, tokens.end()}, isConst, isForce);
+}
+
+JDM_DLL
 const void Parser::_predictInstruction(
 	const std::shared_ptr<Block> &block,
 	const std::vector<std::shared_ptr<TokenStruct>>& tokens)
@@ -203,78 +216,49 @@ const void Parser::_predictInstruction(
 	if (tkType == JDM::TokenType::DATA_TYPE)
 	{
 		DataTypeEnum dataType = JDM::dataTypeMap.at(std::get<0>(tokens[0]->token));
-
 		if (dataType == DataTypeEnum::DATA_CONST)
 		{
 			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jconst'.");
-			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
-				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
-			if (isInVec(nextDataType,
-			{
-				DataTypeEnum::DATA_CONST,
-				DataTypeEnum::DATA_FORCE,
-				DataTypeEnum::DATA_CFORCE,
-			})) throw std::runtime_error("SYNTAX ERROR: Invalid Data Type after 'jconst'.");
-
-			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, true);
-
+			if (nextDataType == DataTypeEnum::DATA_FORCE)
+				return this->_checkAndManageDataType(block, tokens, "jconst jforce", 2, 3, true, true);
+	
+			return this->_checkAndManageDataType(block, tokens, "jconst", 1, 2, true, false);
 		}
 		else if (dataType == DataTypeEnum::DATA_FORCE)
 		{
 			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jforce'.");
-			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
-				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
 
 			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
-			if (isInVec(nextDataType, {
-				DataTypeEnum::DATA_CONST,
-				DataTypeEnum::DATA_FORCE,
-				DataTypeEnum::DATA_CFORCE,
-			})) throw std::runtime_error("SYNTAX ERROR: Invalid Data Type after 'jforce'.");
-
-			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, false, true);
-
+			if (nextDataType == DataTypeEnum::DATA_CONST)
+				return this->_checkAndManageDataType(block, tokens, "jforce jconst", 2, 3, true, true);
+	
+			return this->_checkAndManageDataType(block, tokens, "jforce", 1, 2, false, true);
 		}
+
 		else if (dataType == DataTypeEnum::DATA_CFORCE)
-		{
-			if (tokens.size() < 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::DATA_TYPE)
-				throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after 'jcforce'.");
-			if (tokens.size() < 2 || std::get<1>(tokens[2]->token) != JDM::TokenType::VARIABLE)
-				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
+			return this->_checkAndManageDataType(block, tokens, "jcforce", 1, 2, true, true);
 
-			DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[1]->token));
-			if (isInVec(nextDataType, {
-				DataTypeEnum::DATA_CONST,
-				DataTypeEnum::DATA_FORCE,
-				DataTypeEnum::DATA_CFORCE,
-			})) throw std::runtime_error("SYNTAX ERROR: Invalid Data Type after 'jcforce'.");
-
-			this->_manageDataType(block, tokens[1], tokens[2], {tokens.begin()+3, tokens.end()}, true, true);
-
-		}
 		else
 		{
 			if (tokens.size() == 1 || std::get<1>(tokens[1]->token) != JDM::TokenType::VARIABLE)
 				throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE");
+
 			this->_manageDataType(block, tokens[0], tokens[1], {tokens.begin()+2, tokens.end()});
 		}
 	}
 	else if (tkType == JDM::TokenType::VARIABLE)
-	{
 		this->_manageVariable(block, tokens);
-	}
+
 	else if (tkType == JDM::TokenType::CONTROL_FLOW)
-	{
 		this->_manageControlFlow(block, tokens[0], {tokens.begin()+1, tokens.end()});
-	}
+
 	else if (tkType == JDM::TokenType::CUSTOM_KEYWORD)
-	{
 		this->_manageCustomKeyword(block, tokens[0], {tokens.begin()+1, tokens.end()});
-	}
+
 	else if (tkType == JDM::TokenType::CUSTOM_FUNCTIONS)
 	{
 		auto customFunc = JDM::customFunctionMap.at( std::get<0>(tokens[0]->token) );

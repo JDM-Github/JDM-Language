@@ -26,13 +26,12 @@ THE SOFTWARE.
 */
 
 #pragma once
-#include "defines.hpp"
-#include "objects.hpp"
-#include "instruction.hpp"
-#include "error_handler.hpp"
-#include <fstream>
+#include "utils/Setup.hpp"
+#include "instruction/Instructions.hpp"
+#include "utils/ErrorHandler.hpp"
 
-class JDM_DLL Parser {
+class JDM_DLL Parser
+{
 private:
 	std::ostringstream        __stringStream;
 	SharedTokenStruct         __rootTokens;
@@ -56,8 +55,9 @@ public:
 	JDM_DLL SharedPtr<Block> getAST() { return this->__mainBlock; }
 
 private:
-	JDM_DLL CSharedPtr<Block> _getBlock           (CSharedTokenLinkRef tokenS);
-	JDM_DLL CVoid             _predictInstruction (CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens);
+	JDM_DLL CSharedPtr<Block> _getBlock(CSharedTokenLinkRef tokenS);
+	JDM_DLL CVoid _predictInstruction(CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens);
+	JDM_DLL CVoid _checkAndManageDataType(CSharedPtrRef<Block> block, CVectorRef<SharedTokenStruct> tokens, const std::string &keyword, size_t dataIndex, size_t varIndex, bool isConst, bool isForce = false);
 
 /**
  * 
@@ -83,11 +83,12 @@ private:
 private:
 	JDM_DLL CBool                          _isBlockCurly            (CSharedTokenStructRef token);
 	JDM_DLL CBool                          _findAndReplaceLambdaCall(CVecSharedPtrRef<ExpressionToken> vec, VecSharedPtrRef<ExpressionToken> newVec);
-	JDM_DLL CVecSharedPtr<ExpressionToken> _getAllTokenFromSide     (CVecSharedPtrRef<ExpressionToken> vec, int index, bool isLeft = false);
-	JDM_DLL CVecSharedPtr<ExpressionToken> _transformTokenStruct    (CVectorRef<SharedTokenStruct> tokenS);
 	JDM_DLL CBool                          _findAndReplaceExpression(CVecTokenStrRef targetString, CVecSharedPtrRef<ExpressionToken> vec, VecSharedPtrRef<ExpressionToken> newVec);
 	JDM_DLL CVoid                          _getExpressionFromTokens (CVecSharedPtrRef<ExpressionToken> exprToken, SharedPtrRef<Expression> expression, SharedPtrRef<VarObjects> value);
 	JDM_DLL CVoid                          _setValueObjects         (SharedPtrRef<VarObjects> value, CSharedTokenStructRef tok);
+
+	JDM_DLL CVecSharedPtr<ExpressionToken> _getAllTokenFromSide     (CVecSharedPtrRef<ExpressionToken> vec, int index, bool isLeft = false);
+	JDM_DLL CVecSharedPtr<ExpressionToken> _transformTokenStruct    (CVectorRef<SharedTokenStruct> tokenS);
 
 /*
  * 

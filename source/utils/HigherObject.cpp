@@ -1,46 +1,46 @@
-#include "higherObject.hpp"
+#include "utils/HigherObject.hpp"
 
 JDM_DLL
 HigherObject::HigherObject() {}
 
 JDM_DLL
 HigherObject::HigherObject(const std::string &value)
-	: stringValue (value), isString (true)
+	: stringValue (value)
 {
 	currActive = ACTIVE_STRING;
 }
 
 JDM_DLL
 HigherObject::HigherObject(const int64_t value)
-	: integerValue(value), isInteger(true)
+	: integerValue(value)
 {
 	currActive = ACTIVE_INTEGER;
 }
 
 JDM_DLL
 HigherObject::HigherObject(const long double value)
-	: doubleValue (value), isDecimal(true)
+	: doubleValue (value)
 {
 	currActive = ACTIVE_DECIMAL;
 }
 
 JDM_DLL
 HigherObject::HigherObject(const bool value)
-	: booleanValue(value), isBoolean(true)
+	: booleanValue(value)
 {
 	currActive = ACTIVE_BOOLEAN;
 }
 
 JDM_DLL
 HigherObject::HigherObject(const std::shared_ptr<FunctionCall> &value)
-	: funcValue(value), isFunc(true)
+	: funcValue(value)
 {
 	currActive = ACTIVE_FUNCTION;
 }
 
 JDM_DLL
 HigherObject::HigherObject(const std::shared_ptr<ClassObject> &value)
-	: objectValue(value), isObject(true)
+	: objectValue(value)
 {
 	currActive = ACTIVE_OBJECT;
 }
@@ -48,7 +48,7 @@ HigherObject::HigherObject(const std::shared_ptr<ClassObject> &value)
 JDM_DLL
 HigherObject::HigherObject(
 	const std::vector<std::shared_ptr<HigherObject>> &value)
-	: listValue(value), isList(true)
+	: listValue(value)
 {
 	currActive = ACTIVE_LIST;
 }
@@ -57,7 +57,7 @@ JDM_DLL
 HigherObject::HigherObject(
 	const std::unordered_map<std::shared_ptr<HigherObject>,
 	std::shared_ptr<HigherObject>> &value)
-	: mapValue(value), isMap(true)
+	: mapValue(value)
 {
 	currActive = ACTIVE_MAP;
 }
@@ -70,7 +70,6 @@ HigherObject::HigherObject(const std::shared_ptr<HigherObject> &obj)
 	else
 	{
 		this->integerValue = 0;
-		this->isInteger = true;
 		currActive = ACTIVE_INTEGER;
 	}
 }
@@ -81,22 +80,44 @@ const void HigherObject::setHigherObject(const std::shared_ptr<HigherObject> &ob
 	this->isForcedConstraint = obj->isForcedConstraint;
 	this->isConstant         = obj->isConstant;
 
-	this->refalseAll();
+	this->currActive = obj->getCurrActive();
+			int index = 0;
 
-	if      (obj->isString ) { this->stringValue  = obj->stringValue ; this->isString  = true; currActive = ACTIVE_STRING;   }
-	else if (obj->isInteger) { this->integerValue = obj->integerValue; this->isInteger = true; currActive = ACTIVE_INTEGER;  }
-	else if (obj->isDecimal) { this->doubleValue  = obj->doubleValue ; this->isDecimal = true; currActive = ACTIVE_DECIMAL;  }
-	else if (obj->isBoolean) { this->booleanValue = obj->booleanValue; this->isBoolean = true; currActive = ACTIVE_BOOLEAN;  }
-	else if (obj->isFunc   ) { this->funcValue    = obj->funcValue   ; this->isFunc    = true; currActive = ACTIVE_FUNCTION; }
-	else if (obj->isObject ) { this->objectValue  = obj->objectValue ; this->isObject  = true; currActive = ACTIVE_OBJECT;   }
-	else if (obj->isList   ) { this->listValue    = obj->listValue   ; this->isList    = true; currActive = ACTIVE_LIST;     }
-	else if (obj->isMap    ) { this->mapValue     = obj->mapValue    ; this->isMap     = true; currActive = ACTIVE_MAP;      }
+	switch (this->currActive)
+	{
+		case ACTIVE_STRING  : this->stringValue  = obj->stringValue ; return;
+		case ACTIVE_INTEGER : this->integerValue = obj->integerValue; return;
+		case ACTIVE_DECIMAL : this->doubleValue  = obj->doubleValue ; return;
+		case ACTIVE_BOOLEAN : this->booleanValue = obj->booleanValue; return;
+		case ACTIVE_FUNCTION: this->funcValue    = obj->funcValue   ; return;
+		case ACTIVE_OBJECT  : this->objectValue  = obj->objectValue ; return;
+		case ACTIVE_LIST    :
+			this->listValue.clear();
+			for (const auto &item : obj->listValue)
+			{
+				if (item->getIsReferenced())
+					this->listValue.push_back(item);
+				else
+					this->listValue.push_back(std::make_shared<HigherObject>(*item));
+			}
+			return;
+		case ACTIVE_MAP     :
+			this->mapValue.clear();
+			for (const auto &pair : obj->mapValue)
+			{
+				auto newKey = std::make_shared<HigherObject>(*pair.first);
+				auto newValue = std::make_shared<HigherObject>(*pair.second);
+				this->mapValue[newKey] = newValue;
+			}
+			return;
+	}
+	std::runtime_error("Runtime Error: Invalid HigherObject...");
 }
 
 JDM_DLL
 const DataTypeEnum HigherObject::getDatatypeEnum()
 {
-	switch (currActive)
+	switch (this->currActive)
 	{
 		case ACTIVE_STRING  : return DataTypeEnum::DATA_STRING;
 		case ACTIVE_INTEGER : return DataTypeEnum::DATA_INTEGER;
@@ -113,15 +134,18 @@ const DataTypeEnum HigherObject::getDatatypeEnum()
 JDM_DLL
 const std::string HigherObject::getType()
 {
-	if      (this->isString ) return "STRING";
-	else if (this->isInteger) return "INTEGER";
-	else if (this->isDecimal) return "DECIMAL";
-	else if (this->isBoolean) return "BOOLEAN";
-	else if (this->isFunc   ) return "FUNCTION";
-	else if (this->isObject ) return "OBJECT";
-	else if (this->isList   ) return "LIST";
-	else if (this->isMap    ) return "MAP";
-	else                      return "UNKNOWN";
+	switch (this->currActive)
+	{
+		case ACTIVE_STRING  : return "STRING";
+		case ACTIVE_INTEGER : return "INTEGER";
+		case ACTIVE_DECIMAL : return "DECIMAL";
+		case ACTIVE_BOOLEAN : return "BOOLEAN";
+		case ACTIVE_FUNCTION: return "FUNCTION";
+		case ACTIVE_OBJECT  : return "OBJECT";
+		case ACTIVE_LIST    : return "LIST";
+		case ACTIVE_MAP     : return "MAP";
+	}
+	return "UNKNOWN";
 }
 
 JDM_DLL
@@ -134,7 +158,7 @@ JDM_DLL
 const std::string HigherObject::_getStringValue()
 {
 	std::ostringstream oss;
-	if (isString)
+	if (this->currActive == ACTIVE_STRING)
 	{
 		size_t found  = this->stringValue.find("\\n");
 		while (found != std::string::npos)
@@ -144,27 +168,33 @@ const std::string HigherObject::_getStringValue()
 		}
 		oss << this->stringValue;
 	}
-	else if (isInteger)
+	else if (this->currActive == ACTIVE_INTEGER)
+	{
 		oss << this->integerValue;
-	else if (isDecimal)
+	}
+	else if (this->currActive == ACTIVE_DECIMAL)
+	{
 		oss << this->doubleValue;
-	else if (isBoolean)
+	}
+	else if (this->currActive == ACTIVE_BOOLEAN)
+	{
 		oss << ((booleanValue) ? "jtrue" : "jfalse");
-	else if (isFunc)
+	}
+	else if (this->currActive == ACTIVE_FUNCTION)
 	{
 		if (this->funcValue == nullptr)
 			oss << "Function: Invalid.";
 		else
 			oss << "Function: " << funcValue;
 	}
-	else if (isObject)
+	else if (this->currActive == ACTIVE_OBJECT)
 	{
 		if (this->objectValue == nullptr)
 			oss << "Class: Invalid.";
 		else
 			oss << "Class: " << objectValue;
 	}
-	else if (isList)
+	else if (this->currActive == ACTIVE_LIST)
 	{
 		oss << "[ ";
 		int index = 0;
@@ -176,7 +206,7 @@ const std::string HigherObject::_getStringValue()
 		}
 		oss << " ]";
 	}
-	else if (isMap)
+	else if (this->currActive == ACTIVE_MAP)
 	{
 		oss << "{ ";
 		int index = 0;
@@ -191,21 +221,10 @@ const std::string HigherObject::_getStringValue()
 		oss << " }";
 	}
 	else
+	{
 		oss << "None";
+	}
 	return oss.str();
-}
-
-JDM_DLL
-const void HigherObject::refalseAll()
-{
-	isString  = false;
-	isInteger = false;
-	isDecimal = false;
-	isBoolean = false;
-	isFunc    = false;
-	isObject  = false;
-	isList    = false;
-	isMap     = false;
 }
 
 JDM_DLL
@@ -240,7 +259,9 @@ const bool HigherObject::isInList(const std::shared_ptr<HigherObject> &obj)
 JDM_DLL
 const void HigherObject::sortList()
 {
-	if (!this->isList || this->isListSorted) return;
+	if (this->currActive != ACTIVE_LIST || this->isListSorted)
+		return;
+
 	std::vector<std::shared_ptr<HigherObject>> stringObject;
 	std::vector<std::shared_ptr<HigherObject>> decimalObject;
 	std::vector<std::shared_ptr<HigherObject>> listObject;
@@ -248,19 +269,28 @@ const void HigherObject::sortList()
 	std::vector<std::shared_ptr<HigherObject>> otherObject;
 	for (const auto &obj : this->listValue)
 	{
-		if (obj->isString )
+		auto cActive = obj->getCurrActive();
+		if (cActive == ACTIVE_STRING )
+		{
 			stringObject.push_back(obj);
-		else if (obj->isInteger || obj->isDecimal || obj->isBoolean)
+		}
+		else if (cActive == ACTIVE_INTEGER || cActive == ACTIVE_DECIMAL || cActive == ACTIVE_BOOLEAN)
 		{
 			obj->castToDecimal();
 			decimalObject.push_back(obj);
 		}
-		else if (obj->isList)
+		else if (cActive == ACTIVE_LIST)
+		{
 			listObject.push_back(obj);
-		else if (obj->isMap )
+		}
+		else if (cActive == ACTIVE_MAP)
+		{
 			mapObject .push_back(obj);
+		}
 		else
+		{
 			otherObject.push_back(obj);
+		}
 	}
 	std::sort(mapObject.begin(), mapObject.end(),
 		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
@@ -295,7 +325,9 @@ JDM_DLL
 const bool HigherObject::compareHigherObject(const std::shared_ptr<HigherObject> &obj)
 {
 	if (this->currActive == ACTIVE_STRING && this->currActive == obj->currActive)
+	{
 		return this->stringValue == obj->stringValue;
+	}
 	else if (this->currActive == ACTIVE_INTEGER)
 	{
 		obj->castToDecimal();
@@ -312,15 +344,18 @@ const bool HigherObject::compareHigherObject(const std::shared_ptr<HigherObject>
 		return this->booleanValue == obj->doubleValue;
 	}
 	else if (this->currActive == ACTIVE_FUNCTION && this->currActive == obj->currActive)
+	{
 		return this->funcValue == obj->funcValue && this->funcValue != nullptr;
-
+	}
 	else if (this->currActive == ACTIVE_OBJECT && this->currActive == obj->currActive)
+	{
 		return this->objectValue == obj->objectValue && this->objectValue != nullptr;
-
+	}
 	else if (this->currActive == ACTIVE_LIST && this->currActive == obj->currActive)
 	{
 		if (this->listValue.size() != obj->listValue.size())
 			return false;
+
 		for (int i = 0; i < this->listValue.size(); i++)
 		{
 			if (!this->listValue[i]->compareHigherObject( obj->listValue[i] ))
@@ -332,6 +367,7 @@ const bool HigherObject::compareHigherObject(const std::shared_ptr<HigherObject>
 	{
 		if (this->mapValue.size() != obj->mapValue.size())
 			return false;
+
 		for (int i = 0; i < this->mapValue.size(); i++)
 		{
 			auto it1 = this->mapValue.begin();
@@ -350,34 +386,34 @@ const bool HigherObject::compareHigherObject(const std::shared_ptr<HigherObject>
 JDM_DLL
 const void HigherObject::castToString()
 {
-	if (isString)
+	if (this->currActive == ACTIVE_STRING)
 		return;
-	else if (isInteger)
+
+	else if (this->currActive == ACTIVE_INTEGER)
 		this->stringValue = std::to_string(integerValue);
-	else if (isDecimal)
+	else if (this->currActive == ACTIVE_DECIMAL)
 		this->stringValue = std::to_string(doubleValue);
-	else if (isBoolean)
+	else if (this->currActive == ACTIVE_BOOLEAN)
 		this->stringValue = (booleanValue) ? "jtrue" : "jfalse";
-	else if (isFunc)
+	else if (this->currActive == ACTIVE_FUNCTION)
 		this->stringValue = this->_getStringValue();
-	else if (isObject)
+	else if (this->currActive == ACTIVE_OBJECT)
 		this->stringValue = this->_getStringValue();
-	else if (isList)
+	else if (this->currActive == ACTIVE_LIST)
 		this->stringValue = this->_getStringValue();
-	else if (isMap)
+	else if (this->currActive == ACTIVE_MAP)
 		this->stringValue = this->_getStringValue();
 
-	this->refalseAll();
-	isString  = true;
-	currActive = ACTIVE_STRING;
+	this->currActive = ACTIVE_STRING;
 }
 
 JDM_DLL
 const void HigherObject::castToInteger()
 {
-	if (isInteger)
+	if (this->currActive == ACTIVE_INTEGER)
 		return;
-	else if (isString)
+
+	else if (this->currActive == ACTIVE_STRING)
 	{
 		try {
 			this->integerValue = std::stoll(stringValue);
@@ -385,30 +421,29 @@ const void HigherObject::castToInteger()
 			this->integerValue = 0;
 		}
 	}
-	else if (isDecimal)
+	else if (this->currActive == ACTIVE_DECIMAL)
 		this->integerValue = static_cast<int>(doubleValue);
-	else if (isBoolean)
+	else if (this->currActive == ACTIVE_BOOLEAN)
 		this->integerValue = (booleanValue) ? 1 : 0;
-	else if (isFunc)
+	else if (this->currActive == ACTIVE_FUNCTION)
 		this->integerValue = (this->funcValue   != nullptr) ? 1 : 0;
-	else if (isObject)
+	else if (this->currActive == ACTIVE_OBJECT)
 		this->integerValue = (this->objectValue != nullptr) ? 1 : 0;
-	else if (isList)
+	else if (this->currActive == ACTIVE_LIST)
 		this->integerValue = this->listValue.size();
-	else if (isMap)
+	else if (this->currActive == ACTIVE_MAP)
 		this->integerValue = this->mapValue.size();
 
-	this->refalseAll();
-	isInteger = true;
-	currActive = ACTIVE_INTEGER;
+	this->currActive = ACTIVE_INTEGER;
 }
 
 JDM_DLL
 const void HigherObject::castToDecimal()
 {
-	if (isDecimal)
+	if (this->currActive == ACTIVE_DECIMAL)
 		return;
-	else if (isString)
+
+	else if (this->currActive == ACTIVE_STRING)
 	{
 		try {
 			this->doubleValue = std::stod(stringValue);
@@ -417,111 +452,100 @@ const void HigherObject::castToDecimal()
 			this->doubleValue = 0;
 		}
 	}
-	else if (isInteger)
+	else if (this->currActive == ACTIVE_INTEGER)
 		this->doubleValue = static_cast<double>(integerValue);
-	else if (isBoolean)
+	else if (this->currActive == ACTIVE_BOOLEAN)
 		this->doubleValue = (booleanValue) ? 1.0 : 0.0;
-	else if (isFunc)
+	else if (this->currActive == ACTIVE_FUNCTION)
 		this->doubleValue = (this->funcValue   != nullptr) ? 1.0 : 0.0;
-	else if (isObject)
+	else if (this->currActive == ACTIVE_OBJECT)
 		this->doubleValue = (this->objectValue != nullptr) ? 1.0 : 0.0;
-	else if (isList)
+	else if (this->currActive == ACTIVE_LIST)
 		this->doubleValue = this->listValue.size();
-	else if (isMap)
+	else if (this->currActive == ACTIVE_MAP)
 		this->doubleValue = this->mapValue.size();
 
-	this->refalseAll();
-	isDecimal = true;
-	currActive = ACTIVE_DECIMAL;
+	this->currActive = ACTIVE_DECIMAL;
 }
 
 JDM_DLL
 const void HigherObject::castToBoolean()
 {
-	if (isBoolean)
+	if (this->currActive == ACTIVE_BOOLEAN)
 		return;
-	else if (isString)
+
+	else if (this->currActive == ACTIVE_STRING)
 		this->booleanValue = !stringValue.empty();
-	else if (isInteger)
+	else if (this->currActive == ACTIVE_INTEGER)
 		this->booleanValue = integerValue > 0;
-	else if (isDecimal)
+	else if (this->currActive == ACTIVE_DECIMAL)
 		this->booleanValue = doubleValue > 0.0;
-	else if (isFunc)
+	else if (this->currActive == ACTIVE_FUNCTION)
 		this->booleanValue = (this->funcValue   != nullptr);
-	else if (isObject)
+	else if (this->currActive == ACTIVE_OBJECT)
 		this->booleanValue = (this->objectValue != nullptr);
-	else if (isList)
+	else if (this->currActive == ACTIVE_LIST)
 		this->booleanValue = this->listValue.empty();
-	else if (isMap)
+	else if (this->currActive == ACTIVE_MAP)
 		this->booleanValue = this->mapValue.empty();
 
-	this->refalseAll();
-	isBoolean = true;
-	currActive = ACTIVE_BOOLEAN;
+	this->currActive = ACTIVE_BOOLEAN;
 }
 
 JDM_DLL
 const void HigherObject::castToFunction()
 {
-	if (isFunc)
+	if (this->currActive == ACTIVE_FUNCTION)
 		return;
 
 	this->funcValue = std::make_shared<FunctionCall>();
 	this->funcValue->blockWillRun = std::make_shared<Block>();
-	this->refalseAll();
-	isFunc = true;
-	currActive = ACTIVE_FUNCTION;
+	this->currActive = ACTIVE_FUNCTION;
 }
 
 JDM_DLL
 const void HigherObject::castToObject()
 {
-	if (isObject)
+	if (this->currActive == ACTIVE_OBJECT)
 		return;
 
 	this->objectValue = std::make_shared<ClassObject>();
-	this->refalseAll();
-	isObject = true;
-	currActive = ACTIVE_OBJECT;
+	this->currActive = ACTIVE_OBJECT;
 }
 
 JDM_DLL
 const void HigherObject::castToList()
 {
-	if (isList)
+	if (this->currActive == ACTIVE_LIST)
 		return;
 
 	this->listValue.clear();
-	if (isString)
+	if (this->currActive == ACTIVE_STRING)
 		this->listValue.push_back(std::make_shared<HigherObject>(stringValue));
-	else if (isInteger)
+	else if (this->currActive == ACTIVE_INTEGER)
 		this->listValue.push_back(std::make_shared<HigherObject>(integerValue));
-	else if (isDecimal)
+	else if (this->currActive == ACTIVE_DECIMAL)
 		this->listValue.push_back(std::make_shared<HigherObject>(doubleValue));
-	else if (isBoolean)
+	else if (this->currActive == ACTIVE_BOOLEAN)
 		this->listValue.push_back(std::make_shared<HigherObject>(booleanValue));
-	else if (isFunc)
+	else if (this->currActive == ACTIVE_FUNCTION)
 		this->listValue.push_back(std::make_shared<HigherObject>(funcValue));
-	else if (isObject)
+	else if (this->currActive == ACTIVE_OBJECT)
 		this->listValue.push_back(std::make_shared<HigherObject>(objectValue));
-	else if (isMap)
+	else if (this->currActive == ACTIVE_MAP)
 	{
 		for (auto it = this->mapValue.begin(); it != this->mapValue.end(); ++it)
 			this->listValue.push_back(it->first);
 	}
-	this->refalseAll();
-	isList = true;
-	currActive = ACTIVE_LIST;
+	this->currActive = ACTIVE_LIST;
 }
 
 JDM_DLL
 const void HigherObject::castToMap()
 {
-	if (isMap)
+	if (this->currActive == ACTIVE_MAP)
 		return;
 
 	this->mapValue.clear();
-	this->refalseAll();
-	isMap = true;
-	currActive = ACTIVE_MAP;
+	this->currActive = ACTIVE_MAP;
 }

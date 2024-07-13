@@ -1,14 +1,13 @@
 #pragma once
 
-#include "higherObject.hpp"
-#include "library/nativeObject.hpp"
-#include "library/listObject.hpp"
-#include "library/stringObject.hpp"
-#include "library/mapObject.hpp"
-// #include "library/jdm_math.hpp"
+#include "utils/HigherObject.hpp"
+#include "library/NativeObject.hpp"
+#include "library/ListObject.hpp"
+#include "library/StringObject.hpp"
+#include "library/MapObject.hpp"
 #include "library/classes/baseClasses.hpp"
 
-#include "utils/comparator.hpp"
+#include "utils/Comparator.hpp"
 
 // #include "library/classes/fileClassObject.hpp"
 // #include "library/classes/consoleClassObject.hpp"
@@ -30,12 +29,13 @@ private:
 	struct VariableLink
 	{
 		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> variables;
-		std::unordered_map<std::string, std::shared_ptr<HigherObject::FunctionCall>> functionMap;
+		std::unordered_map<std::string, std::shared_ptr<FunctionCall>> functionMap;
 		std::shared_ptr<VariableLink> next;
 		std::shared_ptr<VariableLink> prev;
 	};
 	std::shared_ptr<VariableLink> variable = std::make_shared<VariableLink>();
 	bool breakLoop       = false;
+	bool isAssigning     = false;
 	int loopRunningCount = 0;
 
 public:
@@ -49,7 +49,7 @@ public:
 		const std::shared_ptr<Block> &block,
 		const std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_variables = {},
 		const std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_AdditionalVariables = {},
-		const std::unordered_map<std::string, std::shared_ptr<HigherObject::FunctionCall>> &_functionsAvail = {});
+		const std::unordered_map<std::string, std::shared_ptr<FunctionCall>> &_functionsAvail = {});
 
 	JDM_DLL CVoid doDeclarationInstruction(const std::shared_ptr<Instruction> &instruction);
 	JDM_DLL CVoid doAssignmentInstruction (const std::shared_ptr<Instruction> &instruction);
@@ -65,7 +65,7 @@ public:
 	JDM_DLL const std::shared_ptr<HigherObject> processForEachStatement(const std::shared_ptr<Instruction> &instruction);
 
 	JDM_DLL const std::shared_ptr<HigherObject> runFunction(
-		const std::shared_ptr<HigherObject::FunctionCall> &newFunc,
+		const std::shared_ptr<FunctionCall> &newFunc,
 		const std::vector<std::shared_ptr<HigherObject>> &arguments);
 
 private:

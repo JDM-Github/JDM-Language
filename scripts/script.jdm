@@ -47,7 +47,7 @@ jfunc checkWinner() =>
 {
 	jfor r => 3 =>
 		jif any((board[r][0] != ' ') && (board[r][0] == board[r][1]) && (board[r][1] == board[r][2]),
-			    (board[0][r] != ' ') && (board[0][r] == board[1][r]) && (board[1][r] == board[2][r])
+				(board[0][r] != ' ') && (board[0][r] == board[1][r]) && (board[1][r] == board[2][r])
 		) => jreturn jtrue;
 
 	jif any(all((board[0][0] != ' '), (board[0][0] == board[1][1]), (board[1][1] == board[2][2])),
@@ -57,9 +57,16 @@ jfunc checkWinner() =>
 	jreturn jfalse;
 }
 
+jfunc isBoardFull() => {
+	jfor r => 3 => 
+		jfor c => 3 =>
+			jif (board[r][c] == ' ') => jreturn jfalse;
+	jreturn jtrue;
+}
+
 jfunc main() =>
 {
-	jwhile (!checkWinner()) =>
+	jwhile (!checkWinner() && !isBoardFull()) =>
 	{
 		$clear;
 		draw();
@@ -68,9 +75,13 @@ jfunc main() =>
 	$clear;
 	draw();
 
-	jif (turn % 2) => 
-		$logn => " Winner is X";
-	jelse => 
-		$logn => " Winner is O";
+	jif (checkWinner()) =>
+	{
+		jif (turn % 2 == 0) => 
+			$logn => " Winner is O";
+		jelse => 
+			$logn => " Winner is X";
+	}
+	jelse => $logn => " It's a draw!";
 }
 main();

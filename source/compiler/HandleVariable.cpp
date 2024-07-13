@@ -1,4 +1,4 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 const std::vector<std::shared_ptr<HigherObject>> Compiler::getVectorHigherObject(
@@ -7,7 +7,10 @@ const std::vector<std::shared_ptr<HigherObject>> Compiler::getVectorHigherObject
 	// Evaluate all expression in vector
 	std::vector<std::shared_ptr<HigherObject>> result;
 	for (const auto &ex : expr)
-		result.push_back(this->evaluateExpression(ex));
+	{
+		auto exRes = this->evaluateExpression(ex);
+		result.push_back(exRes);
+	}
 	return result;
 }
 
@@ -50,16 +53,33 @@ const void Compiler::addVariable(
 	bool isForce,
 	const std::string &operation)
 {
+	this->isAssigning = true;
 	auto var = this->evaluateExpression(expr);
+	if (var->getIsReferenced())
+	{
+		if (operation != "=")
+			throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
+	}
 	if      (operation == "+=") var = this->newOperatedObject(this->variable->variables[varName].second, "+", var);
 	else if (operation == "-=") var = this->newOperatedObject(this->variable->variables[varName].second, "-", var);
 	else if (operation == "*=") var = this->newOperatedObject(this->variable->variables[varName].second, "*", var);
 	else if (operation == "/=") var = this->newOperatedObject(this->variable->variables[varName].second, "/", var);
 	else if (operation == "%=") var = this->newOperatedObject(this->variable->variables[varName].second, "%", var);
 
-	var->isConstant         = isConst;
-	var->isForcedConstraint = isForce;
-	var = this->checkVariableConstraint(var, dataT);
+	if (var->getIsReferenced())
+	{
+		if (dataT != DataTypeEnum::DATA_ANY && var->getDatatypeEnum() != dataT)
+			throw std::runtime_error("Runtime Error: Referenced value must be the same data type.");
+
+		if (var->isConstant != isConst)
+			throw std::runtime_error("Runtime Error: Cannot convert constant to non-constant or non-constant to constant");
+	}
+	else
+	{
+		var->isConstant         = isConst;
+		var->isForcedConstraint = isForce;
+		var = this->checkVariableConstraint(var, dataT);
+	}
 
 	if (operation != "=") return;
 
@@ -68,11 +88,17 @@ const void Compiler::addVariable(
 	if (oldVar != this->variable->variables.end())
 	{
 		// Use the setHigherObject to set the value of variable to var
+		if (oldVar->second.second->getIsReferenced() && var->getIsReferenced())
+			throw std::runtime_error("Runtime Error: Variable " + varName + " is already a reference.");
+
 		oldVar->second.second->setHigherObject(var);
 		this->variable->variables[varName] = std::make_pair(dataT, oldVar->second.second);
 		return;
 	}
-	this->variable->variables[varName] = std::make_pair(dataT, var);
+	if (var->isForcedConstraint && dataT == DataTypeEnum::DATA_ANY)
+		this->variable->variables[varName] = std::make_pair(var->getDatatypeEnum(), var);
+	else
+		this->variable->variables[varName] = std::make_pair(dataT, var);
 }
 
 JDM_DLL
@@ -91,6 +117,9 @@ const std::shared_ptr<HigherObject> Compiler::castVariable(
 	bool checkConstraint)
 {
 	auto var = this->evaluateExpression(expr);
+	if (var->getIsReferenced())
+		throw std::runtime_error("Runtime Error: Cannot cast when declaring referenced.");
+
 	return this->checkVariableConstraint(var, dataT, checkConstraint);
 }
 

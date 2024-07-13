@@ -1,20 +1,14 @@
-#include "headers/lexer.hpp"
-#include "headers/parser.hpp"
-#include "headers/compiler.hpp"
+#include "headers/Lexer.hpp"
+#include "headers/Parser.hpp"
+#include "headers/Compiler.hpp"
 #include <fstream>
 #include <filesystem>
 namespace fs = std::filesystem;
 
 using namespace std;
 
-class FileNotExistError : public runtime_error {
-public:
-    FileNotExistError(const string& filename, bool important)
-        : runtime_error(((important) ? string("[ IMPORTANT FILE MISSING ]: ") : string(""))
-            + "File does not exist: " + filename) {}
-};
-
-const string getScriptOnFile(const string &filename, bool important=false) {
+const string getScriptOnFile(const string &filename, bool important=false)
+{
     ifstream inputFile(filename);
     if (!inputFile) throw FileNotExistError(filename, important);
 
@@ -99,8 +93,8 @@ int main(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
     unique_ptr<Tokenizer> newTokenizer;
-    unique_ptr<Parser> newParser;
-    unique_ptr<Compiler> newCompiler;
+    unique_ptr<Parser   > newParser;
+    unique_ptr<Compiler > newCompiler;
 
     try
     {
@@ -136,7 +130,6 @@ int main(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
-    // cout << "\nCompiler:\n";
     try
     {
         newCompiler = make_unique<Compiler>(newParser->getAST());

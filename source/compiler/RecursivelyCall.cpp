@@ -1,4 +1,4 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
@@ -11,7 +11,7 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 	if (tok == JDM::TokenType::FUNCTIONS)
 	{
 		auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(callObj->currObject);
-		std::shared_ptr<HigherObject::FunctionCall> newFunc = nullptr;
+		std::shared_ptr<FunctionCall> newFunc = nullptr;
 		auto variables = this->variable->variables  .find(functionObj->returnStringValue());
 		auto function  = this->variable->functionMap.find(functionObj->returnStringValue());
 
@@ -19,10 +19,10 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 			newFunc = function->second;
 
 		// Used to run a lambda
-		else if (variables != this->variable->variables.end() && variables->second.second->isFunc)
+		else if (variables != this->variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_FUNCTION)
 			newFunc = variables->second.second->funcValue;
 
-		else if (variables != this->variable->variables.end() && variables->second.second->isObject)
+		else if (variables != this->variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_OBJECT)
 		{
 			for (auto &e : this->allInclude)
 			{
@@ -37,8 +37,8 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 					newObj->objectValue->members   = variables->second.second->objectValue->members;
 					newObj->objectValue->methods   = variables->second.second->objectValue->methods;
 					newObj->objectValue->fromMainSource = false;
-					returnValue = this->nativeClassMap[e]->constructor(newObj,
-						this->getVectorHigherObject(functionObj->arguments));
+					returnValue = this->nativeClassMap[e]->constructor(newObj, this->getVectorHigherObject(functionObj->arguments));
+
 					return this->manageEndCall(callObj, returnValue, expressionAssign);
 				}
 			}
@@ -51,16 +51,26 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 			{
 				if (nativeFunc->second == NativeFunction::NativeFunctionEnum::NATIVE_REFERENCE)
 				{
-					if (functionObj->arguments.size() != 1)
-						throw std::runtime_error("Runtime Error: Reference expect L value.");
-					// if (callObj->nextObject != nullptr)
-					// 	throw std::runtime_error("Runtime Error: Reference can't have recursive call.");
+					if (callObj->prevObject != nullptr)
+						throw std::runtime_error("Runtime Error: Invalid usage of 'ref' inside the expression.");
 
-					return getVariableObject(functionObj->arguments[0]);
+					if (callObj->nextObject != nullptr)
+						throw std::runtime_error("Runtime Error: Reference can't have recursive call.");
+
+					if (!this->isAssigning)
+						throw std::runtime_error("Runtime Error: Reference keyword must be only use in Assignment and Declaration");
+
+					if (functionObj->arguments.size() != 1)
+						throw std::runtime_error("Runtime Error: Reference expect L Value not R Value..");
+
+					auto varReferenced = getVariableObject(functionObj->arguments[0]);
+					varReferenced->setIsReferenced(true);
+					return varReferenced;
 				}
 				else
 					returnValue = this->handleNativeFunction(nativeFunc->second,
 						this->getVectorHigherObject(functionObj->arguments));
+
 				return this->manageEndCall( callObj, returnValue, expressionAssign );
 			}
 			else throw std::runtime_error("Runtime Error: Function is not declared.");
@@ -79,7 +89,9 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 			throw std::runtime_error("Runtime Error: Variable is not declared.");
 
 		auto varList = variables->second.second;
-		if (varList->isList || varList->isMap || varList->isString)
+		if (varList->getCurrActive() == ACTIVE_LIST
+		 || varList->getCurrActive() == ACTIVE_MAP
+		 || varList->getCurrActive() == ACTIVE_STRING)
 			returnValue = this->manageCallBrackets(callObj, varList, expressionAssign);
 		else
 			throw std::runtime_error("Runtime Error: Variable is not a String, List or a Map.");

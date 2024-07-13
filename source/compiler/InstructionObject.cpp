@@ -1,10 +1,16 @@
-#include "compiler.hpp"
+#include "Compiler.hpp"
 
 JDM_DLL
 const void Compiler::doDeclarationInstruction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto declare = std::dynamic_pointer_cast<Declaration>(instruction);
 	auto dataT   = JDM::dataTypeMap.at(std::get<0>(declare->dataType->token));
+
+	auto var    = this->variable->variables.find(declare->varName->returnStringValue());
+	if ( var != this->variable->variables.end() )
+		throw std::runtime_error("Runtime Error: Variable '" + declare->varName->returnStringValue()
+			+ "' is already declared. Redeclaration is not allowed.");
+
 	this->addVariable(
 		declare->expression,
 		dataT,
@@ -18,11 +24,11 @@ const void Compiler::doAssignmentInstruction(const std::shared_ptr<Instruction> 
 {
 	auto assign = std::dynamic_pointer_cast<Assignment>(instruction);
 	auto var    = this->variable->variables.find(assign->varName->returnStringValue());
-	if (var->second.second->isConstant)
-		throw std::runtime_error("Runtime Error: Variable is Constant.");
-
 	if ( var != this->variable->variables.end() )
 	{
+		if (var->second.second->isConstant)
+			throw std::runtime_error("Runtime Error: Variable is Constant.");
+
 		this->addVariable(
 			assign->expression,
 			var->second.first,
@@ -80,7 +86,7 @@ const void Compiler::doCFunctionInstruction(const std::shared_ptr<Instruction> &
 		auto className = this->nativeClassMap.find(varName);
 		if (className != this->nativeClassMap.end())
 		{
-			auto newClass = std::make_shared<HigherObject::ClassObject>();
+			auto newClass = std::make_shared<ClassObject>();
 			newClass->className = varName;
 
 			// Create a HigherObject as a Class
@@ -103,7 +109,7 @@ JDM_DLL
 const void Compiler::processCreateFunction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto createFunc = std::dynamic_pointer_cast<CreateFunction>(instruction);
-	std::shared_ptr<HigherObject::FunctionCall> newFunction = std::make_shared<HigherObject::FunctionCall>();
+	std::shared_ptr<FunctionCall> newFunction = std::make_shared<FunctionCall>();
 	for (const auto &var : createFunc->parameters)
 	{
 		if (var->dataType != nullptr)
@@ -127,9 +133,9 @@ const void Compiler::processCallFunction(const std::shared_ptr<Instruction> &ins
 	auto callFunc    = std::dynamic_pointer_cast<Call>(instruction);
 	auto callObjRoot = callFunc->callObj;
 	while (callObjRoot->prevObject != nullptr)
-	{
 		callObjRoot  = callObjRoot->prevObject;
-	}
+
+	this->isAssigning = true;
 	this->recursivelyCall(callObjRoot, callFunc->expression);
 }
 
@@ -144,6 +150,7 @@ const std::shared_ptr<HigherObject> Compiler::processIfStatement(const std::shar
 	{
 		auto condition = this->evaluateExpression(ifState->condition);
 		condition->castToBoolean();
+
 		if (!condition->booleanValue)
 			return this->processIfStatement(ifState->elseIf);
 	}
@@ -253,13 +260,13 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 			throw std::runtime_error("Runtime Error: Variable is not declared.");
 
 		realValue = variables->second.second;
-		if (!realValue->isList && !realValue->isMap)
+		if (realValue->getCurrActive() != ACTIVE_LIST && realValue->getCurrActive() != ACTIVE_MAP)
 			throw std::runtime_error("Runtime Error: Variable is not a 'jlist' or 'jmap'.");
 	}
 	else if (foreachState->expression)
 	{
 		realValue = this->evaluateExpression(foreachState->expression);
-		if (!realValue->isList && !realValue->isMap)
+		if (realValue->getCurrActive() != ACTIVE_LIST && realValue->getCurrActive() != ACTIVE_MAP)
 			throw std::runtime_error("Runtime Error: Invalid 'jlist' | 'jmap' to run.");
 	}
 	else
@@ -269,7 +276,7 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 	int index = (isReverse ? realValue->listValue.size() - 1 : 0);
 	auto mapIter = realValue->mapValue.begin();
 
-	if (realValue->isList)
+	if (realValue->getCurrActive() == ACTIVE_LIST)
 	{
 		if (index < 0 || index >= realValue->listValue.size())
 			return nullptr;
@@ -295,7 +302,7 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 	else
 	{
 		// If it is list, then use value as a key and normal on map
-		if (realValue->isList)
+		if (realValue->getCurrActive() == ACTIVE_LIST)
 			additionalVariables[foreachState->varKey->returnStringValue()] = std::make_pair(DataTypeEnum::DATA_ANY, value);
 		else
 			additionalVariables[foreachState->varKey->returnStringValue()] = std::make_pair(DataTypeEnum::DATA_ANY, key);
@@ -322,7 +329,7 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 			return returnValue;
 		}
 
-		if (realValue->isMap)
+		if (realValue->getCurrActive() == ACTIVE_MAP)
 		{
 			if (mapIter == realValue->mapValue.end())
 				break;

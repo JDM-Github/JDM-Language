@@ -1,5 +1,5 @@
-#include "higherObject.hpp"
-#include "library/nativeObject.hpp"
+#include "utils/HigherObject.hpp"
+#include "library/NativeObject.hpp"
 
 JDM_DLL
 std::unordered_map<std::string, NativeFunction::NativeFunctionEnum> NativeFunction::allNativeFunction = {
@@ -166,6 +166,7 @@ const std::shared_ptr<HigherObject> NativeFunction::manageFunction(
 	{
 		if (objects.size() != 1)
 			throw std::runtime_error("Runtime Error: Expecting 1 argument.");
+
    		return std::make_shared<HigherObject>(objects[0]->getType());
 	}
 	else if (nativeFuncType == NativeFunction::NativeFunctionEnum::NATIVE_CHAIN)
@@ -178,7 +179,7 @@ const std::shared_ptr<HigherObject> NativeFunction::split(
 	const std::shared_ptr<HigherObject> &obj1,
 	const std::string &stringObj)
 {
-	if (!obj1->isString)
+	if (obj1->getCurrActive() != ACTIVE_STRING)
 		return obj1;
 
 	std::string temp = "";
@@ -199,54 +200,75 @@ const std::shared_ptr<HigherObject> NativeFunction::split(
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::input(const std::vector<std::shared_ptr<HigherObject>> &objects)
+const std::shared_ptr<HigherObject> NativeFunction::input(
+	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
 	for (const auto &param : objects)
 	{
 		if (param == nullptr)
 			throw std::runtime_error("Runtime Error: Invalid Expression.");
+
 		param->logValue();
 	}
+
 	std::string input;
 	std::getline(std::cin, input);
 	return std::make_shared<HigherObject>(input);
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::len(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::len(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (obj1->isString) return std::make_shared<HigherObject>( static_cast<int64_t>( obj1->stringValue.size()) );
-	if (obj1->isList  ) return std::make_shared<HigherObject>( static_cast<int64_t>( obj1->listValue  .size()) );
-	if (obj1->isMap   ) return std::make_shared<HigherObject>( static_cast<int64_t>( obj1->mapValue   .size()) );
+	if (obj1->getCurrActive() == ACTIVE_STRING)
+		return std::make_shared<HigherObject>( static_cast<int64_t>( obj1->stringValue.size()) );
+	if (obj1->getCurrActive() == ACTIVE_LIST  )
+		return std::make_shared<HigherObject>( static_cast<int64_t>( obj1->listValue  .size()) );
+	if (obj1->getCurrActive() == ACTIVE_MAP   )
+		return std::make_shared<HigherObject>( static_cast<int64_t>( obj1->mapValue   .size()) );
+
 	return std::make_shared<HigherObject>( static_cast<int64_t> (1) );
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::absolute(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::absolute(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (obj1->isInteger) return std::make_shared<HigherObject>( static_cast<int64_t>( abs(obj1->integerValue) ));
-	if (obj1->isDecimal) return std::make_shared<HigherObject>( static_cast<long double>( abs(obj1->doubleValue) ));
+	if (obj1->getCurrActive() == ACTIVE_INTEGER)
+		return std::make_shared<HigherObject>( static_cast<int64_t>( abs(obj1->integerValue) ));
+	if (obj1->getCurrActive() == ACTIVE_DECIMAL)
+		return std::make_shared<HigherObject>( static_cast<long double>( abs(obj1->doubleValue) ));
+
 	return obj1;
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::ceiling(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::ceiling(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (obj1->isDecimal) return std::make_shared<HigherObject>( static_cast<long double>( ceil(obj1->doubleValue) ));
+	if (obj1->getCurrActive() == ACTIVE_DECIMAL)
+		return std::make_shared<HigherObject>( static_cast<long double>( ceil(obj1->doubleValue) ));
+
 	return obj1;
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::floored(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::floored(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (obj1->isDecimal) return std::make_shared<HigherObject>( static_cast<long double>( static_cast<int>(obj1->doubleValue) ));
+	if (obj1->getCurrActive() == ACTIVE_DECIMAL)
+		return std::make_shared<HigherObject>( static_cast<long double>( static_cast<int>(obj1->doubleValue) ));
+
 	return obj1;
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::minimum(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::minimum(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (!obj1->isList && !obj1->isMap) return obj1;
+	if (obj1->getCurrActive() != ACTIVE_LIST && obj1->getCurrActive() != ACTIVE_MAP)
+		return obj1;
+
 	std::vector<std::shared_ptr<HigherObject>> stringObject;
 	std::vector<std::shared_ptr<HigherObject>> DecimalObject;
 	std::vector<std::shared_ptr<HigherObject>> ListObject;
@@ -254,54 +276,78 @@ const std::shared_ptr<HigherObject> NativeFunction::minimum(const std::shared_pt
 	std::vector<std::shared_ptr<HigherObject>> otherObject;
 
 	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
-	if (newList->listValue.empty()) throw std::runtime_error("Runtime Error: Using 'min' on empty ITERABLE.");
-	if (newList->isList)
+	if (newList->listValue.empty())
+		throw std::runtime_error("Runtime Error: Using 'min' on empty ITERABLE.");
+
+	if (newList->getCurrActive() == ACTIVE_LIST)
 	{
 		for (const auto &obj : newList->listValue)
 		{
-			if      (obj->isString ) stringObject .push_back(obj);
-			else if (obj->isInteger || obj->isDecimal || obj->isBoolean)
+			if      (obj->getCurrActive() == ACTIVE_STRING)
+			{
+				stringObject .push_back(obj);
+			}
+			else if (obj->getCurrActive() == ACTIVE_INTEGER
+				  || obj->getCurrActive() == ACTIVE_DECIMAL
+				  || obj->getCurrActive() == ACTIVE_BOOLEAN)
 			{
 				auto newValue = std::make_shared<HigherObject>(obj);
 				newValue->castToDecimal();
 				DecimalObject.push_back(newValue);
 			}
-			else if (obj->isList   ) ListObject   .push_back(obj);
-			else if (obj->isMap    ) MapObject    .push_back(obj);
+			else if (obj->getCurrActive() == ACTIVE_LIST)
+				ListObject   .push_back(obj);
+			else if (obj->getCurrActive() == ACTIVE_MAP )
+				MapObject    .push_back(obj);
 			else otherObject.push_back(obj);
 		}
 	}
 	if (!DecimalObject.empty())
 	{
-		std::sort(DecimalObject.begin(), DecimalObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->doubleValue < b->doubleValue; });
+		std::sort(DecimalObject.begin(), DecimalObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->doubleValue < b->doubleValue;
+		});
 		return DecimalObject[0];
 	}
 	if (!stringObject.empty())
 	{
-		std::sort(stringObject.begin(), stringObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->stringValue < b->stringValue; });
+		std::sort(stringObject.begin(), stringObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->stringValue < b->stringValue;
+		});
 		return stringObject[0];
 	}
 	if (!ListObject.empty())
 	{
-		std::sort(ListObject.begin(), ListObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->listValue.size() < b->listValue.size(); });
+		std::sort(ListObject.begin(), ListObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->listValue.size() < b->listValue.size();
+		});
 		return ListObject[0];
 	}
 	if (!MapObject.empty())
 	{
-		std::sort(MapObject.begin(), MapObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->mapValue.size() < b->mapValue.size(); });
+		std::sort(MapObject.begin(), MapObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->mapValue.size() < b->mapValue.size();
+		});
 		return MapObject[0];
 	}
 	return otherObject[0];
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::maxed(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::maxed(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (!obj1->isList && !obj1->isMap) return obj1;
+	if (obj1->getCurrActive() != ACTIVE_LIST && obj1->getCurrActive() != ACTIVE_MAP)
+		return obj1;
+
 	std::vector<std::shared_ptr<HigherObject>> stringObject;
 	std::vector<std::shared_ptr<HigherObject>> DecimalObject;
 	std::vector<std::shared_ptr<HigherObject>> ListObject;
@@ -309,53 +355,78 @@ const std::shared_ptr<HigherObject> NativeFunction::maxed(const std::shared_ptr<
 	std::vector<std::shared_ptr<HigherObject>> otherObject;
 
 	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
-	if (newList->listValue.empty()) throw std::runtime_error("Runtime Error: Using 'max' on empty ITERABLE.");
-	if (newList->isList)
+	if (newList->listValue.empty())
+		throw std::runtime_error("Runtime Error: Using 'max' on empty ITERABLE.");
+
+	if (newList->getCurrActive() == ACTIVE_LIST)
 	{
-		for (const auto &obj : newList->listValue) {
-			if      (obj->isString ) stringObject .push_back(obj);
-			else if (obj->isInteger || obj->isDecimal || obj->isBoolean)
+		for (const auto &obj : newList->listValue)
+		{
+			if      (obj->getCurrActive() == ACTIVE_STRING)
+			{
+				stringObject .push_back(obj);
+			}
+			else if (obj->getCurrActive() == ACTIVE_INTEGER
+				  || obj->getCurrActive() == ACTIVE_DECIMAL
+				  || obj->getCurrActive() == ACTIVE_BOOLEAN)
 			{
 				auto newValue = std::make_shared<HigherObject>(obj);
 				newValue->castToDecimal();
 				DecimalObject.push_back(newValue);
 			}
-			else if (obj->isList   ) ListObject   .push_back(obj);
-			else if (obj->isMap    ) MapObject    .push_back(obj);
+			else if (obj->getCurrActive() == ACTIVE_LIST)
+				ListObject   .push_back(obj);
+			else if (obj->getCurrActive() == ACTIVE_MAP )
+				MapObject    .push_back(obj);
 			else otherObject.push_back(obj);
 		}
 	}
 	if (!MapObject.empty())
 	{
-		std::sort(MapObject.begin(), MapObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->mapValue.size() < b->mapValue.size(); });
+		std::sort(MapObject.begin(), MapObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->mapValue.size() < b->mapValue.size();
+		});
 		return MapObject[MapObject.size()-1];
 	}
 	if (!ListObject.empty())
 	{
-		std::sort(ListObject.begin(), ListObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->listValue.size() < b->listValue.size(); });
+		std::sort(ListObject.begin(), ListObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->listValue.size() < b->listValue.size();
+		});
 		return ListObject[ListObject.size()-1];
 	}
 	if (!stringObject.empty())
 	{
-		std::sort(stringObject.begin(), stringObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->stringValue < b->stringValue; });
+		std::sort(stringObject.begin(), stringObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->stringValue < b->stringValue;
+		});
 		return stringObject[stringObject.size()-1];
 	}
 	if (!DecimalObject.empty())
 	{
-		std::sort(DecimalObject.begin(), DecimalObject.end(), [](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
-			{ return a->doubleValue < b->doubleValue; });
+		std::sort(DecimalObject.begin(), DecimalObject.end(),
+		[](const std::shared_ptr<HigherObject> &a, const std::shared_ptr<HigherObject> &b)
+		{
+			return a->doubleValue < b->doubleValue;
+		});
 		return DecimalObject[DecimalObject.size()-1];
 	}
 	return otherObject[0];
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::reverse(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::reverse(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
+	auto newList = std::make_shared<HigherObject>(obj1);
+	newList->castToList();
+
 	std::vector<std::shared_ptr<HigherObject>> result;
 	for (int i = obj1->listValue.size() - 1; i >= 0; i--)
 		result.push_back(obj1->listValue[i]);
@@ -364,7 +435,9 @@ const std::shared_ptr<HigherObject> NativeFunction::reverse(const std::shared_pt
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::randint(int start, int end)
+const std::shared_ptr<HigherObject> NativeFunction::randint(
+	int start,
+	int end)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -374,7 +447,9 @@ const std::shared_ptr<HigherObject> NativeFunction::randint(int start, int end)
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::randfloat(long double start, long double end)
+const std::shared_ptr<HigherObject> NativeFunction::randfloat(
+	long double start,
+	long double end)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -384,7 +459,8 @@ const std::shared_ptr<HigherObject> NativeFunction::randfloat(long double start,
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::sort(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::sort(
+	const std::shared_ptr<HigherObject> &obj1)
 {
 	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
 	newList->sortList();
@@ -392,7 +468,8 @@ const std::shared_ptr<HigherObject> NativeFunction::sort(const std::shared_ptr<H
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::anyOperator(const std::vector<std::shared_ptr<HigherObject>> &objects)
+const std::shared_ptr<HigherObject> NativeFunction::anyOperator(
+	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
 	for (const auto &obj : objects)
 	{
@@ -404,7 +481,8 @@ const std::shared_ptr<HigherObject> NativeFunction::anyOperator(const std::vecto
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::allOperator(const std::vector<std::shared_ptr<HigherObject>> &objects)
+const std::shared_ptr<HigherObject> NativeFunction::allOperator(
+	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
 	for (const auto &obj : objects)
 	{
@@ -416,7 +494,8 @@ const std::shared_ptr<HigherObject> NativeFunction::allOperator(const std::vecto
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::chain(const std::vector<std::shared_ptr<HigherObject>> &objects)
+const std::shared_ptr<HigherObject> NativeFunction::chain(
+	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
 	std::vector<std::shared_ptr<HigherObject>> newList;
 	for (const auto &obj : objects)
@@ -432,19 +511,24 @@ const std::shared_ptr<HigherObject> NativeFunction::chain(const std::vector<std:
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::roundOperator(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::roundOperator(
+	const std::shared_ptr<HigherObject> &obj1)
 {
-	if (obj1->isDecimal) return std::make_shared<HigherObject>( static_cast<int64_t>(round(obj1->doubleValue)) );
+	if (obj1->getCurrActive() == ACTIVE_DECIMAL)
+		return std::make_shared<HigherObject>( static_cast<int64_t>(round(obj1->doubleValue)) );
+
 	return obj1;
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> NativeFunction::sumOperator(const std::shared_ptr<HigherObject> &obj1)
+const std::shared_ptr<HigherObject> NativeFunction::sumOperator(
+	const std::shared_ptr<HigherObject> &obj1)
 {
 	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
-	if (newList->listValue.empty()) throw std::runtime_error("Runtime Error: Using 'sum' on empty ITERABLE.");
-	long double result = 0;
+	if (newList->listValue.empty())
+		throw std::runtime_error("Runtime Error: Using 'sum' on empty ITERABLE.");
 
+	long double result = 0;
 	for (const auto &obj : newList->listValue)
 	{
 		auto newValue = std::make_shared<HigherObject>(obj);
@@ -459,9 +543,10 @@ const std::shared_ptr<HigherObject> NativeFunction::joinOperator(
 	const std::shared_ptr<HigherObject> &obj1, const std::string &stringObj)
 {
 	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
-	if (newList->listValue.empty()) throw std::runtime_error("Runtime Error: Using 'join' on empty ITERABLE.");
-	std::string result;
+	if (newList->listValue.empty())
+		throw std::runtime_error("Runtime Error: Using 'join' on empty ITERABLE.");
 
+	std::string result;
 	for (const auto &obj : newList->listValue)
 	{
 		auto newValue = std::make_shared<HigherObject>(obj); newValue->castToString();
@@ -475,11 +560,14 @@ const std::shared_ptr<HigherObject> NativeFunction::indexOperator(
 	const std::shared_ptr<HigherObject> &obj1,
 	const std::shared_ptr<HigherObject> &obj2)
 {
-	if (!obj1->isList && !obj1->isMap) return std::make_shared<HigherObject>( static_cast<int64_t>(-1) );
-	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
-	if (newList->listValue.empty()) throw std::runtime_error("Runtime Error: Using 'index' on empty ITERABLE.");
-	int64_t index = 0;
+	if (obj1->getCurrActive() != ACTIVE_LIST && obj1->getCurrActive() != ACTIVE_MAP)
+		return std::make_shared<HigherObject>( static_cast<int64_t>(-1) );
 
+	auto newList = std::make_shared<HigherObject>(obj1); newList->castToList();
+	if (newList->listValue.empty())
+		throw std::runtime_error("Runtime Error: Using 'index' on empty ITERABLE.");
+
+	int64_t index = 0;
 	for (const auto &obj : newList->listValue)
 	{
 		if (obj->compareHigherObject(obj2)) return std::make_shared<HigherObject>( index );

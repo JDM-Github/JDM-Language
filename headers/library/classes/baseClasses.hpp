@@ -1,5 +1,4 @@
 #pragma once
-#include "higherObject.hpp"
 
 class BaseNativeClass {
 public:

@@ -25,6 +25,16 @@ DLL        = $(DLL_DIR)/$(DLL_NAME).dll
 all: clean $(EXECUTABLE) exec
 comp: oclean clean $(EXECUTABLE) exec
 
+commit:
+	@echo ---------------------------------------------------
+	@echo Adding all files in git...
+	@git add .
+	@echo Setting commit message...
+	@git commit -eF message.txt
+	@echo Pushing to Github...
+	@git push origin private
+	@git push origin private:main
+
 $(EXECUTABLE): $(DLL)
 	@echo ===================================================
 	@echo - Compiling the Main executable...
@@ -47,11 +57,9 @@ $(OBJ_DIR):
 	@echo ---------------------------------------------------
 	@echo - Creating Object Directories...
 	@echo ---------------------------------------------------
-	@echo - [INFO] Making Directory: $(OBJ_DIR)\library\console...
+	@echo - [INFO] Making Necessary Directories
 	@mkdir $(OBJ_DIR)\library\console
-	@echo - [INFO] Making Directory: $(OBJ_DIR)\compiler...
 	@mkdir $(OBJ_DIR)\compiler
-	@echo - [INFO] Making Directory: $(OBJ_DIR)\utils...
 	@mkdir $(OBJ_DIR)\utils
 	@echo - [SUCCESS] Object directories created
 
@@ -77,4 +85,4 @@ clean:
 	
 	@echo - [SUCCESS] Cleaning completed
 
-.PHONY: all oclean clean test exec
+.PHONY: all oclean clean test exec confirm

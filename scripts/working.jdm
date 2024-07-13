@@ -1,43 +1,36 @@
 |> Declaration
-jint test = 90;
+|> jint test = 90;
 
 |> If statement
-jif (test + 45) => jint test = 90;   |> 1 LINE IF
-jelseif (test) => {
-	jif (test) => {
-		|> Nested
-	}
-}
-test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
+|> jif (test + 45) => jint test = 90;   |> 1 LINE IF
+|> jelseif (test) => {
+|> 	jif (test) => {
+|> 		|> Nested
+|> 	}
+|> }
+|> test = 56 + 2 - 34 ** 34; |> ASSIGNMENT
 
 |> While Loop
-jwhile (condition) => { |-> Comment Block <-| };
+|> jwhile (condition) => { |-> Comment Block <-| };
 
 |> For Loop
 
 |> 1 = Start, 45 = Stop, 1 = Step
-jfor i => [1, 45, 1] => {}
+|> jfor i => [1, 45, 1] => {}
 |> 1 = Start, 45 = Stop
-jfor i => 1, 45 => {}
+|> jfor i => 1, 45 => {}
 |> 45 = Stop
-jfor i => 45 => {}
+|> jfor i => 45 => {}
 
 |> Foreach and more complicated stuff
-jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
-	jfor j => [1, 3, 4] => {
-		jstring testString = "test" + 'test2' + jstring(i);
-		jif (testString == 'testtest2') => {
-			jmap map = {
-				'1' => 1,
-				2 => '2',
-				testString => 2.0,
-			};
-			jforeach key, val => map => {
-				|> Do Stuff
-			}
-		}
-	}
-}
+|> jforeach i => jreverse => [ 2, 34, "3", 35 ] => {
+|> 
+	|> jfor j => [1, 3, 1] => {
+		|> jstring testString = "test" + i;
+		|> $logn => testString;
+	|> }
+|> 
+|> }
 
 |> LIST NATIVE FUNCTIONS
 jlist testList = [2, 0, 4, "test", 4.56, 2];
@@ -71,7 +64,7 @@ $logn => "Pop Back: " + testList;
 testList.pop_front();
 $logn => "Pop Front: " + testList;
 
-jstring test = "Hello, World";
+jstring test = "Hello World";
 $logn => "Size   : " + test.size();
 $logn => "Replace: " + test.rreplace("o", "oo");
 $logn => "Concat : " + test.rconcat("!");
@@ -99,48 +92,61 @@ jfunc testMapFunction   ( arg )        => jreturn arg ** 2;
 
 jlist testList = [1, 2, 3, 4, 5];
 $logn
-	=> "input    : " => input    ("Test Input: ")
-	=> "split    : " => split    ("Test-Split", "-")
-	=> "len      : " => len      (testList)
-	=> "abs      : " => abs      (-436)
-	=> "ceil     : " => ceil     (34.3)
-	=> "floor    : " => floor    (34.3)
-	=> "max      : " => max      (testList)
-	=> "min      : " => min      (testList)
-	=> "reverse  : " => reverse  (testList)
-	=> "round    : " => round    (34.76)
-	=> "sum      : " => sum      (testList)
-	=> "join     : " => join     (testList, " -> ")
-	=> "index    : " => index    (testList, 4)
-	=> "randint  : " => randint  (100, 200)
-	=> "randfloat: " => randfloat(10.0, 20.0)
-	=> "filter   : " => filter   (testList, testFilterFunction)
-	=> "reduce   : " => reduce   (testList, testReduceFunction)
-	=> "sort_if  : " => sort_if  (testList, testSortIfFunction)
-	=> "map      : " => map      (testList, testMapFunction   )
-	=> "chain    : " => chain    (testList, testList, testList)
+	=> "input    : " + jstring(input    ("Test Input: "))
+	=> "split    : " + jstring(split    ("Test-Split", "-"))
+	=> "len      : " + jstring(len      (testList))
+	=> "abs      : " + jstring(abs      (-436))
+	=> "ceil     : " + jstring(ceil     (34.3))
+	=> "floor    : " + jstring(floor    (34.3))
+	=> "max      : " + jstring(max      (testList))
+	=> "min      : " + jstring(min      (testList))
+	=> "reverse  : " + jstring(reverse  (testList))
+	=> "round    : " + jstring(round    (34.76))
+	=> "sum      : " + jstring(sum      (testList))
+	=> "join     : " + jstring(join     (testList, " -> "))
+	=> "index    : " + jstring(index    (testList, 4))
+	=> "randint  : " + jstring(randint  (100, 200))
+	=> "randfloat: " + jstring(randfloat(10.0, 20.0))
+	=> "filter   : " + jstring(filter   (testList, testFilterFunction))
+	=> "reduce   : " + jstring(reduce   (testList, testReduceFunction))
+	=> "sort_if  : " + jstring(sort_if  (testList, testSortIfFunction))
+	=> "map      : " + jstring(map      (testList, testMapFunction   ))
+	=> "chain    : " + jstring(chain    (testList, testList, testList))
 ;
 
 |> Testing 
 jlist testList = ["TESDT", 0, 4, "test", 4.56, 2];
 jmap  testMap  = {1 => "Hello", 2 => "World", 1 => "TEST"};
 
-jforeach k, v => testMap => {
-	$log => "Key: " => k => ", Value: " => v;
-}
-jforeach k, v => testList => {
-	$log => "Key: " => k => ", Value: " => v;
-}
+$logn => '\n';
+$logn => testList => testMap;
+
+$logn => "FOREACH KEY ONLY";
+$logn => "MAP:";
 jforeach k => testMap => {
-	$log => "Key: " => k;
+	$log => "Key: " => k => '\n';
 }
+$logn => "LIST:";
 jforeach v => testList => {
-	$log => "Value: " => v;
+	$log => "Value: " => v => '\n';
 }
 
-jforeach k, v => jreverse => testList => {
-	$log => "Key: " => k => ", Value: " => v;
+$logn => "\nFOREACH KEY AND VALUE";
+$logn => "MAP:";
+jforeach k, v => testMap => {
+	$log => "Key: " => k => ", Value: " => v => '\n';
 }
+$logn => "LIST:";
+jforeach k, v => testList => {
+	$log => "Key: " => k => ", Value: " => v => '\n';
+}
+
+$logn => "\nREVERSE FOREACH";
+$logn => "LIST KEY AND VALUE:";
+jforeach k, v => jreverse => testList => {
+	$log => "Key: " => k => ", Value: " => v => '\n';
+}
+$logn => "LIST KEY:";
 jforeach v => jreverse => testList => {
-	$log => "Value: " => v;
+	$log => "Value: " => v => '\n';
 }
