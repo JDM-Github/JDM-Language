@@ -71,8 +71,10 @@ public:
      * @param filename Reference to the FileStream for input file.
      * @param input_buffer Reference to the InputStream for input text.
      */
+	JDM_DLL inline Tokenizer() {}
 	JDM_DLL Tokenizer(FileStream &filename, InputStream &input_buffer);
 	inline ~Tokenizer() {}
+	JDM_DLL CVoid tokenize();
 
 	/**
      * @brief Analyzes all tokens in the input text and optionally prints the results.
@@ -87,13 +89,14 @@ public:
      * @param filename Reference to the FileStream where token analysis results will be saved.
      */
 	JDM_DLL CVoid              saveTokens       (FileStream &filename   );
+	JDM_DLL CVoid              loadTokens       (FileStream &filename   );
 
 	/**
      * @brief Gets the token analysis results.
      *
      * @return A shared pointer to a data structure containing token analysis results.
      */
-	JDM_DLL CSharedTokenStruct getTokens        (                       );
+	JDM_DLL CSharedTokenStructRef getTokens        (                       );
 
 private:
 	JDM_DLL CVoid       _traverseTokenStruct             (CSharedTokenStructRef curr, SpaceString space            );

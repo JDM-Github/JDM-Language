@@ -2,16 +2,30 @@
 
 class VarObjects
 {
-protected:
+public:
 	size_t row, col;
 	JDM::TokenType varType = JDM::TokenType::UNDEFINED;
 
-protected:
-	inline VarObjects(JDM::TokenType type, size_t r = 0, size_t c = 0)
-		: varType(type), row(r), col(c) {}
+public:
+	VarObjects() = default;
+	inline VarObjects(
+		JDM::TokenType type,
+		size_t r = 0,
+		size_t c = 0)
+	:
+		varType(type),
+		row(r),
+		col(c)
+	{}
 	virtual ~VarObjects() {}
 
 public:
+	template<class Archive>
+	void serialize(Archive & archive)
+	{
+		archive(row, col, varType);
+	}
+
 	inline const char* getStringToken()
 	{
 		return JDM::tokenTypeToString(this->varType);

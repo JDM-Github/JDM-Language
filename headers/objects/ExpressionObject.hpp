@@ -7,7 +7,14 @@ public:
 	std::shared_ptr<Expression> expression;
 
 public:
-	ExpressionObjects(
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<VarObjects>(this));
+		archive(name, expression);
+	}
+
+	inline ExpressionObjects(
 		const std::shared_ptr<TokenStruct> &tok  = nullptr,
 		const std::shared_ptr<Expression > &expr = nullptr
 	)

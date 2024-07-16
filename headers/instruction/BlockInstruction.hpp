@@ -6,7 +6,13 @@ public:
 	std::vector<std::shared_ptr<Instruction>> instruction;
 
 public:
-	Block()
+	template<class Archive>
+	void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this), instruction);
+	}
+
+	inline Block()
 	:
 		Instruction(InstructionType::BlockInstruction)
 	{}

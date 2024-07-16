@@ -11,8 +11,16 @@ public:
 	std::shared_ptr<Expression     > expression;
 
 public:
-	ForEachStatement(
-		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this));
+		archive(isReverse, blockWillRun, varKey, varVal, varToRun, expression);
+	}
+
+	ForEachStatement() = default;
+	inline ForEachStatement(
+		const std::shared_ptr<Block          > &_blockWillRun,
 		const std::shared_ptr<VariableObjects> &_varKey       = nullptr,
 		const std::shared_ptr<VariableObjects> &_varVal       = nullptr,
 		const std::shared_ptr<Expression     > &_expression   = nullptr,
@@ -27,8 +35,8 @@ public:
 		Instruction(InstructionType::ForEachStatementInstruction)
 	{}
 
-	ForEachStatement(
-		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
+	inline ForEachStatement(
+		const std::shared_ptr<Block          > &_blockWillRun,
 		const std::shared_ptr<VariableObjects> &_varKey       = nullptr,
 		const std::shared_ptr<VariableObjects> &_varVal       = nullptr,
 		const std::shared_ptr<VariableObjects> &_varToRun     = nullptr,

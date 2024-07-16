@@ -3,7 +3,13 @@
 class Break : public Instruction
 {
 public:
-	Break()
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this));
+	}
+
+	inline Break()
 	:
 		Instruction(InstructionType::BreakInstruction)
 	{}
@@ -12,7 +18,13 @@ public:
 class Continue : public Instruction
 {
 public:
-	Continue()
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this));
+	}
+
+	inline Continue()
 	:
 		Instruction(InstructionType::ContinueInstruction)
 	{}

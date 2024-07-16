@@ -7,4 +7,11 @@ struct Expression
 	std::shared_ptr<Expression > firstExpression;
 	std::shared_ptr<TokenStruct> opWillUse;
 	std::shared_ptr<Expression > secondExpression;
+
+	template<class Archive>
+    void serialize(Archive & archive)
+    {
+        archive(firstValue, secondValue, firstExpression, opWillUse, secondExpression);
+    }
 };
+

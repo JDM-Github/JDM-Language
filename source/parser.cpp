@@ -10,6 +10,75 @@ Parser::Parser(
 	this->__stringStream.str("");
 }
 
+
+JDM_DLL
+const void Parser::saveBlock(
+	const std::string& filename)
+{
+	if (std::filesystem::exists(filename))
+	{
+		char choice;
+		Log << "File already exists. Choose an option:\n"
+				  << "1. Overwrite\n"
+				  << "2. Change path\n"
+				  << "3. Cancel\n"
+				  << "Enter your choice (1/2/3): ";
+		std::cin >> choice;
+
+		switch (choice)
+		{
+		case '1':
+			if (!std::filesystem::remove(filename))
+				throw std::runtime_error("Failed to delete the existing file: " + filename);
+			break;
+
+		case '2':
+		{
+			std::string newFilename;
+			Log << "Enter new file path: ";
+			std::cin >> newFilename;
+			saveBlock(StaticFunction::changeFileExtension(newFilename, ".jdms"));
+			return;
+		}
+
+		case '3':
+			Log << "Operation canceled.\n";
+			return;
+
+		default:
+			Log << "Invalid choice. Operation canceled.\n";
+			return;
+		}
+	}
+
+	std::ofstream os(filename, std::ios::binary);
+	if (!os.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing: " + filename);
+		return;
+	}
+
+	cereal::BinaryOutputArchive archive(os);
+	archive(this->__mainBlock);
+}
+
+JDM_DLL
+const void Parser::loadBlock(
+	const std::string& filename)
+{
+	if (!std::filesystem::exists(filename))
+		throw std::runtime_error("File not found: " + filename);
+
+	std::ifstream is(filename, std::ios::binary);
+	if (!is.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading: " + filename);
+	}
+
+	cereal::BinaryInputArchive archive(is);
+	archive(this->__mainBlock);
+}
+
 JDM_DLL
 const void Parser::analyzeAST(
 	const std::shared_ptr<Block> &block,
@@ -193,18 +262,18 @@ const void Parser::_checkAndManageDataType(
 	bool isConst,
 	bool isForce)
 {
-    if (tokens.size() <= dataIndex || std::get<1>(tokens[dataIndex]->token) != JDM::TokenType::DATA_TYPE)
-        throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after " + keyword);
+	if (tokens.size() <= dataIndex || std::get<1>(tokens[dataIndex]->token) != JDM::TokenType::DATA_TYPE)
+		throw std::runtime_error("SYNTAX ERROR: Expecting Data Type after " + keyword);
 
-    if (tokens.size() <= varIndex || std::get<1>(tokens[varIndex]->token) != JDM::TokenType::VARIABLE)
-        throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE after " + keyword);
+	if (tokens.size() <= varIndex || std::get<1>(tokens[varIndex]->token) != JDM::TokenType::VARIABLE)
+		throw std::runtime_error("SYNTAX ERROR: Expecting VARIABLE after " + keyword);
 
-    DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[dataIndex]->token));
-    if (isInVec(nextDataType, { DataTypeEnum::DATA_CONST, DataTypeEnum::DATA_FORCE, DataTypeEnum::DATA_CFORCE }))
-        throw std::runtime_error("SYNTAX ERROR: Invalid Data Type after " + keyword);
+	DataTypeEnum nextDataType = JDM::dataTypeMap.at(std::get<0>(tokens[dataIndex]->token));
+	if (isInVec(nextDataType, { DataTypeEnum::DATA_CONST, DataTypeEnum::DATA_FORCE, DataTypeEnum::DATA_CFORCE }))
+		throw std::runtime_error("SYNTAX ERROR: Invalid Data Type after " + keyword);
 
-    this->_manageDataType(block, tokens[dataIndex], tokens[varIndex],
-    	{tokens.begin() + varIndex + 1, tokens.end()}, isConst, isForce);
+	this->_manageDataType(block, tokens[dataIndex], tokens[varIndex],
+		{tokens.begin() + varIndex + 1, tokens.end()}, isConst, isForce);
 }
 
 JDM_DLL
@@ -551,9 +620,14 @@ const void Parser::_manageVariable(
 			this->_transformTokenStruct(rightToks))[0]->expression;
 
 		if (leftToks.size() > 1)
+		{
+			auto newObj = this->_createCallObject(this->_transformTokenStruct(leftToks), nullptr, true);
+			auto newOperation = std::get<0>((*it)->token);
+			newObj->operation = newOperation;
+
 			block->instruction.push_back(std::make_shared<Call>(true,
-				this->_createCallObject(this->_transformTokenStruct(leftToks), nullptr, true),
-				newExpression, std::get<0>((*it)->token)));
+				newObj, newExpression, newOperation));
+		}
 
 		else block->instruction.push_back(std::make_shared<Assignment>(
 			std::make_shared<VariableObjects>(tokens[0]), *it, newExpression ));

@@ -25,7 +25,11 @@ Tokenizer::Tokenizer(
 	this->__candidate_block   = false;
 	this->__last_toke_type    = JDM::TokenType::UNDEFINED;
 	this->__currentStruct     = MSharedTokenLink();
+}
 
+JDM_DLL
+CVoid Tokenizer::tokenize()
+{
 	this->_getTokens();
 	if (!this->__opening_patt.empty())
 	{
@@ -37,6 +41,74 @@ Tokenizer::Tokenizer(
 			this->__track_column
 		);
 	}
+}
+
+JDM_DLL
+CVoid Tokenizer::saveTokens(
+	FileStream &filename)
+{
+	if (std::filesystem::exists(filename))
+	{
+		char choice;
+		Log << "File already exists. Choose an option:\n"
+				  << "1. Overwrite\n"
+				  << "2. Change path\n"
+				  << "3. Cancel\n"
+				  << "Enter your choice (1/2/3): ";
+		std::cin >> choice;
+
+		switch (choice)
+		{
+		case '1':
+			if (!std::filesystem::remove(filename))
+				throw std::runtime_error("Failed to delete the existing file: " + filename);
+			break;
+
+		case '2':
+		{
+			std::string newFilename;
+			Log << "Enter new file path: ";
+			std::cin >> newFilename;
+			this->saveTokens(StaticFunction::changeFileExtension(newFilename, ".jdmt"));
+			return;
+		}
+
+		case '3':
+			Log << "Operation canceled.\n";
+			return;
+
+		default:
+			Log << "Invalid choice. Operation canceled.\n";
+			return;
+		}
+	}
+
+	std::ofstream os(filename, std::ios::binary);
+	if (!os.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing: " + filename);
+		return;
+	}
+
+	cereal::BinaryOutputArchive archive(os);
+	archive(this->__allTokens);
+}
+
+JDM_DLL
+CVoid Tokenizer::loadTokens(
+	FileStream &filename)
+{
+	if (!std::filesystem::exists(filename))
+		throw std::runtime_error("File not found: " + filename);
+
+	std::ifstream is(filename, std::ios::binary);
+	if (!is.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading: " + filename);
+	}
+
+	cereal::BinaryInputArchive archive(is);
+	archive(this->__allTokens);
 }
 
 JDM_DLL
@@ -62,7 +134,6 @@ CVoid Tokenizer::analyzeAllTokens(
 	}
 
 	std::string logFilePath = "logs/token.log";
-
 	std::ofstream logFile(logFilePath, std::ios::trunc);
 	if (!logFile.is_open())
 	{
@@ -77,18 +148,10 @@ CVoid Tokenizer::analyzeAllTokens(
 }
 
 JDM_DLL
-CVoid Tokenizer::saveTokens(
-	FileStream &filename)
+CSharedTokenStructRef Tokenizer::getTokens()
 {
-	std::ofstream outputFile(filename);
-	if (this->__stringStream.str().size())
-	{
-		this->analyzeAllTokens();
-	}
-	outputFile << this->__stringStream.str();
-	outputFile.close();
+	return this->__allTokens;
 }
-
 
 /*
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,12 +160,6 @@ Tokenizer Private Class Method
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 */
-
-JDM_DLL
-CSharedTokenStruct Tokenizer::getTokens()
-{
-	return this->__allTokens;
-}
 
 /**
  * @brief Traverses the token structure recursively and performs a specific task.
@@ -288,8 +345,7 @@ CBool Tokenizer::_checkIfNextTokenIsOperatorStart(
 		if (!isInVec(this->__input_buffer[i],   this->__operator_symbol)
 			&&  isInVec(this->__input_buffer[i+1], this->__operator_symbol))
 		{
-			if (willAdd)
-				this->_addToken();
+			if (willAdd) this->_addToken();
 			this->__just_added_token = false;
 			return true;
 		}
@@ -592,8 +648,18 @@ CVoid Tokenizer::_getTokens()
 
 	for (SizeT i = 0; i < this->__input_buffer.size(); i++)
 	{
-		this->__is_in_paren = this->_isInParen();
+		if (this->__is_comment_line)
+		{
+			if (this->__input_buffer[i] == '\n')
+			{
+				this->__is_comment_line = false;
+				this->__track_column = 1;
+				this->_addToken();
+			}
+			continue;
+		}
 
+		this->__is_in_paren = this->_isInParen();
 		if (this->__input_buffer[i] == '\n')
 		{
 			this->__track_row++;

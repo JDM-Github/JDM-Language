@@ -4,12 +4,19 @@ class Call : public Instruction
 {
 public:
 	bool isAssigning = false;
-	std::string operation;
+	std::string operation = "";
 	std::shared_ptr<CallObjects> callObj;
 	std::shared_ptr<Expression > expression;
 
 public:
-	Call(
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this));
+		archive(isAssigning, operation, callObj, expression);
+	}
+
+	inline Call(
 		bool _isAssigning = false,
 		const std::shared_ptr<CallObjects> &_callObj    = nullptr,
 		const std::shared_ptr<Expression > &_expression = nullptr,
@@ -21,7 +28,5 @@ public:
 		expression (_expression),
 		operation  (_operation),
 		Instruction(InstructionType::CallInstruction)
-	{
-		this->callObj->operation = operation;
-	}
+	{}
 };

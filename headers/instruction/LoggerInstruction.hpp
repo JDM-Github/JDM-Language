@@ -5,7 +5,9 @@ class Logger : public Instruction
 public:
 	bool addNewLine = false;
 	std::vector<std::shared_ptr<Expression>> expressions;
-	Logger(
+
+public:
+	inline Logger(
 		const std::vector<std::shared_ptr<Expression>> &_expressions = {},
 		const bool _addNewLine = false
 	)
@@ -14,4 +16,11 @@ public:
 		addNewLine (_addNewLine ),
 		Instruction(InstructionType::LoggerInstruction)
 	{}
+
+	template<class Archive>
+	void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this), expressions, addNewLine);
+	}
 };
+

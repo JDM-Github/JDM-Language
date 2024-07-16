@@ -6,7 +6,15 @@ public:
 	bool value;
 
 public:
-	BooleanObjects(const std::shared_ptr<TokenStruct> &tok)
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<VarObjects>(this));
+		archive(value);
+	}
+
+	BooleanObjects() = default;
+	inline explicit BooleanObjects(const std::shared_ptr<TokenStruct> &tok)
 	:
 		VarObjects(JDM::TokenType::BOOLED, std::get<2>(tok->token),
 		std::get<3>(tok->token))

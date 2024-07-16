@@ -1,5 +1,5 @@
 #include "utils/HigherObject.hpp"
-#include "utils/comparator.hpp"
+#include "utils/Comparator.hpp"
 
 JDM_DLL const bool Comparator::DoOperationString(
 	const std::string &first,

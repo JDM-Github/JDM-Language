@@ -9,7 +9,14 @@ public:
 	std::shared_ptr<Instruction            > blockWillRun;
 
 public:
-	LambdaObjects(
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<VarObjects>(this));
+		archive(willCall, arguments, parameters, blockWillRun);
+	}
+
+	inline LambdaObjects(
 		bool _willCall = false,
 		const std::vector<std::shared_ptr<Expression>> &_arguments    = {},
 		const std::vector<std::shared_ptr<Variable  >> &_parameters   = {},

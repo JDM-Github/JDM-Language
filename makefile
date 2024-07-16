@@ -9,9 +9,9 @@ BIN_DIR    = Build
 DLL_DIR    = Build
 
 SRC_DIRS   = $(SRC_DIR) \
+			 $(SRC_DIR)/instruction \
 			 $(SRC_DIR)/library \
 			 $(SRC_DIR)/utils \
-			 $(SRC_DIR)/compiler \
 			 $(SRC_DIR)/library/console
 
 SOURCES    = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.cpp))
@@ -24,16 +24,24 @@ DLL        = $(DLL_DIR)/$(DLL_NAME).dll
 
 all: clean $(EXECUTABLE) exec
 comp: oclean clean $(EXECUTABLE) exec
+main: main-comp exec
 
 commit:
 	@echo ---------------------------------------------------
 	@echo Adding all files in git...
 	@git add .
 	@echo Setting commit message...
-	@git commit -eF message.txt
+	@git commit -F message.txt
 	@echo Pushing to Github...
 	@git push origin private
 	@git push origin private:main
+
+
+main-comp:
+	@echo ===================================================
+	@echo - Compiling the Main executable...
+	@$(CXX) main.cpp -o $(EXECUTABLE) -L$(DLL_DIR) -l$(DLL_NAME) $(INCLUDE)
+	@echo - [SUCCESS] Main executable compiled: $(EXECUTABLE)
 
 $(EXECUTABLE): $(DLL)
 	@echo ===================================================
@@ -59,7 +67,7 @@ $(OBJ_DIR):
 	@echo ---------------------------------------------------
 	@echo - [INFO] Making Necessary Directories
 	@mkdir $(OBJ_DIR)\library\console
-	@mkdir $(OBJ_DIR)\compiler
+	@mkdir $(OBJ_DIR)\instruction
 	@mkdir $(OBJ_DIR)\utils
 	@echo - [SUCCESS] Object directories created
 
@@ -85,4 +93,4 @@ clean:
 	
 	@echo - [SUCCESS] Cleaning completed
 
-.PHONY: all oclean clean test exec confirm
+.PHONY: all oclean clean test exec main comp commit

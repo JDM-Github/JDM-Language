@@ -3,13 +3,23 @@
 
 class Instruction
 {
-protected:
+public:
+	Instruction() = default;
+
 	InstructionType _instructType;
-	Instruction(InstructionType type)
-		: _instructType(type) {}
+	explicit Instruction(InstructionType type)
+	:
+		_instructType(type)
+	{}
 	virtual ~Instruction() {}
 
 public:
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(_instructType);
+	}
+
 	inline const InstructionType getType()
 	{
 		return this->_instructType;

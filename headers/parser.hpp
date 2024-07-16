@@ -50,7 +50,10 @@ private:
 	SharedPtr<IfStatementLink> __currIfLink;
 
 public:
+	JDM_DLL       Parser    () {}
 	JDM_DLL       Parser    (CSharedTokenStructRef tokens);
+	JDM_DLL CVoid saveBlock (const std::string& filename);
+	JDM_DLL CVoid loadBlock (const std::string& filename);
 	JDM_DLL CVoid analyzeAST(CSharedPtrRef<Block> block, SpaceString space = "");
 	JDM_DLL SharedPtr<Block> getAST() { return this->__mainBlock; }
 

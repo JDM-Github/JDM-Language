@@ -8,8 +8,15 @@ public:
 	std::shared_ptr<Expression     > expression;
 
 public:
+	template<class Archive>
+	void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<Instruction>(this), varName, operation, expression);
+	}
+
+	Assignment() = default;
 	inline Assignment(
-		const std::shared_ptr<VariableObjects> &_varName    = nullptr,
+		const std::shared_ptr<VariableObjects> &_varName,
 		const std::shared_ptr<Expression     > &_expression = nullptr
 	)
 	:
@@ -19,7 +26,7 @@ public:
 	{}
 
 	inline Assignment(
-		const std::shared_ptr<VariableObjects> &_varName    = nullptr,
+		const std::shared_ptr<VariableObjects> &_varName,
 		const std::shared_ptr<TokenStruct    > &_operation  = nullptr,
 		const std::shared_ptr<Expression     > &_expression = nullptr
 	)

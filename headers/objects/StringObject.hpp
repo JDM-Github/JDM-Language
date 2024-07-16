@@ -6,7 +6,14 @@ public:
 	std::string value;
 
 public:
-	StringObjects(const std::shared_ptr<TokenStruct> &tok)
+	template<class Archive>
+	void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<VarObjects>(this), value);
+	}
+
+	StringObjects() = default;
+	inline explicit StringObjects(const std::shared_ptr<TokenStruct> &tok)
 	:
 		VarObjects(JDM::TokenType::STRING, std::get<2>(tok->token),
 		std::get<3>(tok->token)),

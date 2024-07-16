@@ -7,7 +7,14 @@ public:
 	std::vector<std::shared_ptr<Expression>> arguments;
 
 public:
-	FunctionObjects(
+	template<class Archive>
+	inline void serialize(Archive & archive)
+	{
+		archive(cereal::base_class<VarObjects>(this));
+		archive(name, arguments);
+	}
+
+	inline FunctionObjects(
 		const std::shared_ptr<TokenStruct>             &tok        = nullptr,
 		const std::vector<std::shared_ptr<Expression>> &_arguments = {}
 	)
