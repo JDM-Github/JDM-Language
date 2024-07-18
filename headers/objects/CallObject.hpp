@@ -25,6 +25,13 @@ public:
 		currObject(_currObject),
 		prevObject(_prevObject)
 	{}
+	inline CallObjects(const std::shared_ptr<CallObjects > &_callObj)
+	:
+		VarObjects(JDM::TokenType::CALL_OBJ),
+		currObject(_callObj->currObject),
+		prevObject(_callObj->prevObject),
+		nextObject(_callObj->nextObject)
+	{}
 
 	inline const std::string returnStringValue()
 	{

@@ -21,11 +21,59 @@ const std::string StaticFunction::changeFileExtension(
 }
 
 __declspec(dllexport)
+const std::string StaticFunction::createNewFilename(const std::string &extension)
+{
+	std::string newFilename;
+	std::cout << "Enter new filename or filepath: ";
+	std::cin >> newFilename;
+	return StaticFunction::changeFileExtension(newFilename, extension);
+}
+
+__declspec(dllexport)
+const std::string StaticFunction::handleFileExists(
+	const std::string &filename,
+	const std::string &extension,
+	const bool autoOverwrite)
+{
+	if (autoOverwrite)
+	{
+		if (!std::filesystem::remove(filename))
+			throw std::runtime_error("Failed to delete the existing file: " + filename);
+		return filename;
+	}
+
+	char choice;
+	std::cout << "File already exists. Choose an option:\n"
+		<< "1. Overwrite\n"
+		<< "2. Change path\n"
+		<< "3. Cancel\n"
+		<< "Enter your choice (1/2/3): ";
+	std::cin >> choice;
+
+	switch (choice)
+	{
+	case '1':
+		if (!std::filesystem::remove(filename))
+			throw std::runtime_error("Failed to delete the existing file: " + filename);
+		return filename;
+	case '2':
+		return StaticFunction::createNewFilename(extension);
+	case '3':
+		std::cout << "Operation canceled.\n";
+		exit(EXIT_SUCCESS);
+	default:
+		std::cout << "Invalid choice. Operation canceled.\n";
+		exit(EXIT_SUCCESS);
+	}
+}
+
+__declspec(dllexport)
 Arguments StaticFunction::parse_arguments(
 	int argc,
 	char* argv[])
 {
 	Arguments args;
+	args.argc = argc;
 	for (int i = 1; i < argc; ++i)
 	{
 		if (std::strcmp(argv[i], "__version__") == 0)
@@ -39,6 +87,10 @@ Arguments StaticFunction::parse_arguments(
 			++i;
 			args.location = argv[i];
 		}
+		else if (std::strcmp(argv[i], "/O") == 0)
+		{
+			args.overwrite = true;
+		}
 		else if (std::strcmp(argv[i], "-lex") == 0)
 		{
 			if (i + 2 >= argc)
@@ -51,7 +103,6 @@ Arguments StaticFunction::parse_arguments(
 			args.file_to_change = argv[i];
 			++i;
 			args.output_of_file = argv[i];
-			return args;
 		}
 		else if (std::strcmp(argv[i], "-parse") == 0)
 		{
@@ -65,7 +116,6 @@ Arguments StaticFunction::parse_arguments(
 			args.file_to_change = argv[i];
 			++i;
 			args.output_of_file = argv[i];
-			return args;
 		}
 		else if (std::strcmp(argv[i], "-compile") == 0)
 		{
@@ -77,7 +127,6 @@ Arguments StaticFunction::parse_arguments(
 			++i;
 			args.compile_ast = true;
 			args.file_to_compile = argv[i];
-			return args;
 		}
 		else if (args.filename.empty())
 			args.filename = argv[i];

@@ -88,8 +88,8 @@ public:
      *
      * @param filename Reference to the FileStream where token analysis results will be saved.
      */
-	JDM_DLL CVoid              saveTokens       (FileStream &filename   );
-	JDM_DLL CVoid              loadTokens       (FileStream &filename   );
+	JDM_DLL CVoid              saveTokens       (FileStream &filename, const bool autoOverwrite=false);
+	JDM_DLL CVoid              loadTokens       (FileStream &filename);
 
 	/**
      * @brief Gets the token analysis results.

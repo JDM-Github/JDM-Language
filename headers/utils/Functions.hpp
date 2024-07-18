@@ -15,4 +15,13 @@ public:
 
 	__declspec(dllexport)
 	static const std::string getFileExtension(const std::string& filename);
+
+	__declspec(dllexport)
+	static const std::string createNewFilename(const std::string &extension);
+
+	__declspec(dllexport)
+	static const std::string handleFileExists(
+		const std::string &filename,
+		const std::string &extension,
+		const bool autoOverwrite);
 };

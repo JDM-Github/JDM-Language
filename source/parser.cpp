@@ -10,56 +10,24 @@ Parser::Parser(
 	this->__stringStream.str("");
 }
 
-
 JDM_DLL
 const void Parser::saveBlock(
-	const std::string& filename)
+	const std::string& filename,
+	const bool autoOverwrite)
 {
+	if (filename == "")
+		return this->saveBlock(StaticFunction::createNewFilename(".jdms"));
 	if (std::filesystem::exists(filename))
-	{
-		char choice;
-		Log << "File already exists. Choose an option:\n"
-				  << "1. Overwrite\n"
-				  << "2. Change path\n"
-				  << "3. Cancel\n"
-				  << "Enter your choice (1/2/3): ";
-		std::cin >> choice;
-
-		switch (choice)
-		{
-		case '1':
-			if (!std::filesystem::remove(filename))
-				throw std::runtime_error("Failed to delete the existing file: " + filename);
-			break;
-
-		case '2':
-		{
-			std::string newFilename;
-			Log << "Enter new file path: ";
-			std::cin >> newFilename;
-			saveBlock(StaticFunction::changeFileExtension(newFilename, ".jdms"));
-			return;
-		}
-
-		case '3':
-			Log << "Operation canceled.\n";
-			return;
-
-		default:
-			Log << "Invalid choice. Operation canceled.\n";
-			return;
-		}
-	}
+		return this->saveBlock(StaticFunction::handleFileExists(filename, ".jdms", autoOverwrite));
 
 	std::ofstream os(filename, std::ios::binary);
 	if (!os.is_open())
-	{
 		throw std::runtime_error("Failed to open file for writing: " + filename);
-		return;
-	}
 
-	cereal::BinaryOutputArchive archive(os);
+	// cereal::BinaryOutputArchive archive(os);
+	cereal::JSONOutputArchive archive(os);
 	archive(this->__mainBlock);
+	Log << "Parsing completed successfully and ast saved to " << filename << std::endl;	
 }
 
 JDM_DLL
@@ -71,11 +39,10 @@ const void Parser::loadBlock(
 
 	std::ifstream is(filename, std::ios::binary);
 	if (!is.is_open())
-	{
 		throw std::runtime_error("Failed to open file for reading: " + filename);
-	}
 
-	cereal::BinaryInputArchive archive(is);
+	// cereal::BinaryInputArchive archive(is);
+	cereal::JSONInputArchive archive(is);
 	archive(this->__mainBlock);
 }
 
@@ -613,7 +580,8 @@ const void Parser::_manageVariable(
 		return std::get<1>(tok->token) == JDM::TokenType::ASSIGNMENT_OPERATOR;
 	});
 
-	if (it != tokens.end()) {
+	if (it != tokens.end())
+	{
 		std::vector<std::shared_ptr<TokenStruct>> leftToks  = {tokens.begin(), it};
 		std::vector<std::shared_ptr<TokenStruct>> rightToks = {it+1, tokens.end()};
 		std::shared_ptr<Expression> newExpression = this->_createExpression(
@@ -935,7 +903,6 @@ const std::vector<std::shared_ptr<ExpressionToken>> Parser::_createExpression(
 		}
 		return vec;
 	}
-
 	if (checkInvalid)
 	{
 		for (const auto &v : vec)

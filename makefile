@@ -9,7 +9,7 @@ BIN_DIR    = Build
 DLL_DIR    = Build
 
 SRC_DIRS   = $(SRC_DIR) \
-			 $(SRC_DIR)/instruction \
+			 $(SRC_DIR)/register \
 			 $(SRC_DIR)/library \
 			 $(SRC_DIR)/utils \
 			 $(SRC_DIR)/library/console
@@ -67,7 +67,7 @@ $(OBJ_DIR):
 	@echo ---------------------------------------------------
 	@echo - [INFO] Making Necessary Directories
 	@mkdir $(OBJ_DIR)\library\console
-	@mkdir $(OBJ_DIR)\instruction
+	@mkdir $(OBJ_DIR)\register
 	@mkdir $(OBJ_DIR)\utils
 	@echo - [SUCCESS] Object directories created
 

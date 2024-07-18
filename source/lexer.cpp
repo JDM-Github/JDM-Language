@@ -45,53 +45,21 @@ CVoid Tokenizer::tokenize()
 
 JDM_DLL
 CVoid Tokenizer::saveTokens(
-	FileStream &filename)
+	FileStream &filename,
+	const bool autoOverwrite)
 {
+	if (filename == "")
+		return this->saveTokens(StaticFunction::createNewFilename(".jdmt"));
 	if (std::filesystem::exists(filename))
-	{
-		char choice;
-		Log << "File already exists. Choose an option:\n"
-				  << "1. Overwrite\n"
-				  << "2. Change path\n"
-				  << "3. Cancel\n"
-				  << "Enter your choice (1/2/3): ";
-		std::cin >> choice;
-
-		switch (choice)
-		{
-		case '1':
-			if (!std::filesystem::remove(filename))
-				throw std::runtime_error("Failed to delete the existing file: " + filename);
-			break;
-
-		case '2':
-		{
-			std::string newFilename;
-			Log << "Enter new file path: ";
-			std::cin >> newFilename;
-			this->saveTokens(StaticFunction::changeFileExtension(newFilename, ".jdmt"));
-			return;
-		}
-
-		case '3':
-			Log << "Operation canceled.\n";
-			return;
-
-		default:
-			Log << "Invalid choice. Operation canceled.\n";
-			return;
-		}
-	}
+		return this->saveTokens(StaticFunction::handleFileExists(filename, ".jdmt", autoOverwrite));
 
 	std::ofstream os(filename, std::ios::binary);
 	if (!os.is_open())
-	{
 		throw std::runtime_error("Failed to open file for writing: " + filename);
-		return;
-	}
 
-	cereal::BinaryOutputArchive archive(os);
+	cereal::JSONOutputArchive archive(os);
 	archive(this->__allTokens);
+	Log << "Lexing completed successfully and tokens saved to " << filename << std::endl;
 }
 
 JDM_DLL
@@ -103,11 +71,9 @@ CVoid Tokenizer::loadTokens(
 
 	std::ifstream is(filename, std::ios::binary);
 	if (!is.is_open())
-	{
 		throw std::runtime_error("Failed to open file for reading: " + filename);
-	}
 
-	cereal::BinaryInputArchive archive(is);
+	cereal::JSONInputArchive archive(is);
 	archive(this->__allTokens);
 }
 
