@@ -1,0 +1,33 @@
+$include => Math;
+
+$log => "\nMath Add      : " => Math.add      (10, 10);        |> Prints 20
+$log => "\nMath Sub      : " => Math.subtract (10, 15);        |> Prints -5
+$log => "\nMath Mul      : " => Math.multiply (5, 3);          |> Prints 15
+$log => "\nMath Div      : " => Math.divide   (20, 4);         |> Prints 5
+$log => "\nMath Sqr      : " => Math.sqrt     (25);            |> Prints 5
+$log => "\nMath Max      : " => Math.max      (10, 20);        |> Prints 20
+$log => "\nMath Min      : " => Math.min      (5, 8);          |> Prints 5
+$log => "\nMath Log      : " => Math.log      (100);           |> Prints the natural logarithm of 100
+$log => "\nMath Log10    : " => Math.log10    (100);           |> Prints the logarithm10 of 100
+$log => "\nMath Log2     : " => Math.log2     (100);           |> Prints the logarithm2 of 100
+$log => "\nMath Exp      : " => Math.exp      (2);             |> Prints e^2
+$log => "\nMath Sin      : " => Math.sin      (30);            |> Prints the sine of 30 degrees
+$log => "\nMath Cos      : " => Math.cos      (45);            |> Prints the cosine of 45 degrees
+$log => "\nMath Tan      : " => Math.tan      (60);            |> Prints the tangent of 60 degrees
+$log => "\nMath Asin     : " => Math.asin     (0.5);           |> Prints the arcsine of 0.5
+$log => "\nMath Acos     : " => Math.acos     (0.5);           |> Prints the arccosine of 0.5
+$log => "\nMath Atan     : " => Math.atan     (1);             |> Prints the arctangent of 1
+$log => "\nMath Atan2    : " => Math.atan2    (1, 1);          |> Prints the arctangent of 1/1
+$log => "\nMath Sinh     : " => Math.sinh     (1);             |> Prints the hyperbolic sine of 1
+$log => "\nMath Cosh     : " => Math.cosh     (1);             |> Prints the hyperbolic cosine of 1
+$log => "\nMath Tanh     : " => Math.tanh     (1);             |> Prints the hyperbolic tangent of 1
+$log => "\nMath Mean     : " => Math.mean     (1, 2, 3, 4, 5); |> Prints the mean of the numbers
+$log => "\nMath Median   : " => Math.median   (1, 2, 3, 4, 5); |> Prints the median of the numbers
+$log => "\nMath Variance : " => Math.variance (1, 2, 3, 4, 5); |> Prints the variance of the numbers
+$log => "\nMath Stddev   : " => Math.stddev   (1, 2, 3, 4, 5); |> Prints the standard deviation of the numbers
+$log => "\nMath Factorial: " => Math.factorial(5);             |> Prints the factorial of 5
+$log => "\nMath Combin   : " => Math.combin   (5, 2);          |> Prints the combination of 5 taken 2 at a time
+$log => "\nMath Perm     : " => Math.perm     (5, 2);          |> Prints the permutation of 5 taken 2 at a time
+$log => "\nMath Round    : " => Math.round    (3.6);           |> Prints 4
+$log => "\nMath Gamma    : " => Math.gamma    (4);             |> Prints the Gamma function of 4
+$log => "\nMath Beta     : " => Math.beta     (2, 3);          |> Prints the Beta function of 2 and 3

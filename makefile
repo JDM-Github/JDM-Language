@@ -12,7 +12,8 @@ SRC_DIRS   = $(SRC_DIR) \
 			 $(SRC_DIR)/register \
 			 $(SRC_DIR)/library \
 			 $(SRC_DIR)/utils \
-			 $(SRC_DIR)/library/console
+			 $(SRC_DIR)/library/console \
+			 $(SRC_DIR)/library/classes
 
 SOURCES    = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.cpp))
 OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
@@ -67,6 +68,7 @@ $(OBJ_DIR):
 	@echo ---------------------------------------------------
 	@echo - [INFO] Making Necessary Directories
 	@mkdir $(OBJ_DIR)\library\console
+	@mkdir $(OBJ_DIR)\library\classes
 	@mkdir $(OBJ_DIR)\register
 	@mkdir $(OBJ_DIR)\utils
 	@echo - [SUCCESS] Object directories created

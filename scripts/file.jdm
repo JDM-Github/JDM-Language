@@ -1,0 +1,17 @@
+$include => File;
+
+jobject testFile = File().open("test.txt");
+testFile.write("Hello, JDM!");
+$log => "Write: " => testFile.read() => '\n';
+
+testFile.append(" -> This is an appended line.");
+$log => "Append: " => testFile.read() => '\n';
+
+testFile.truncate(5);
+$log => "Truncated: " => testFile.read() => '\n';
+
+testFile.write("Hide Content.");
+$log => "Read Seek: " => testFile.read(5) => '\n';
+
+testFile.remove();
+testFile.close();

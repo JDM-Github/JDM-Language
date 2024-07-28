@@ -73,26 +73,15 @@ public:
 	JDM_DLL const DataTypeEnum getDatatypeEnum();
 	JDM_DLL CString getType();
 	JDM_DLL CString _getStringValue();
-	JDM_DLL inline ActiveDataType getCurrActive()
-	{
-		return this->currActive;
-	}
 
-	JDM_DLL inline void setIsReferenced(bool reference)
-	{
-		this->isReferenced = reference;
-	}
-	JDM_DLL inline bool getIsReferenced()
-	{
-		return this->isReferenced;
-	}
+	JDM_DLL inline ActiveDataType getCurrActive() { return this->currActive; }
+	JDM_DLL inline void setIsReferenced(bool reference) { this->isReferenced = reference; }
+	JDM_DLL inline bool getIsReferenced() { return this->isReferenced; }
 
 	JDM_DLL const void logValue();
 	JDM_DLL const void sortList();
-
 	JDM_DLL const bool isInList(CSharedHigherObject &obj);
 	JDM_DLL const bool compareHigherObject(CSharedHigherObject &obj);
-
 	JDM_DLL CSharedHigherObject isInMap(CSharedHigherObject &obj, const bool getFirst = false);
 
 	JDM_DLL const void castToString  ();

@@ -12,10 +12,8 @@ public:
 	{ return nullptr; }
 
 	virtual std::shared_ptr<HigherObject> manageFunction(
-		int funcType,
-		std::shared_ptr<HigherObject> &obj1,
+		int funcType, std::shared_ptr<HigherObject> &obj1,
 		const std::vector<std::shared_ptr<HigherObject>> &objects) {
-
 		return nullptr;
 	}
 };

@@ -1,5 +1,31 @@
 #include "Compiler.hpp"
+#include "library/ListObject.hpp"
+#include "library/StringObject.hpp"
+#include "library/MapObject.hpp"
 
+#include "utils/Comparator.hpp"
+#include "library/classes/Console.hpp"
+#include "library/classes/File.hpp"
+#include "library/classes/Math.hpp"
+
+JDM_DLL
+Compiler::Compiler(const std::shared_ptr<Block> &mainBlock)
+	: __mainBlock(mainBlock)
+{
+	this->_initializeVariables();
+	this->compile(this->__mainBlock);
+}
+
+JDM_DLL
+const void Compiler::_initializeVariables()
+{
+	this->__nativeClassMap =
+	{
+		{ "Console", std::make_shared<ConsoleClass>() },
+		{ "File"   , std::make_shared<FileClass>() },
+		{ "Math"   , std::make_shared<MathClass>() }
+	};
+}
 
 // =================================================================================================
 // COMPILE
@@ -13,20 +39,20 @@ const std::shared_ptr<HigherObject> Compiler::compile(
 	const std::unordered_map<std::string, std::shared_ptr<FunctionCall>> &_functionsAvail)
 {
 	// Use for scoping
-	if (this->variable == nullptr)
-		this->variable = std::make_shared<VariableLink>();
+	if (this->__variable == nullptr)
+		this->__variable = std::make_shared<VariableLink>();
 	else
 	{
-		this->variable->next = std::make_shared<VariableLink>();
-		this->variable->next->prev = this->variable;
-		this->variable = this->variable->next;
+		this->__variable->next = std::make_shared<VariableLink>();
+		this->__variable->next->prev = this->__variable;
+		this->__variable = this->__variable->next;
 	}
-	this->variable->variables = _variables;
+	this->__variable->variables = _variables;
 	for (const auto& element : _AdditionalVariables)
 	{
-		this->variable->variables[element.first] = element.second;
+		this->__variable->variables[element.first] = element.second;
 	}
-	this->variable->functionMap = _functionsAvail;
+	this->__variable->functionMap = _functionsAvail;
 
 
 	bool willReturn = false;
@@ -34,49 +60,49 @@ const std::shared_ptr<HigherObject> Compiler::compile(
 	for (const auto &instruction : block->instruction)
 	{
 		// Reset the break and continue
-		this->breakLoop   = false;
-		this->isAssigning = false;
-		if      (instruction->getType() == DeclarationInstruction   ) this->doDeclarationInstruction(instruction);
-		else if (instruction->getType() == AssignmentInstruction    ) this->doAssignmentInstruction(instruction);
-		else if (instruction->getType() == LoggerInstruction        ) this->doLoggerInstruction(instruction);
-		else if (instruction->getType() == CFunctionInstruction     ) this->doCFunctionInstruction(instruction);
-		else if (instruction->getType() == CreateFunctionInstruction) this->processCreateFunction(instruction);
-		else if (instruction->getType() == CallInstruction          ) this->processCallFunction(instruction);
+		this->__breakLoop   = false;
+		this->__isAssigning = false;
+		if      (instruction->getType() == DeclarationInstruction   ) this->_doDeclarationInstruction(instruction);
+		else if (instruction->getType() == AssignmentInstruction    ) this->_doAssignmentInstruction(instruction);
+		else if (instruction->getType() == LoggerInstruction        ) this->_doLoggerInstruction(instruction);
+		else if (instruction->getType() == CFunctionInstruction     ) this->_doCFunctionInstruction(instruction);
+		else if (instruction->getType() == CreateFunctionInstruction) this->_processCreateFunction(instruction);
+		else if (instruction->getType() == CallInstruction          ) this->_processCallFunction(instruction);
 		else if (instruction->getType() == IfStatementInstruction   )
 		{
-			valueToReturn = this->processIfStatement(instruction);
+			valueToReturn = this->_processIfStatement(instruction);
 			if (valueToReturn != nullptr)
 				willReturn = true;
 		}
 		else if (instruction->getType() == ForLoopStatementInstruction)
 		{
-			valueToReturn = this->processForStatement(instruction);
+			valueToReturn = this->_processForStatement(instruction);
 			if (valueToReturn != nullptr)
 				willReturn = true;
 		}
 		else if (instruction->getType() == ForEachStatementInstruction)
 		{
-			valueToReturn = this->processForEachStatement(instruction);
+			valueToReturn = this->_processForEachStatement(instruction);
 			if (valueToReturn != nullptr)
 				willReturn = true;
 		}
 		else if (instruction->getType() == WhileStatementInstruction)
 		{
-			auto valueToReturn = this->processWhileLoop(instruction);
+			auto valueToReturn = this->_processWhileLoop(instruction);
 			if (valueToReturn != nullptr)
 				willReturn = true;
 		}
 		else if (instruction->getType() == BreakInstruction)
 		{
-			if (this->loopRunningCount > 0)
+			if (this->__loopRunningCount > 0)
 			{
 				willReturn = true;
-				this->breakLoop = true;
+				this->__breakLoop = true;
 			}
 		}
 		else if (instruction->getType() == ContinueInstruction)
 		{
-			if (this->loopRunningCount > 0)
+			if (this->__loopRunningCount > 0)
 				willReturn = true;
 		}
 		else if (instruction->getType() == ReturnInstruction)
@@ -85,7 +111,7 @@ const std::shared_ptr<HigherObject> Compiler::compile(
 				throw std::runtime_error("Runtime Error: Cannot return outside Function.");
 
 			auto returnObj = std::dynamic_pointer_cast<Return>(instruction);
-			valueToReturn  = this->evaluateExpression(returnObj->returnValue);
+			valueToReturn  = this->_evaluateExpression(returnObj->returnValue);
 			willReturn     = true;
 		}
 		if (willReturn)
@@ -98,19 +124,18 @@ const std::shared_ptr<HigherObject> Compiler::compile(
 	return nullptr;
 }
 
-
 // =================================================================================================
 // EvaluateExpression
 // 
 // =================================================================================================
 JDM_DLL
-std::shared_ptr<HigherObject> Compiler::getHigherObject(
+std::shared_ptr<HigherObject> Compiler::_getHigherObject(
 	const std::shared_ptr<VarObjects> &Value,
 	const std::shared_ptr<Expression> &Expression)
 {
 	if ( !Value )
 		// If Value is nullptr then just return the value of expression
-		return this->evaluateExpression(Expression);
+		return this->_evaluateExpression(Expression);
 	// Get the value from Variable
 	JDM::TokenType type = Value->getToken();
 
@@ -120,13 +145,13 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 		auto varName = std::dynamic_pointer_cast<VariableObjects>(Value)->returnStringValue();
 
 		// Check if it is a variable and get it's value from pair
-		auto var  = this->variable->variables.find(varName);
-		if (var != this->variable->variables.end())
+		auto var  = this->__variable->variables.find(varName);
+		if (var != this->__variable->variables.end())
 			return std::make_shared<HigherObject>(var->second.second);
 
 		// Check if it is a function
-		auto func = this->variable->functionMap.find(varName);
-		if (func != this->variable->functionMap.end())
+		auto func = this->__variable->functionMap.find(varName);
+		if (func != this->__variable->functionMap.end())
 			return std::make_shared<HigherObject>(func->second);
 
 		auto nativeFunc = NativeFunction::allNativeFunction.find(varName);
@@ -156,7 +181,7 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 		auto exprList = std::dynamic_pointer_cast<ListObject>(Value)->returnValue();
 		for (const auto &expr : exprList)
 			// [1+2, 3+4] -> [3, 7]
-			vecList.push_back( this->evaluateExpression(expr) );
+			vecList.push_back( this->_evaluateExpression(expr) );
 
 		// Create a new HigherObject List
 		return std::make_shared<HigherObject>(vecList);
@@ -168,7 +193,7 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 		auto mapStruct = std::dynamic_pointer_cast<MapObject>(Value)->returnValue();
 		for (const auto &expr : mapStruct)
 		{
-			auto value = this->evaluateExpression(expr->key);
+			auto value = this->_evaluateExpression(expr->key);
 			for (auto it = mapList.begin(); it != mapList.end(); ++it)
 			{
 				if (it->first->compareHigherObject(value))
@@ -187,19 +212,19 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 				throw std::runtime_error("Runtime Error: Referenced cannot be a key.");
 
 			// Used to create key and value using evaluateExpression
-			mapList[value] = this->evaluateExpression(expr->value);
+			mapList[value] = this->_evaluateExpression(expr->value);
 		}
 		return std::make_shared<HigherObject>(mapList);
 	}
 	// If the expression is Call Object, or function
 	if (type == JDM::TokenType::CALL_OBJ)
 	{
-		// Get the root of CallObjects and get the result using recursivelyCall
+		// Get the root of CallObjects and get the result using _recursivelyCall
 		auto callObjRoot = std::dynamic_pointer_cast<CallObjects>(Value);
 		while (callObjRoot->prevObject != nullptr)
 			callObjRoot = callObjRoot->prevObject;
 
-		auto result = this->recursivelyCall(callObjRoot);
+		auto result = this->_recursivelyCall(callObjRoot);
 		// if (result == nullptr)
 		// 	return std::make_shared<HigherObject>(static_cast<int64_t>(0));
 		return result;
@@ -215,31 +240,31 @@ std::shared_ptr<HigherObject> Compiler::getHigherObject(
 			if (var->dataType != nullptr)
 			{
 				auto dataT   = JDM::dataTypeMap.at(std::get<0>(var->dataType->token));
-				newFunction->parameters[var->varName->returnStringValue()] = this->returnVariable(var->varValue, dataT);
+				newFunction->parameters[var->varName->returnStringValue()] = this->_returnVariable(var->varValue, dataT);
 			}
 			else
-				newFunction->parameters[var->varName->returnStringValue()] = this->returnVariable(
+				newFunction->parameters[var->varName->returnStringValue()] = this->_returnVariable(
 					var->varValue, DataTypeEnum::DATA_ANY);
 		}
 		newFunction->blockWillRun     = std::dynamic_pointer_cast<Block>(lambdaObj->blockWillRun);
-		newFunction->varNameAccesible = this->getAllVarName(this->variable->variables);
+		newFunction->varNameAccesible = this->_getAllVarName(this->__variable->variables);
 
 		// If the lambda is being called, Then just call it, if not, make it like a function
 		if (lambdaObj->willCall)
-			return this->runFunction(newFunction, this->getVectorHigherObject(lambdaObj->arguments));
+			return this->_runFunction(newFunction, this->_getVectorHigherObject(lambdaObj->arguments));
 		else
 			return std::make_shared<HigherObject>(newFunction);
 	}
 	if (type == JDM::TokenType::CAST)
 	{
 		auto castObj = std::dynamic_pointer_cast<CastObjects>(Value);
-		return this->castVariable(castObj->expression, castObj->datTypeToTurn, false);
+		return this->_castVariable(castObj->expression, castObj->datTypeToTurn, false);
 	}
 	return nullptr;
 }
 
 JDM_DLL
-std::shared_ptr<HigherObject> &Compiler::getVariableObject(
+std::shared_ptr<HigherObject> &Compiler::_getVariableObject(
 	const std::shared_ptr<Expression> &expr)
 {
 	if (!expr || expr->firstValue == nullptr)
@@ -254,73 +279,21 @@ std::shared_ptr<HigherObject> &Compiler::getVariableObject(
 		throw std::runtime_error("Runtime Error: Expecting a Variable to reference.");
 
 	auto varName = std::dynamic_pointer_cast<VariableObjects>(Value)->returnStringValue();
-	auto var = this->variable->variables.find(varName);
-	if (var != this->variable->variables.end())
+	auto var = this->__variable->variables.find(varName);
+	if (var != this->__variable->variables.end())
 		return var->second.second;
 
 	throw std::runtime_error("Runtime Error: Variable is not declared.");
 }
 
-#if 0
 JDM_DLL
-std::shared_ptr<HigherObject> Compiler::evaluateExpression(
+std::shared_ptr<HigherObject> Compiler::_evaluateExpression(
 	const std::shared_ptr<Expression> &expr)
 {
 	if (!expr)
 		return std::make_shared<HigherObject>(static_cast<int64_t>(0));
 
-	std::future<void> firstFuture;
-	std::future<void> secondFuture;
-
-	// Asynchronously evaluate firstValue or firstExpression
-	firstFuture = std::async(std::launch::async, [&]() {
-		return this->getHigherObject(expr->firstValue, expr->firstExpression);
-	});
-
-	if (expr->opWillUse)
-	{
-		// Asynchronously evaluate secondValue or secondExpression if present
-		if (expr->secondValue || expr->secondExpression)
-			secondFuture = std::async(std::launch::async, [&]() {
-				return this->getHigherObject(expr->secondValue, expr->secondExpression);
-			});
-
-		// Wait for firstFuture to complete
-		auto firstVal  = firstFuture.get();
-		if (firstVal == nullptr)
-			throw std::runtime_error("Runtime Error: Invalid Expression. Return null.");
-
-		if (firstVal->getIsReferenced())
-			throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
-
-		if (expr->secondValue || expr->secondExpression)
-		{
-			auto second  = secondFuture.get();
-			if (second == nullptr)
-				throw std::runtime_error("Runtime Error: Invalid Expression. Return null.");
-
-			if (second->getIsReferenced())
-				throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
-
-			return this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), second);
-		}
-		return this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), nullptr);
-	}
-	auto firstVal  = firstFuture.get();
-	if (firstVal == nullptr)
-		throw std::runtime_error("Runtime Error: Invalid Expression. Return null.");
-
-	return firstVal;
-}
-#else
-JDM_DLL
-std::shared_ptr<HigherObject> Compiler::evaluateExpression(
-	const std::shared_ptr<Expression> &expr)
-{
-	if (!expr)
-		return std::make_shared<HigherObject>(static_cast<int64_t>(0));
-
-	auto firstVal = this->getHigherObject(expr->firstValue, expr->firstExpression);
+	auto firstVal = this->_getHigherObject(expr->firstValue, expr->firstExpression);
 	if (firstVal == nullptr)
 		throw std::runtime_error("Runtime Error: Invalid Expression. Return null.");
 
@@ -331,25 +304,24 @@ std::shared_ptr<HigherObject> Compiler::evaluateExpression(
 
 		if (expr->secondValue || expr->secondExpression)
 		{
-			auto second = this->getHigherObject  (expr->secondValue, expr->secondExpression);
+			auto second = this->_getHigherObject(expr->secondValue, expr->secondExpression);
 			if (second->getIsReferenced())
 				throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
 
-			firstVal = this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), second);
+			firstVal = this->_newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), second);
 		}
 		else
-			firstVal = this->newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), nullptr);
+			firstVal = this->_newOperatedObject(firstVal, std::get<0>(expr->opWillUse->token), nullptr);
 	}
 	return firstVal;
 }
-#endif
 
 // =================================================================================================
 // HandleNativeFunction
 // 
 // =================================================================================================
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
+const std::shared_ptr<HigherObject> Compiler::_handleNativeFunction(
 	NativeFunction::NativeFunctionEnum nativeType,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
@@ -370,7 +342,7 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 			newList->listValue.erase(std::remove_if(newList->listValue.begin(), newList->listValue.end(),
 				[&](const std::shared_ptr<HigherObject> &obj1)
 				{
-					std::shared_ptr<HigherObject> filterResult = this->runFunction(objects[1]->funcValue, { obj1 });
+					std::shared_ptr<HigherObject> filterResult = this->_runFunction(objects[1]->funcValue, { obj1 });
 					filterResult->castToBoolean(); return !filterResult->booleanValue;
 				}),
 			newList->listValue.end());
@@ -415,7 +387,7 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 
 			auto result = newList->listValue[0];
 			for (int i = 1; i < newList->listValue.size(); i++)
-				result = this->runFunction(objects[1]->funcValue, { result, newList->listValue[i] });
+				result = this->_runFunction(objects[1]->funcValue, { result, newList->listValue[i] });
 			return result;
 		}
 	}
@@ -434,7 +406,7 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 		{
 			auto newList = std::make_shared<HigherObject>(objects[0]); newList->castToList();
 			for (int i = 0; i < newList->listValue.size(); i++)
-				newList->listValue[i] = this->runFunction(objects[1]->funcValue, { newList->listValue[i] });
+				newList->listValue[i] = this->_runFunction(objects[1]->funcValue, { newList->listValue[i] });
 			return newList;
 		}
 	}
@@ -455,7 +427,7 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 			std::sort(newList->listValue.begin(), newList->listValue.end(),
 				[&](const std::shared_ptr<HigherObject> &obj1, const std::shared_ptr<HigherObject> &obj2)
 				{
-					std::shared_ptr<HigherObject> conditionResult = this->runFunction(objects[1]->funcValue, { obj1, obj2 });
+					std::shared_ptr<HigherObject> conditionResult = this->_runFunction(objects[1]->funcValue, { obj1, obj2 });
 					conditionResult->castToBoolean(); return conditionResult->booleanValue;
 				});
 			return newList;
@@ -489,14 +461,14 @@ const std::shared_ptr<HigherObject> Compiler::handleNativeFunction(
 // 
 // =================================================================================================
 JDM_DLL
-const std::vector<std::shared_ptr<HigherObject>> Compiler::getVectorHigherObject(
+const std::vector<std::shared_ptr<HigherObject>> Compiler::_getVectorHigherObject(
 	const std::vector<std::shared_ptr<Expression>> &expr)
 {
 	// Evaluate all expression in vector
 	std::vector<std::shared_ptr<HigherObject>> result;
 	for (const auto &ex : expr)
 	{
-		auto exRes = this->evaluateExpression(ex);
+		auto exRes = this->_evaluateExpression(ex);
 		result.push_back(exRes);
 	}
 	return result;
@@ -505,24 +477,24 @@ const std::vector<std::shared_ptr<HigherObject>> Compiler::getVectorHigherObject
 JDM_DLL
 const void Compiler::setupVariablePrevious()
 {
-	if (this->variable->prev != nullptr)
+	if (this->__variable->prev != nullptr)
 	{
-		this->variable = this->variable->prev;
+		this->__variable = this->__variable->prev;
 		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> tempMap;
-		for (const auto& element : this->variable->variables)
+		for (const auto& element : this->__variable->variables)
 		{
-			if (this->variable->next->variables.count(element.first))
-				tempMap[element.first] = this->variable->next->variables.at(element.first);
+			if (this->__variable->next->variables.count(element.first))
+				tempMap[element.first] = this->__variable->next->variables.at(element.first);
 			else
 				tempMap[element.first] = element.second;
 		}
-		this->variable->variables = tempMap;
-		this->variable->next = nullptr;
+		this->__variable->variables = tempMap;
+		this->__variable->next = nullptr;
 	}
 }
 
 JDM_DLL
-const std::vector<std::string> Compiler::getAllVarName(
+const std::vector<std::string> Compiler::_getAllVarName(
 	const std::unordered_map<std::string,
 	std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_variables)
 {
@@ -533,7 +505,7 @@ const std::vector<std::string> Compiler::getAllVarName(
 }
 
 JDM_DLL
-const void Compiler::addVariable(
+const void Compiler::_addVariable(
 	const std::shared_ptr<Expression> &expr,
 	DataTypeEnum dataT,
 	const std::string &varName,
@@ -541,18 +513,23 @@ const void Compiler::addVariable(
 	bool isForce,
 	const std::string &operation)
 {
-	this->isAssigning = true;
-	auto var = this->evaluateExpression(expr);
+	this->__isAssigning = true;
+	auto var = this->_evaluateExpression(expr);
 	if (var->getIsReferenced())
 	{
 		if (operation != "=")
 			throw std::runtime_error("Runtime Error: Referenced cannot be used in operation.");
 	}
-	if      (operation == "+=") var = this->newOperatedObject(this->variable->variables[varName].second, "+", var);
-	else if (operation == "-=") var = this->newOperatedObject(this->variable->variables[varName].second, "-", var);
-	else if (operation == "*=") var = this->newOperatedObject(this->variable->variables[varName].second, "*", var);
-	else if (operation == "/=") var = this->newOperatedObject(this->variable->variables[varName].second, "/", var);
-	else if (operation == "%=") var = this->newOperatedObject(this->variable->variables[varName].second, "%", var);
+	if      (operation == "+=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "+", var);
+	else if (operation == "-=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "-", var);
+	else if (operation == "*=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "*", var);
+	else if (operation == "/=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "/", var);
+	else if (operation == "%=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "%", var);
+
+	// if (var->getCurrActive() == ACTIVE_FUNCTION)
+	// {
+
+	// }
 
 	if (var->getIsReferenced())
 	{
@@ -566,53 +543,53 @@ const void Compiler::addVariable(
 	{
 		var->isConstant         = isConst;
 		var->isForcedConstraint = isForce;
-		var = this->checkVariableConstraint(var, dataT);
+		var = this->_checkVariableConstraint(var, dataT);
 	}
 
 	if (operation != "=") return;
 
 	// Get the old Variable and just set it's new value to this
-	auto oldVar  = this->variable->variables.find(varName);
-	if (oldVar != this->variable->variables.end())
+	auto oldVar  = this->__variable->variables.find(varName);
+	if (oldVar != this->__variable->variables.end())
 	{
 		// Use the setHigherObject to set the value of variable to var
 		if (oldVar->second.second->getIsReferenced() && var->getIsReferenced())
 			throw std::runtime_error("Runtime Error: Variable " + varName + " is already a reference.");
 
 		oldVar->second.second->setHigherObject(var);
-		this->variable->variables[varName] = std::make_pair(dataT, oldVar->second.second);
+		this->__variable->variables[varName] = std::make_pair(dataT, oldVar->second.second);
 		return;
 	}
 	if (var->isForcedConstraint && dataT == DataTypeEnum::DATA_ANY)
-		this->variable->variables[varName] = std::make_pair(var->getDatatypeEnum(), var);
+		this->__variable->variables[varName] = std::make_pair(var->getDatatypeEnum(), var);
 	else
-		this->variable->variables[varName] = std::make_pair(dataT, var);
+		this->__variable->variables[varName] = std::make_pair(dataT, var);
 }
 
 JDM_DLL
-const std::pair<DataTypeEnum, std::shared_ptr<HigherObject>> Compiler::returnVariable(
+const std::pair<DataTypeEnum, std::shared_ptr<HigherObject>> Compiler::_returnVariable(
 	const std::shared_ptr<Expression> &expr,
 	DataTypeEnum dataT)
 {
-	auto var = this->castVariable(expr, dataT);
+	auto var = this->_castVariable(expr, dataT);
 	return std::make_pair(dataT, var);
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::castVariable(
+const std::shared_ptr<HigherObject> Compiler::_castVariable(
 	const std::shared_ptr<Expression> &expr,
 	DataTypeEnum dataT,
 	bool checkConstraint)
 {
-	auto var = this->evaluateExpression(expr);
+	auto var = this->_evaluateExpression(expr);
 	if (var->getIsReferenced())
 		throw std::runtime_error("Runtime Error: Cannot cast when declaring referenced.");
 
-	return this->checkVariableConstraint(var, dataT, checkConstraint);
+	return this->_checkVariableConstraint(var, dataT, checkConstraint);
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::checkVariableConstraint(
+const std::shared_ptr<HigherObject> Compiler::_checkVariableConstraint(
 	const std::shared_ptr<HigherObject> &var,
 	DataTypeEnum dataT,
 	bool checkConstraint)
@@ -654,35 +631,47 @@ const std::shared_ptr<HigherObject> Compiler::checkVariableConstraint(
 // 
 // =================================================================================================
 JDM_DLL
-const void Compiler::doDeclarationInstruction(const std::shared_ptr<Instruction> &instruction)
+const void Compiler::_doDeclarationInstruction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto declare = std::dynamic_pointer_cast<Declaration>(instruction);
 	auto dataT   = JDM::dataTypeMap.at(std::get<0>(declare->dataType->token));
 
-	auto var    = this->variable->variables.find(declare->varName->returnStringValue());
-	if ( var != this->variable->variables.end() )
-		throw std::runtime_error("Runtime Error: Variable '" + declare->varName->returnStringValue()
+	auto varName = declare->varName->returnStringValue();
+	auto var    = this->__variable->variables.find(varName);
+	if ( var != this->__variable->variables.end() )
+		throw std::runtime_error("Runtime Error: Variable '" + varName
 			+ "' is already declared. Redeclaration is not allowed.");
 
-	this->addVariable(
+	auto func = this->__variable->functionMap.find(varName);
+	if (func != this->__variable->functionMap.end())
+		throw std::runtime_error("Runtime Error: Variable '" + varName
+			+ "' is already declared as a function. Redeclaration is not allowed.");
+
+	auto nativeFunc = NativeFunction::allNativeFunction.find(varName);
+	if (nativeFunc != NativeFunction::allNativeFunction.end())
+		throw std::runtime_error("Runtime Error: Variable '" + varName
+			+ "' is already declared as a native function. Redeclaration is not allowed.");
+
+	this->_addVariable(
 		declare->expression,
 		dataT,
-		declare->varName->returnStringValue(),
-		declare->isConst, declare->isForce
+		varName,
+		declare->isConst,
+		declare->isForce
 	);
 }
 
 JDM_DLL
-const void Compiler::doAssignmentInstruction(const std::shared_ptr<Instruction> &instruction)
+const void Compiler::_doAssignmentInstruction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto assign = std::dynamic_pointer_cast<Assignment>(instruction);
-	auto var    = this->variable->variables.find(assign->varName->returnStringValue());
-	if ( var != this->variable->variables.end() )
+	auto var    = this->__variable->variables.find(assign->varName->returnStringValue());
+	if ( var != this->__variable->variables.end() )
 	{
 		if (var->second.second->isConstant)
 			throw std::runtime_error("Runtime Error: Variable is Constant.");
 
-		this->addVariable(
+		this->_addVariable(
 			assign->expression,
 			var->second.first,
 			assign->varName->returnStringValue(),
@@ -696,13 +685,13 @@ const void Compiler::doAssignmentInstruction(const std::shared_ptr<Instruction> 
 }
 
 JDM_DLL
-const void Compiler::doLoggerInstruction(const std::shared_ptr<Instruction> &instruction)
+const void Compiler::_doLoggerInstruction(const std::shared_ptr<Instruction> &instruction)
 {
-	this->isAssigning = true;
+	this->__isAssigning = true;
 	auto logger = std::dynamic_pointer_cast<Logger>(instruction);
 	for (const auto &expr : logger->expressions)
 	{
-		auto resultExpr = this->evaluateExpression(expr);
+		auto resultExpr = this->_evaluateExpression(expr);
 		if (resultExpr == nullptr)
 			throw std::runtime_error("Runtime Error: Invalid Expression.");
 
@@ -713,7 +702,7 @@ const void Compiler::doLoggerInstruction(const std::shared_ptr<Instruction> &ins
 }
 
 JDM_DLL
-const void Compiler::doCFunctionInstruction(const std::shared_ptr<Instruction> &instruction)
+const void Compiler::_doCFunctionInstruction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto cfunction = std::dynamic_pointer_cast<CFunction>(instruction);
 
@@ -723,7 +712,7 @@ const void Compiler::doCFunctionInstruction(const std::shared_ptr<Instruction> &
 	else if (cfunction->funcType == CUSFUNC_SLEEP)
 	{
 		// Evaluate and then sleep
-		auto timeML = this->evaluateExpression(cfunction->expression);
+		auto timeML = this->_evaluateExpression(cfunction->expression);
 		timeML->castToInteger();
 		std::this_thread::sleep_for(std::chrono::milliseconds(timeML->integerValue));
 	}
@@ -736,8 +725,8 @@ const void Compiler::doCFunctionInstruction(const std::shared_ptr<Instruction> &
 		// My code first treat it as a random variable
 		auto varName   = std::dynamic_pointer_cast<VariableObjects>(
 			cfunction->expression->firstValue)->returnStringValue();
-		auto className = this->nativeClassMap.find(varName);
-		if (className != this->nativeClassMap.end())
+		auto className = this->__nativeClassMap.find(varName);
+		if (className != this->__nativeClassMap.end())
 		{
 			auto newClass = std::make_shared<ClassObject>();
 			newClass->className = varName;
@@ -748,9 +737,9 @@ const void Compiler::doCFunctionInstruction(const std::shared_ptr<Instruction> &
 			var->isConstant         = true;
 
 			// Set variable to global variables scope
-			this->variable->variables[varName] = std::make_pair(DataTypeEnum::DATA_OBJECT,
-				this->checkVariableConstraint(var, DataTypeEnum::DATA_OBJECT));
-			this->allInclude.push_back(varName);
+			this->__variable->variables[varName] = std::make_pair(DataTypeEnum::DATA_OBJECT,
+				this->_checkVariableConstraint(var, DataTypeEnum::DATA_OBJECT));
+			this->__allInclude.push_back(varName);
 		}
 		else
 			// If it is not valid include. Return error
@@ -759,7 +748,7 @@ const void Compiler::doCFunctionInstruction(const std::shared_ptr<Instruction> &
 }
 
 JDM_DLL
-const void Compiler::processCreateFunction(const std::shared_ptr<Instruction> &instruction)
+const void Compiler::_processCreateFunction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto createFunc = std::dynamic_pointer_cast<CreateFunction>(instruction);
 	std::shared_ptr<FunctionCall> newFunction = std::make_shared<FunctionCall>();
@@ -768,32 +757,32 @@ const void Compiler::processCreateFunction(const std::shared_ptr<Instruction> &i
 		if (var->dataType != nullptr)
 		{
 			auto dataT = JDM::dataTypeMap.at(std::get<0>(var->dataType->token));
-			newFunction->parameters[var->varName->returnStringValue()] = this->returnVariable(var->varValue, dataT);
+			newFunction->parameters[var->varName->returnStringValue()] = this->_returnVariable(var->varValue, dataT);
 		}
 		else
-			newFunction->parameters[var->varName->returnStringValue()] = this->returnVariable(var->varValue, DataTypeEnum::DATA_ANY);
+			newFunction->parameters[var->varName->returnStringValue()] = this->_returnVariable(var->varValue, DataTypeEnum::DATA_ANY);
 	}
 	auto functionName                         = createFunc->functionName->returnStringValue();
 	newFunction->funcName                     = functionName;
 	newFunction->blockWillRun                 = createFunc->blockWillRun;
-	newFunction->varNameAccesible             = this->getAllVarName(this->variable->variables);
-	this->variable->functionMap[functionName] = newFunction;
+	newFunction->varNameAccesible             = this->_getAllVarName(this->__variable->variables);
+	this->__variable->functionMap[functionName] = newFunction;
 }
 
 JDM_DLL
-const void Compiler::processCallFunction(const std::shared_ptr<Instruction> &instruction)
+const void Compiler::_processCallFunction(const std::shared_ptr<Instruction> &instruction)
 {
 	auto callFunc    = std::dynamic_pointer_cast<Call>(instruction);
 	auto callObjRoot = callFunc->callObj;
 	while (callObjRoot->prevObject != nullptr)
 		callObjRoot  = callObjRoot->prevObject;
 
-	this->isAssigning = true;
-	this->recursivelyCall(callObjRoot, callFunc->expression);
+	this->__isAssigning = true;
+	this->_recursivelyCall(callObjRoot, callFunc->expression);
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::processIfStatement(const std::shared_ptr<Instruction> &instruction)
+const std::shared_ptr<HigherObject> Compiler::_processIfStatement(const std::shared_ptr<Instruction> &instruction)
 {
 	if (instruction == nullptr)
 		return nullptr;
@@ -801,32 +790,32 @@ const std::shared_ptr<HigherObject> Compiler::processIfStatement(const std::shar
 	auto ifState = std::dynamic_pointer_cast<IfStatement>(instruction);
 	if (ifState->condition != nullptr)
 	{
-		this->isAssigning = true;
-		auto condition = this->evaluateExpression(ifState->condition);
+		this->__isAssigning = true;
+		auto condition = this->_evaluateExpression(ifState->condition);
 		condition->castToBoolean();
 
 		if (!condition->booleanValue)
-			return this->processIfStatement(ifState->elseIf);
+			return this->_processIfStatement(ifState->elseIf);
 	}
-	return this->compile(ifState->blockWillRun, this->variable->variables, {}, this->variable->functionMap);
+	return this->compile(ifState->blockWillRun, this->__variable->variables, {}, this->__variable->functionMap);
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::processForStatement(const std::shared_ptr<Instruction> &instruction)
+const std::shared_ptr<HigherObject> Compiler::_processForStatement(const std::shared_ptr<Instruction> &instruction)
 {
-	this->isAssigning = true;
+	this->__isAssigning = true;
 	auto forState = std::dynamic_pointer_cast<ForLoopStatement>(instruction);
 
 	// Setup the for loop
 	// The start, step, and stop
 	std::shared_ptr<HigherObject> start;
 	std::shared_ptr<HigherObject> step ;
-	std::shared_ptr<HigherObject> stop = this->evaluateExpression(forState->stop);
+	std::shared_ptr<HigherObject> stop = this->_evaluateExpression(forState->stop);
 
 	if (forState->start != nullptr)
-		start = this->evaluateExpression(forState->start);
+		start = this->_evaluateExpression(forState->start);
 	if (forState->step  != nullptr)
-		step  = this->evaluateExpression(forState->step);
+		step  = this->_evaluateExpression(forState->step);
 	if (start == nullptr)
 		start = std::make_shared<HigherObject>(static_cast<int64_t>(0));
 	if (step  == nullptr)
@@ -840,69 +829,69 @@ const std::shared_ptr<HigherObject> Compiler::processForStatement(const std::sha
 	std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> additionalVariables;
 	additionalVariables[forState->variable->returnStringValue()] = std::make_pair(DataTypeEnum::DATA_INTEGER, start);
 	// While loop the loop process.
-	this->loopRunningCount++;
+	this->__loopRunningCount++;
 	while (start->integerValue != stop->integerValue)
 	{
 		// Remember compile return a value, this is useful because sometimes you want to continue in loop or break
 		auto returnValue = this->compile(
 			forState->blockWillRun,
-			this->variable->variables,
+			this->__variable->variables,
 			additionalVariables,
-			this->variable->functionMap
+			this->__variable->functionMap
 		);
-		if (this->breakLoop)
+		if (this->__breakLoop)
 		{
-			this->loopRunningCount--;
-			this->breakLoop = false;
+			this->__loopRunningCount--;
+			this->__breakLoop = false;
 			return nullptr;
 		}
 		if (returnValue != nullptr)
 		{
-			this->loopRunningCount--;
+			this->__loopRunningCount--;
 			return returnValue;
 		}
 		start->integerValue += step->integerValue;
 	}
-	this->loopRunningCount--;
+	this->__loopRunningCount--;
 	return nullptr;
 }
 
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::processWhileLoop(const std::shared_ptr<Instruction> &instruction)
+const std::shared_ptr<HigherObject> Compiler::_processWhileLoop(const std::shared_ptr<Instruction> &instruction)
 {
-	this->isAssigning = true;
+	this->__isAssigning = true;
 	auto whileState = std::dynamic_pointer_cast<WhileStatement>(instruction);
-	auto expr       = this->evaluateExpression(whileState->condition);
+	auto expr       = this->_evaluateExpression(whileState->condition);
 	expr->castToBoolean(); bool check = expr->booleanValue;
-	this->loopRunningCount++;
+	this->__loopRunningCount++;
 	while (check)
 	{
 		auto returnValue = this->compile( whileState->blockWillRun,
-			this->variable->variables, {}, this->variable->functionMap);
-		if (this->breakLoop)
+			this->__variable->variables, {}, this->__variable->functionMap);
+		if (this->__breakLoop)
 		{
-			this->breakLoop = false;
-			this->loopRunningCount--;
+			this->__breakLoop = false;
+			this->__loopRunningCount--;
 			return nullptr;
 		}
 		if (returnValue != nullptr)
 		{
-			this->loopRunningCount--;
+			this->__loopRunningCount--;
 			return returnValue;
 		}
-		auto expr = this->evaluateExpression(whileState->condition);
+		auto expr = this->_evaluateExpression(whileState->condition);
 		expr->castToBoolean();
 		check = expr->booleanValue;
 	}
-	this->loopRunningCount--;
+	this->__loopRunningCount--;
 	return nullptr;
 }
 
 
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std::shared_ptr<Instruction> &instruction)
+const std::shared_ptr<HigherObject> Compiler::_processForEachStatement(const std::shared_ptr<Instruction> &instruction)
 {
-	this->isAssigning = true;
+	this->__isAssigning = true;
 	auto foreachState = std::dynamic_pointer_cast<ForEachStatement>(instruction);
 	std::shared_ptr<HigherObject> realValue = nullptr;
 	std::shared_ptr<HigherObject> key       = nullptr;
@@ -913,8 +902,8 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 
 	if (foreachState->varToRun != nullptr)
 	{
-		auto variables = this->variable->variables.find(foreachState->varToRun->returnStringValue());
-		if (variables == this->variable->variables.end())
+		auto variables = this->__variable->variables.find(foreachState->varToRun->returnStringValue());
+		if (variables == this->__variable->variables.end())
 			throw std::runtime_error("Runtime Error: Variable is not declared.");
 
 		realValue = variables->second.second;
@@ -923,7 +912,7 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 	}
 	else if (foreachState->expression)
 	{
-		realValue = this->evaluateExpression(foreachState->expression);
+		realValue = this->_evaluateExpression(foreachState->expression);
 		if (realValue->getCurrActive() != ACTIVE_LIST && realValue->getCurrActive() != ACTIVE_MAP)
 			throw std::runtime_error("Runtime Error: Invalid 'jlist' | 'jmap' to run.");
 	}
@@ -966,24 +955,24 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 			additionalVariables[foreachState->varKey->returnStringValue()] = std::make_pair(DataTypeEnum::DATA_ANY, key);
 	}
 
-	this->loopRunningCount++;
+	this->__loopRunningCount++;
 	while (true)
 	{
 		auto returnValue = this->compile(
 			foreachState->blockWillRun,
-			this->variable->variables,
+			this->__variable->variables,
 			additionalVariables,
-			this->variable->functionMap
+			this->__variable->functionMap
 		);
-		if (this->breakLoop)
+		if (this->__breakLoop)
 		{
-			this->loopRunningCount--;
-			this->breakLoop = false;
+			this->__loopRunningCount--;
+			this->__breakLoop = false;
 			return nullptr;
 		}
 		if (returnValue != nullptr)
 		{
-			this->loopRunningCount--;
+			this->__loopRunningCount--;
 			return returnValue;
 		}
 
@@ -1016,22 +1005,22 @@ const std::shared_ptr<HigherObject> Compiler::processForEachStatement(const std:
 			value->setHigherObject(realValue->listValue[index]);
 		}
 	}
-	this->loopRunningCount--;
+	this->__loopRunningCount--;
 	return nullptr;
 }
 
 // =================================================================================================
-// ManageCallHBracket
+// ManageCallBracket
 // 
 // =================================================================================================
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::manageCallBrackets(
+const std::shared_ptr<HigherObject> Compiler::_manageCallBrackets(
 	const std::shared_ptr<CallObjects > &next,
 	const std::shared_ptr<HigherObject> &returnVal,
 	const std::shared_ptr<Expression  > &expressionAssign)
 {
 	auto exprObj = std::dynamic_pointer_cast<ExpressionObjects>(next->currObject);
-	auto expr    = this->evaluateExpression(exprObj->expression); // Evaluate the expression
+	auto expr    = this->_evaluateExpression(exprObj->expression); // Evaluate the expression
 	if (returnVal->getCurrActive() == ACTIVE_LIST)
 	{
 		expr->castToInteger();
@@ -1045,23 +1034,23 @@ const std::shared_ptr<HigherObject> Compiler::manageCallBrackets(
 			if (returnVal->isConstant)
 				throw std::runtime_error("Runtime Error: Variable is Constant.");
 
-			this->isAssigning = true;
-			auto exprResult = this->evaluateExpression(expressionAssign);
+			this->__isAssigning = true;
+			auto exprResult = this->_evaluateExpression(expressionAssign);
 			auto oldValue   = returnVal->listValue[index];
 			if (next->operation == "+=")
-				exprResult = this->newOperatedObject(oldValue, "+", exprResult);
+				exprResult = this->_newOperatedObject(oldValue, "+", exprResult);
 			else if (next->operation == "-=")
-				exprResult = this->newOperatedObject(oldValue, "-", exprResult);
+				exprResult = this->_newOperatedObject(oldValue, "-", exprResult);
 			else if (next->operation == "*=")
-				exprResult = this->newOperatedObject(oldValue, "*", exprResult);
+				exprResult = this->_newOperatedObject(oldValue, "*", exprResult);
 			else if (next->operation == "/=")
-				exprResult = this->newOperatedObject(oldValue, "/", exprResult);
+				exprResult = this->_newOperatedObject(oldValue, "/", exprResult);
 			else if (next->operation == "%=")
-				exprResult = this->newOperatedObject(oldValue, "%", exprResult);
+				exprResult = this->_newOperatedObject(oldValue, "%", exprResult);
 
 			if (returnVal->listValue[index]->isConstant)
 				throw std::runtime_error("Runtime Error: Variable is Constant.");
-			this->checkVariableConstraint(returnVal->listValue[index], exprResult->getDatatypeEnum());
+			this->_checkVariableConstraint(returnVal->listValue[index], exprResult->getDatatypeEnum());
 
 			if (returnVal == exprResult)
 				throw std::runtime_error("Runtime Error: Self-referencing in list");
@@ -1089,8 +1078,8 @@ const std::shared_ptr<HigherObject> Compiler::manageCallBrackets(
 			if (returnVal->isConstant)
 				throw std::runtime_error("Runtime Error: Variable is Constant.");
 
-			this->isAssigning = true;
-			auto exprResult = this->evaluateExpression(expressionAssign);
+			this->__isAssigning = true;
+			auto exprResult = this->_evaluateExpression(expressionAssign);
 			if (exprResult->getIsReferenced())
 				throw std::runtime_error("Runtime Error: Invalid assignment. Referenced variables cannot be assigned to specific elements in a 'jstring'.");
 
@@ -1114,28 +1103,28 @@ const std::shared_ptr<HigherObject> Compiler::manageCallBrackets(
 			if (key == nullptr && next->operation != "=")
 				throw std::runtime_error("Runtime Error: Key in map doesn't exist. Cannot do operation.");
 
-			this->isAssigning = true;
-			auto exprResult = this->evaluateExpression(expressionAssign);
+			this->__isAssigning = true;
+			auto exprResult = this->_evaluateExpression(expressionAssign);
 			if (key != nullptr)
 			{
 				auto oldValue = returnVal->mapValue.at(key);
 				if (next->operation == "+=")
-					exprResult = this->newOperatedObject(oldValue, "+", exprResult);
+					exprResult = this->_newOperatedObject(oldValue, "+", exprResult);
 				else if (next->operation == "-=")
-					exprResult = this->newOperatedObject(oldValue, "-", exprResult);
+					exprResult = this->_newOperatedObject(oldValue, "-", exprResult);
 				else if (next->operation == "*=")
-					exprResult = this->newOperatedObject(oldValue, "*", exprResult);
+					exprResult = this->_newOperatedObject(oldValue, "*", exprResult);
 				else if (next->operation == "/=")
-					exprResult = this->newOperatedObject(oldValue, "/", exprResult);
+					exprResult = this->_newOperatedObject(oldValue, "/", exprResult);
 				else if (next->operation == "%=")
-					exprResult = this->newOperatedObject(oldValue, "%", exprResult);
+					exprResult = this->_newOperatedObject(oldValue, "%", exprResult);
 			}
 
 			if (key != nullptr)
 			{
 				if (returnVal->mapValue[key]->isConstant)
 					throw std::runtime_error("Runtime Error: Variable is Constant.");
-				this->checkVariableConstraint(returnVal->mapValue[key], exprResult->getDatatypeEnum());
+				this->_checkVariableConstraint(returnVal->mapValue[key], exprResult->getDatatypeEnum());
 
 				if (returnVal == exprResult)
 					throw std::runtime_error("Runtime Error: Self-referencing in list");
@@ -1174,7 +1163,7 @@ const std::shared_ptr<HigherObject> Compiler::manageCallBrackets(
 // This is the return value on what you call. Example the return value of function is list.
 // Then you can still do operation because. you know, you can?.
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::manageEndCall(
+const std::shared_ptr<HigherObject> Compiler::_manageEndCall(
 	const std::shared_ptr<CallObjects> &callObj,
 	std::shared_ptr<HigherObject> &returnVal,
 	const std::shared_ptr<Expression> &expressionAssign)
@@ -1212,8 +1201,8 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 		if (functionObj->returnStringValue() != "(")
 			throw std::runtime_error("Runtime Error: Return Value is Function. Not a class.");
 
-		this->isAssigning = true;
-		return this->runFunction(returnVal->funcValue, this->getVectorHigherObject(functionObj->arguments));
+		this->__isAssigning = true;
+		return this->_runFunction(returnVal->funcValue, this->_getVectorHigherObject(functionObj->arguments));
 	}
 	// This thing is still not properly coded or implemented.
 	// I will do this bit later or next time
@@ -1222,13 +1211,14 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 	{
 		if (tok == JDM::TokenType::FUNCTIONS)
 		{
-			auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCurrObj);
-			auto classFunc   = this->nativeClassMap.find(returnVal->objectValue->className);
-			if (classFunc != this->nativeClassMap.end())
+			auto classFunc   = this->__nativeClassMap.find(returnVal->objectValue->className);
+			if (classFunc != this->__nativeClassMap.end())
 			{
+				auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCurrObj);
+
 				// Will never be true, as recursively call, will handle it, but just in case.
 				if (functionObj->returnStringValue() == "(")
-					newReturn = classFunc->second->constructor(returnVal, this->getVectorHigherObject(functionObj->arguments));
+					newReturn = classFunc->second->constructor(returnVal, this->_getVectorHigherObject(functionObj->arguments));
 				else
 				{
 					// This still not really cannot do anything.
@@ -1236,8 +1226,8 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 					if (func == classFunc->second->mapFunctions.end())
 						throw std::runtime_error("Runtime Error: This method is not a member of class '" + returnVal->objectValue->className + "'.");
 
-					this->isAssigning = true;
-					newReturn = classFunc->second->manageFunction(func->second, returnVal, this->getVectorHigherObject(functionObj->arguments));
+					this->__isAssigning = true;
+					newReturn = classFunc->second->manageFunction(func->second, returnVal, this->_getVectorHigherObject(functionObj->arguments));
 				}
 			}
 		}
@@ -1260,7 +1250,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 			}
 			$log => test()[0];
 			*/
-			newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+			newReturn = this->_manageCallBrackets(newCallObj, returnVal, expressionAssign);
 
 		else if (tok == JDM::TokenType::FUNCTIONS)
 		{
@@ -1293,10 +1283,10 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 				*/
 				throw std::runtime_error("Runtime Error: This function is not a member of class 'jstring'.");
 
-			this->isAssigning = true;
+			this->__isAssigning = true;
 			newReturn = StringHigherFunctions::manageFunction(
 				func->second, returnVal,
-				this->getVectorHigherObject(functionObj->arguments)
+				this->_getVectorHigherObject(functionObj->arguments)
 			);
 		}
 	}
@@ -1305,7 +1295,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 		if (tok == JDM::TokenType::EXPRESSION)
 		{
 			// This will manage when you want to know the index of something
-			newReturn = this->manageCallBrackets(newCallObj, returnVal, expressionAssign);
+			newReturn = this->_manageCallBrackets(newCallObj, returnVal, expressionAssign);
 		}
 
 		else if (tok == JDM::TokenType::FUNCTIONS)
@@ -1328,10 +1318,10 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 					*/
 					throw std::runtime_error("Runtime Error: This function is not a member of class 'jlist'.");
 
-				this->isAssigning = true;
+				this->__isAssigning = true;
 				newReturn = ListHigherFunctions::manageFunction(
 					func->second, returnVal,
-					this->getVectorHigherObject(functionObj->arguments)
+					this->_getVectorHigherObject(functionObj->arguments)
 				);
 			}
 			else // Return Value is Map
@@ -1351,10 +1341,10 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 					*/
 					throw std::runtime_error("Runtime Error: This function is not a member of class 'jmap'.");
 
-				this->isAssigning = true;
+				this->__isAssigning = true;
 				newReturn = MapHigherFunctions::manageFunction(
 					func->second, returnVal,
-					this->getVectorHigherObject(functionObj->arguments)
+					this->_getVectorHigherObject(functionObj->arguments)
 				);
 			}
 		}
@@ -1366,7 +1356,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 		throw std::runtime_error("Runtime Error: Return Value cannot be called or act like class.");
 
 	// Return the new Value calculated above
-	return this->manageEndCall(newCallObj, newReturn);
+	return this->_manageEndCall(newCallObj, newReturn);
 }
 
 
@@ -1375,7 +1365,7 @@ const std::shared_ptr<HigherObject> Compiler::manageEndCall(
 // 
 // =================================================================================================
 JDM_DLL
-std::shared_ptr<HigherObject> Compiler::newOperatedObject(
+std::shared_ptr<HigherObject> Compiler::_newOperatedObject(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1397,23 +1387,23 @@ std::shared_ptr<HigherObject> Compiler::newOperatedObject(
 	// Handle different types of firstVal based on its type
 
 	auto cActive = firstVal->getCurrActive();
-	if      (cActive == ACTIVE_STRING  ) this->handleNewOperatedString(firstVal, operation, secondVal);
-	else if (cActive == ACTIVE_LIST    ) this->handleNewOperatedList  (firstVal, operation, secondVal);
-	else if (cActive == ACTIVE_MAP     ) this->handleNewOperatedMap   (firstVal, operation, secondVal);
-	else if (cActive == ACTIVE_FUNCTION) this->handleNewOperatedFunc  (firstVal, operation, secondVal);
-	else if (cActive == ACTIVE_OBJECT  ) this->handleNewOperatedObject(firstVal, operation, secondVal);
+	if      (cActive == ACTIVE_STRING  ) this->_handleNewOperatedString(firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_LIST    ) this->_handleNewOperatedList  (firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_MAP     ) this->_handleNewOperatedMap   (firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_FUNCTION) this->_handleNewOperatedFunc  (firstVal, operation, secondVal);
+	else if (cActive == ACTIVE_OBJECT  ) this->_handleNewOperatedObject(firstVal, operation, secondVal);
 	else if (cActive == ACTIVE_INTEGER
 		  || cActive == ACTIVE_DECIMAL
 		  || cActive == ACTIVE_BOOLEAN)
 		// Handle number types (integer, decimal, boolean)
-		this->handleNewOperatedNumber(firstVal, operation, secondVal);
+		this->_handleNewOperatedNumber(firstVal, operation, secondVal);
 
 	// Return the modified first value
 	return firstVal;
 }
 
 JDM_DLL
-void Compiler::handleNewOperatedString(
+void Compiler::_handleNewOperatedString(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1453,7 +1443,7 @@ void Compiler::handleNewOperatedString(
 }
 
 JDM_DLL
-void Compiler::handleNewOperatedList(
+void Compiler::_handleNewOperatedList(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1483,7 +1473,7 @@ void Compiler::handleNewOperatedList(
 }
 
 JDM_DLL
-void Compiler::handleNewOperatedMap(
+void Compiler::_handleNewOperatedMap(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1515,7 +1505,7 @@ void Compiler::handleNewOperatedMap(
 }
 
 JDM_DLL
-void Compiler::handleNewOperatedFunc(
+void Compiler::_handleNewOperatedFunc(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1534,7 +1524,7 @@ void Compiler::handleNewOperatedFunc(
 
 
 JDM_DLL
-void Compiler::handleNewOperatedNumber(
+void Compiler::_handleNewOperatedNumber(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1579,7 +1569,7 @@ void Compiler::handleNewOperatedNumber(
 }
 
 JDM_DLL
-void Compiler::handleNewOperatedObject(
+void Compiler::_handleNewOperatedObject(
 	std::shared_ptr<HigherObject> &firstVal,
 	const std::string &operation,
 	const std::shared_ptr<HigherObject> &secondVal)
@@ -1601,7 +1591,7 @@ void Compiler::handleNewOperatedObject(
 // 
 // =================================================================================================
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
+const std::shared_ptr<HigherObject> Compiler::_recursivelyCall(
 	const std::shared_ptr<CallObjects> &callObj,
 	const std::shared_ptr<Expression> &expressionAssign)
 {
@@ -1612,34 +1602,35 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 	{
 		auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(callObj->currObject);
 		std::shared_ptr<FunctionCall> newFunc = nullptr;
-		auto variables = this->variable->variables  .find(functionObj->returnStringValue());
-		auto function  = this->variable->functionMap.find(functionObj->returnStringValue());
+		auto variables = this->__variable->variables  .find(functionObj->returnStringValue());
+		auto function  = this->__variable->functionMap.find(functionObj->returnStringValue());
 
-		if (function != this->variable->functionMap.end())
+		if (function != this->__variable->functionMap.end())
 			newFunc = function->second;
 
 		// Used to run a lambda
-		else if (variables != this->variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_FUNCTION)
+		else if (variables != this->__variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_FUNCTION)
 			newFunc = variables->second.second->funcValue;
 
-		else if (variables != this->variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_OBJECT)
+		else if (variables != this->__variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_OBJECT)
 		{
-			for (auto &e : this->allInclude)
+			for (auto &e : this->__allInclude)
 			{
 				if (e.compare(variables->second.second->objectValue->className) == 0)
 				{
+					// Check if the object is callable
 					if (!variables->second.second->objectValue->fromMainSource)
 						throw std::runtime_error("Runtime Error: This object is not callable.");
-					auto newObj = std::make_shared<HigherObject>();
 
+					auto newObj = std::make_shared<HigherObject>();
 					newObj->castToObject();
 					newObj->objectValue->className = variables->second.second->objectValue->className;
 					newObj->objectValue->members   = variables->second.second->objectValue->members;
 					newObj->objectValue->methods   = variables->second.second->objectValue->methods;
 					newObj->objectValue->fromMainSource = false;
-					returnValue = this->nativeClassMap[e]->constructor(newObj, this->getVectorHigherObject(functionObj->arguments));
+					returnValue = this->__nativeClassMap[e]->constructor(newObj, this->_getVectorHigherObject(functionObj->arguments));
 
-					return this->manageEndCall(callObj, returnValue, expressionAssign);
+					return this->_manageEndCall(callObj, returnValue, expressionAssign);
 				}
 			}
 			throw std::runtime_error("Runtime Error: No CONSTRUCTOR implemented yet.");
@@ -1657,50 +1648,50 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 					if (callObj->nextObject != nullptr)
 						throw std::runtime_error("Runtime Error: Reference can't have recursive call.");
 
-					if (!this->isAssigning)
+					if (!this->__isAssigning)
 						throw std::runtime_error("Runtime Error: Reference keyword must be only use in Assignment and Declaration");
 
 					if (functionObj->arguments.size() != 1)
 						throw std::runtime_error("Runtime Error: Reference expect L Value not R Value..");
 
-					auto varReferenced = getVariableObject(functionObj->arguments[0]);
+					auto varReferenced = this->_getVariableObject(functionObj->arguments[0]);
 					varReferenced->setIsReferenced(true);
 					return varReferenced;
 				}
 				else
-					returnValue = this->handleNativeFunction(nativeFunc->second,
-						this->getVectorHigherObject(functionObj->arguments));
+					returnValue = this->_handleNativeFunction(nativeFunc->second,
+						this->_getVectorHigherObject(functionObj->arguments));
 
-				return this->manageEndCall( callObj, returnValue, expressionAssign );
+				return this->_manageEndCall( callObj, returnValue, expressionAssign );
 			}
 			else throw std::runtime_error("Runtime Error: Function is not declared.");
 		}
 		if (newFunc == nullptr)
 			throw std::runtime_error("Runtime Error: Invalid Function.");
 
-		returnValue = this->runFunction(newFunc, this->getVectorHigherObject(functionObj->arguments));
+		returnValue = this->_runFunction(newFunc, this->_getVectorHigherObject(functionObj->arguments));
 	}
 	else if (tok == JDM::TokenType::EXPRESSION)
 	{
 		// Get the expression object
 		auto exprObj = std::dynamic_pointer_cast<ExpressionObjects>(callObj->currObject);
-		auto variables = this->variable->variables.find(exprObj->returnStringValue());
-		if (variables == this->variable->variables.end())
+		auto variables = this->__variable->variables.find(exprObj->returnStringValue());
+		if (variables == this->__variable->variables.end())
 			throw std::runtime_error("Runtime Error: Variable is not declared.");
 
 		auto varList = variables->second.second;
 		if (varList->getCurrActive() == ACTIVE_LIST
 		 || varList->getCurrActive() == ACTIVE_MAP
 		 || varList->getCurrActive() == ACTIVE_STRING)
-			returnValue = this->manageCallBrackets(callObj, varList, expressionAssign);
+			returnValue = this->_manageCallBrackets(callObj, varList, expressionAssign);
 		else
 			throw std::runtime_error("Runtime Error: Variable is not a String, List or a Map.");
 	}
 	else if (tok == JDM::TokenType::VARIABLE)
 	{
 		auto var = std::dynamic_pointer_cast<VariableObjects>(callObj->currObject);
-		auto variables = this->variable->variables.find(var->returnStringValue());
-		if (variables == this->variable->variables.end())
+		auto variables = this->__variable->variables.find(var->returnStringValue());
+		if (variables == this->__variable->variables.end())
 			throw std::runtime_error("Runtime Error: Variable is not declared.");
 
 		returnValue = variables->second.second;
@@ -1708,7 +1699,7 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 	else if (tok == JDM::TokenType::STRING)
 		returnValue = std::make_shared<HigherObject>(callObj->currObject->returnStringValue());
 
-	return this->manageEndCall(callObj, returnValue, expressionAssign);
+	return this->_manageEndCall(callObj, returnValue, expressionAssign);
 }
 
 // =================================================================================================
@@ -1716,7 +1707,7 @@ const std::shared_ptr<HigherObject> Compiler::recursivelyCall(
 // 
 // =================================================================================================
 JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::runFunction(
+const std::shared_ptr<HigherObject> Compiler::_runFunction(
 	const std::shared_ptr<FunctionCall> &newFunc,
 	const std::vector<std::shared_ptr<HigherObject>> &arguments)
 {
@@ -1726,7 +1717,7 @@ const std::shared_ptr<HigherObject> Compiler::runFunction(
 	{
 		auto nativeFunc = NativeFunction::allNativeFunction.find(newFunc->funcName.substr(8));
 		if (nativeFunc != NativeFunction::allNativeFunction.end())
-			return this->handleNativeFunction(nativeFunc->second, newArgVec);
+			return this->_handleNativeFunction(nativeFunc->second, newArgVec);
 		else
 			throw std::runtime_error("Runtime Error: Function is not declared.");
 	}
@@ -1734,7 +1725,7 @@ const std::shared_ptr<HigherObject> Compiler::runFunction(
 	std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> scopedVariables;
 	for (const auto& varName : newFunc->varNameAccesible)
 	{
-		scopedVariables[varName] = this->variable->variables.at(varName);
+		scopedVariables[varName] = this->__variable->variables.at(varName);
 	}
 	int index = 0;
 	std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> newParam
@@ -1743,9 +1734,9 @@ const std::shared_ptr<HigherObject> Compiler::runFunction(
 	{
 		if (index == newArgVec.size())
 			break;
-		auto var = this->checkVariableConstraint(newArgVec[newArgVec.size()-1-index], param.second.first);
+		auto var = this->_checkVariableConstraint(newArgVec[newArgVec.size()-1-index], param.second.first);
 		newParam[param.first] = std::make_pair(param.second.first, var);
 		index++;
 	}
-	return this->compile(newFunc->blockWillRun, scopedVariables, newParam, this->variable->functionMap);
+	return this->compile(newFunc->blockWillRun, scopedVariables, newParam, this->__variable->functionMap);
 }

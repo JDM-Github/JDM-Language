@@ -1,3 +1,0 @@
-jfunc test() => {}
-test();
-$logn => 10 + 20;

@@ -2,150 +2,77 @@
 
 #include "utils/HigherObject.hpp"
 #include "library/NativeObject.hpp"
-#include "library/ListObject.hpp"
-#include "library/StringObject.hpp"
-#include "library/MapObject.hpp"
-#include "library/classes/baseClasses.hpp"
-
-#include "utils/Comparator.hpp"
-
-// #include "library/classes/fileClassObject.hpp"
-// #include "library/classes/consoleClassObject.hpp"
+#include "library/classes/BaseClasses.hpp"
+#include "struct/VariableLink.hpp"
 
 class JDM_DLL Compiler
 {
+public:
+	JDM_DLL Compiler(const std::shared_ptr<Block> &mainBlock);
+	JDM_DLL CSharedHigherObject compile(
+		const std::shared_ptr<Block> &block,
+		const std::unordered_map<std::string, std::pair<DataTypeEnum, SharedHigherObject>> &_variables = {},
+		const std::unordered_map<std::string, std::pair<DataTypeEnum, SharedHigherObject>> &_AdditionalVariables = {},
+		const std::unordered_map<std::string, std::shared_ptr<FunctionCall>> &_functionsAvail = {});
+
 private:
 	std::shared_ptr<Block> __mainBlock;
 
 	// Collection of all include file, Stored in string
-	std::vector<std::string> allInclude;
-	std::unordered_map<std::string, std::shared_ptr<BaseNativeClass>> nativeClassMap =
-	{
-		// { "File"   , std::make_shared<FileClassFunctions>() },
-		// { "Console", std::make_shared<ConsoleClass>() }
-	};
+	std::vector<std::string> __allInclude;
+	std::unordered_map<std::string, std::shared_ptr<BaseNativeClass>> __nativeClassMap;
+	std::shared_ptr<VariableLink> __variable = std::make_shared<VariableLink>();
 
-	// Variable link
-	struct VariableLink
-	{
-		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> variables;
-		std::unordered_map<std::string, std::shared_ptr<FunctionCall>> functionMap;
-		std::shared_ptr<VariableLink> next;
-		std::shared_ptr<VariableLink> prev;
-	};
-	std::shared_ptr<VariableLink> variable = std::make_shared<VariableLink>();
-	bool breakLoop       = false;
-	bool isAssigning     = false;
-	int loopRunningCount = 0;
-
-public:
-	Compiler(const std::shared_ptr<Block> &mainBlock)
-	 : __mainBlock(mainBlock)
-	{
-		this->compile(this->__mainBlock);
-	}
-
-	JDM_DLL const std::shared_ptr<HigherObject> compile(
-		const std::shared_ptr<Block> &block,
-		const std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_variables = {},
-		const std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_AdditionalVariables = {},
-		const std::unordered_map<std::string, std::shared_ptr<FunctionCall>> &_functionsAvail = {});
-
-	JDM_DLL CVoid doDeclarationInstruction(const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL CVoid doAssignmentInstruction (const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL CVoid doLoggerInstruction     (const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL CVoid doCFunctionInstruction  (const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL CVoid processCreateFunction   (const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL CVoid processCallFunction     (const std::shared_ptr<Instruction> &instruction);
-
-	JDM_DLL const std::shared_ptr<HigherObject> processIfStatement (const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL const std::shared_ptr<HigherObject> processForStatement(const std::shared_ptr<Instruction> &instruction);
-	JDM_DLL const std::shared_ptr<HigherObject> processWhileLoop   (const std::shared_ptr<Instruction> &instruction);
-
-	JDM_DLL const std::shared_ptr<HigherObject> processForEachStatement(const std::shared_ptr<Instruction> &instruction);
-
-	JDM_DLL const std::shared_ptr<HigherObject> runFunction(
-		const std::shared_ptr<FunctionCall> &newFunc,
-		const std::vector<std::shared_ptr<HigherObject>> &arguments);
+	bool __breakLoop        = false;
+	bool __isAssigning      = false;
+	int  __loopRunningCount = 0;
 
 private:
+	JDM_DLL const void _initializeVariables();
+	JDM_DLL const void setupVariablePrevious();
 
-	JDM_DLL const std::shared_ptr<HigherObject> handleNativeFunction(
-		NativeFunction::NativeFunctionEnum nativeType,
-		const std::vector<std::shared_ptr<HigherObject>> &objects);
-	JDM_DLL const std::shared_ptr<HigherObject> recursivelyCall(
-		const std::shared_ptr<CallObjects> &callObj,
-		const std::shared_ptr<Expression> &expressionAssign = nullptr);
-	JDM_DLL const std::shared_ptr<HigherObject> manageEndCall(
-		const std::shared_ptr<CallObjects> &callObj,
-		std::shared_ptr<HigherObject> &returnVal,
-		const std::shared_ptr<Expression> &expressionAssign = nullptr);
-	JDM_DLL const std::shared_ptr<HigherObject> manageCallBrackets(
-		const std::shared_ptr<CallObjects > &next,
-		const std::shared_ptr<HigherObject> &returnVal,
-		const std::shared_ptr<Expression  > &expressionAssign = nullptr);
+	JDM_DLL CVoid _doDeclarationInstruction(const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CVoid _doAssignmentInstruction (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CVoid _doLoggerInstruction     (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CVoid _doCFunctionInstruction  (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CVoid _processCreateFunction   (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CVoid _processCallFunction     (const std::shared_ptr<Instruction> &instruction);
+
+	JDM_DLL CSharedHigherObject _processIfStatement     (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CSharedHigherObject _processForStatement    (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CSharedHigherObject _processWhileLoop       (const std::shared_ptr<Instruction> &instruction);
+	JDM_DLL CSharedHigherObject _processForEachStatement(const std::shared_ptr<Instruction> &instruction);
+
+	JDM_DLL CSharedHigherObject _runFunction(
+		const std::shared_ptr<FunctionCall> &newFunc,
+		const std::vector<SharedHigherObject> &arguments);
+
+	JDM_DLL CSharedHigherObject _handleNativeFunction(NativeFunction::NativeFunctionEnum nativeType, const std::vector<SharedHigherObject> &objects);
+	JDM_DLL CSharedHigherObject _recursivelyCall     (const std::shared_ptr<CallObjects> &callObj, const std::shared_ptr<Expression> &expressionAssign = nullptr);
+	JDM_DLL CSharedHigherObject _manageEndCall       (const std::shared_ptr<CallObjects> &callObj, SharedHigherObject &returnVal, const std::shared_ptr<Expression> &expressionAssign = nullptr);
+	JDM_DLL CSharedHigherObject _manageCallBrackets  (const std::shared_ptr<CallObjects > &next, CSharedHigherObject &returnVal, const std::shared_ptr<Expression  > &expressionAssign = nullptr);
 
 	// HANDLE VARIABLE, LIKE DECLARATION
-	JDM_DLL const std::vector<std::shared_ptr<HigherObject>> getVectorHigherObject(
-		const std::vector<std::shared_ptr<Expression>> &expr);
-	JDM_DLL const void setupVariablePrevious();
-	JDM_DLL const std::vector<std::string> getAllVarName(
-		const std::unordered_map<std::string,
-		std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_variables = {});
-	JDM_DLL const void addVariable(
-		const std::shared_ptr<Expression> &expr,
-		DataTypeEnum dataT,
-		const std::string &varName,
-		bool isConst = false,
-		bool isForce = false,
-		const std::string &operation = "=");
-	JDM_DLL const std::pair<DataTypeEnum, std::shared_ptr<HigherObject>> returnVariable(
-		const std::shared_ptr<Expression> &expr,
-		DataTypeEnum dataT);
-	JDM_DLL const std::shared_ptr<HigherObject> castVariable(
-		const std::shared_ptr<Expression> &expr,
-		DataTypeEnum dataT,
-		bool checkConstraint = true);
-	JDM_DLL const std::shared_ptr<HigherObject> checkVariableConstraint(
-		const std::shared_ptr<HigherObject> &var,
-		DataTypeEnum dataT,
-		bool checkConstraint = true);
+	JDM_DLL const std::vector<SharedHigherObject> _getVectorHigherObject(const std::vector<std::shared_ptr<Expression>> &expr);
+
+	JDM_DLL const std::vector<std::string> _getAllVarName(const std::unordered_map<std::string, std::pair<DataTypeEnum, SharedHigherObject>> &_variables = {});
+	JDM_DLL const void _addVariable(const std::shared_ptr<Expression> &expr, DataTypeEnum dataT, const std::string &varName, bool isConst = false, bool isForce = false, const std::string &operation = "=");
+	JDM_DLL const std::pair<DataTypeEnum, SharedHigherObject> _returnVariable(const std::shared_ptr<Expression> &expr, DataTypeEnum dataT);
+	JDM_DLL CSharedHigherObject _castVariable(const std::shared_ptr<Expression> &expr, DataTypeEnum dataT, bool checkConstraint = true);
+	JDM_DLL CSharedHigherObject _checkVariableConstraint(CSharedHigherObject &var, DataTypeEnum dataT, bool checkConstraint = true);
 
 	// Function to create a new operated object based on the provided operation and operands
-	JDM_DLL std::shared_ptr<HigherObject> newOperatedObject(
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
-	JDM_DLL void handleNewOperatedString(
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
-	JDM_DLL void handleNewOperatedList  (
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
-	JDM_DLL void handleNewOperatedMap   (
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
-	JDM_DLL void handleNewOperatedFunc  (
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
-	JDM_DLL void handleNewOperatedNumber(
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
-	JDM_DLL void handleNewOperatedObject(
-		std::shared_ptr<HigherObject> &firstVal,
-		const std::string &operation = "",
-		const std::shared_ptr<HigherObject> &secondVal = nullptr);
+	JDM_DLL SharedHigherObject _newOperatedObject(SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
+	JDM_DLL void _handleNewOperatedString(SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
+	JDM_DLL void _handleNewOperatedList  (SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
+	JDM_DLL void _handleNewOperatedMap   (SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
+	JDM_DLL void _handleNewOperatedFunc  (SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
+	JDM_DLL void _handleNewOperatedNumber(SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
+	JDM_DLL void _handleNewOperatedObject(SharedHigherObject &firstVal, const std::string &operation = "", CSharedHigherObject &secondVal = nullptr);
 
 	// Used to get the HigherObject
 	// This will return value of variable or expression
-	JDM_DLL std::shared_ptr<HigherObject> getHigherObject(
-		const std::shared_ptr<VarObjects> &Value,
-		const std::shared_ptr<Expression> &Expression);
-	JDM_DLL std::shared_ptr<HigherObject> &getVariableObject(const std::shared_ptr<Expression> &expr);
-	JDM_DLL std::shared_ptr<HigherObject> evaluateExpression(const std::shared_ptr<Expression> &expr);
+	JDM_DLL SharedHigherObject _getHigherObject    (const std::shared_ptr<VarObjects> &Value, const std::shared_ptr<Expression> &Expression);
+	JDM_DLL SharedHigherObject &_getVariableObject (const std::shared_ptr<Expression> &expr);
+	JDM_DLL SharedHigherObject _evaluateExpression(const std::shared_ptr<Expression> &expr);
 };
