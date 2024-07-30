@@ -33,7 +33,8 @@ namespace JDMConsole {
 
     struct PixelRGB { int R, G, B; };
 
-    enum PIXEL {
+    enum PIXEL
+    {
         NEWLINE     = 0xA,
         BLANK       = 0x20,
         PIXEL_SOLID = 0x2588,

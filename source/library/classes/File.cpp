@@ -21,6 +21,7 @@ std::shared_ptr<HigherObject> FileClass::constructor(
 	if (objects.size() > 1)
 		throw std::runtime_error("Runtime Error: 'File' expects only one argument (file path).");
 
+	obj1->objectValue->members["class" ] = std::make_shared<HigherObject>("File");
 	obj1->objectValue->members["file"  ] = std::make_shared<HigherObject>("");
 	obj1->objectValue->members["opened"] = std::make_shared<HigherObject>(false);
 	if (objects.size() == 1)

@@ -526,11 +526,6 @@ const void Compiler::_addVariable(
 	else if (operation == "/=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "/", var);
 	else if (operation == "%=") var = this->_newOperatedObject(this->__variable->variables[varName].second, "%", var);
 
-	// if (var->getCurrActive() == ACTIVE_FUNCTION)
-	// {
-
-	// }
-
 	if (var->getIsReferenced())
 	{
 		if (dataT != DataTypeEnum::DATA_ANY && var->getDatatypeEnum() != dataT)
@@ -1227,7 +1222,12 @@ const std::shared_ptr<HigherObject> Compiler::_manageEndCall(
 						throw std::runtime_error("Runtime Error: This method is not a member of class '" + returnVal->objectValue->className + "'.");
 
 					this->__isAssigning = true;
-					newReturn = classFunc->second->manageFunction(func->second, returnVal, this->_getVectorHigherObject(functionObj->arguments));
+					if (!returnVal->objectValue->fromMainSource
+						&& func->second == static_cast<int>(ConsoleClass::CONSOLE_RUN)
+						&& classFunc->first == "Console")
+						newReturn = this->_runConsole(classFunc->second, returnVal, this->_getVectorHigherObject(functionObj->arguments));
+					else
+						newReturn = classFunc->second->manageFunction(func->second, returnVal, this->_getVectorHigherObject(functionObj->arguments));
 				}
 			}
 		}
@@ -1236,8 +1236,13 @@ const std::shared_ptr<HigherObject> Compiler::_manageEndCall(
 		// TO DO
 		else if (tok == JDM::TokenType::VARIABLE)
 		{
-			
+			auto classFunc   = this->__nativeClassMap.find(returnVal->objectValue->className);
+			if (classFunc != this->__nativeClassMap.end())
+			{
+			}
 		}
+		else
+			throw std::runtime_error("Runtime Error: Invalid end call on 'jobject'");
 	}
 	// If the return value is string, do something, make it act like a string
 	else if (returnVal->getCurrActive() == ACTIVE_STRING)
@@ -1728,8 +1733,7 @@ const std::shared_ptr<HigherObject> Compiler::_runFunction(
 		scopedVariables[varName] = this->__variable->variables.at(varName);
 	}
 	int index = 0;
-	std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> newParam
-		= newFunc->parameters;
+	std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> newParam = newFunc->parameters;
 	for (const auto &param : newFunc->parameters)
 	{
 		if (index == newArgVec.size())
@@ -1739,4 +1743,49 @@ const std::shared_ptr<HigherObject> Compiler::_runFunction(
 		index++;
 	}
 	return this->compile(newFunc->blockWillRun, scopedVariables, newParam, this->__variable->functionMap);
+}
+
+JDM_DLL
+const std::shared_ptr<HigherObject> Compiler::_runConsole(
+	const std::shared_ptr<BaseNativeClass> &nativeClassFunc,
+	std::shared_ptr<HigherObject> &obj,
+	const std::vector<std::shared_ptr<HigherObject>> &objects)
+{
+	if (obj->objectValue->members["userCreate"] != nullptr)
+	{
+		auto createResult = this->_runFunction(obj->objectValue->members["userCreate"]->funcValue, {});
+		if (createResult != nullptr)
+		{
+			createResult->castToBoolean();
+			if (!createResult->booleanValue)
+				return std::make_shared<HigherObject>(false);
+		}
+	}
+
+	nativeClassFunc->manageFunction(static_cast<int>(ConsoleClass::CONSOLE_RUN), obj, objects);
+	while (obj->objectValue->members["isRunning"]->booleanValue)
+	{
+		nativeClassFunc->manageFunction(static_cast<int>(ConsoleClass::CONSOLE_START_UPDATE), obj, objects);
+		auto userupd = obj->objectValue->members["userUpdate"];
+
+		bool updateGame = (userupd == nullptr);
+		if (!updateGame)
+		{
+			auto result = this->_runFunction(userupd->funcValue, {});
+			updateGame = result == nullptr;
+			if (!updateGame)
+			{
+				result->castToBoolean();
+				updateGame = result->booleanValue;
+			}
+		}
+		if (updateGame)
+		{
+			auto anotherRes = nativeClassFunc->manageFunction(static_cast<int>(ConsoleClass::CONSOLE_UPDATE), obj, objects);
+			if (!anotherRes->booleanValue) break;
+			continue;
+		}
+		return std::make_shared<HigherObject>(false);
+	}
+	return std::make_shared<HigherObject>(true);
 }

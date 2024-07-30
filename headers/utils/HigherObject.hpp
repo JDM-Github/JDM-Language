@@ -74,6 +74,8 @@ public:
 	JDM_DLL CString getType();
 	JDM_DLL CString _getStringValue();
 
+	JDM_DLL const bool isNumber();
+
 	JDM_DLL inline ActiveDataType getCurrActive() { return this->currActive; }
 	JDM_DLL inline void setIsReferenced(bool reference) { this->isReferenced = reference; }
 	JDM_DLL inline bool getIsReferenced() { return this->isReferenced; }

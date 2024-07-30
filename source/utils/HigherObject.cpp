@@ -155,6 +155,13 @@ const void HigherObject::logValue()
 }
 
 JDM_DLL
+const bool HigherObject::isNumber()
+{
+	auto active = this->currActive;
+	return active == ACTIVE_INTEGER || active == ACTIVE_DECIMAL || active == ACTIVE_BOOLEAN;
+}
+
+JDM_DLL
 const std::string HigherObject::_getStringValue()
 {
 	std::ostringstream oss;

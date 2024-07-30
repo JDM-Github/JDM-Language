@@ -75,4 +75,8 @@ private:
 	JDM_DLL SharedHigherObject _getHigherObject    (const std::shared_ptr<VarObjects> &Value, const std::shared_ptr<Expression> &Expression);
 	JDM_DLL SharedHigherObject &_getVariableObject (const std::shared_ptr<Expression> &expr);
 	JDM_DLL SharedHigherObject _evaluateExpression(const std::shared_ptr<Expression> &expr);
+
+	JDM_DLL const SharedHigherObject _runConsole(
+		const std::shared_ptr<BaseNativeClass> &nativeClassFunc,
+		SharedHigherObject &obj, const std::vector<SharedHigherObject> &objects);
 };

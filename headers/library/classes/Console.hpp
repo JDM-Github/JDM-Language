@@ -1,69 +1,74 @@
 #pragma once
-#include "baseClasses.hpp"
-#include "../console/window.hpp"
+#include "BaseClasses.hpp"
 
-class ConsoleClass : public BaseNativeClass {
+class Window;
+
+class ConsoleClass : public BaseNativeClass
+{
 public:
 	enum ConsoleEnum {
-		CONSOLE_RUN
-	};
+		CONSOLE_RUN,
+		CONSOLE_UPDATE,
+		CONSOLE_START_UPDATE,
+		CONSOLE_SET_UPDATE,
+		CONSOLE_SET_CREATE,
+		CONSOLE_AUTO_CLEAR,
+		CONSOLE_CLEAR,
 
-	ConsoleClass() {
-		this->mapFunctions["run" ] = ConsoleEnum::CONSOLE_RUN;
-	}
+		CONSOLE_DRAW,
+		CONSOLE_DRAW_BOX
+	};
+	int64_t index = 0;
+	std::vector<std::shared_ptr<Window>> windows;
+
+	ConsoleClass();
 	std::shared_ptr<HigherObject> constructor(
 		std::shared_ptr<HigherObject> &obj1,
-		const std::vector<std::shared_ptr<HigherObject>> &objects)
-	{
-		obj1->objectValue->members["isRunning" ] = std::make_shared<HigherObject>(false);
-		obj1->objectValue->members["Width"     ] = std::make_shared<HigherObject>(static_cast<int64_t>(50));
-		obj1->objectValue->members["Height"    ] = std::make_shared<HigherObject>(static_cast<int64_t>(50));
-		obj1->objectValue->members["FontWidth" ] = std::make_shared<HigherObject>(static_cast<int64_t>(5 ));
-		obj1->objectValue->members["FontHeight"] = std::make_shared<HigherObject>(static_cast<int64_t>(5 ));
-		return obj1;
-	}
+		const std::vector<std::shared_ptr<HigherObject>> &objects);
 
-	std::shared_ptr<HigherObject> manageFunction(int funcType, std::shared_ptr<HigherObject> &obj1,
-		const std::vector<std::shared_ptr<HigherObject>> &objects)
-	{
-		ConsoleEnum newfuncType = static_cast<ConsoleEnum>(funcType);
-		std::shared_ptr<HigherObject> newReturn;
+	std::shared_ptr<HigherObject> manageFunction(
+		int funcType, std::shared_ptr<HigherObject> &obj1,
+		const std::vector<std::shared_ptr<HigherObject>> &objects);
 
-		if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_RUN)
-		{
-			if (obj1->objectValue->fromMainSource)
-				throw std::runtime_error("Runtime Error: The 'run' method is not static.");
-			if (obj1->objectValue->members["isRunning"]->booleanValue)
-				throw std::runtime_error("Runtime Error: The Console is already running.");
-			if (objects.empty())
-				throw std::runtime_error("Runtime Error: Expecting atleast 1 argument.");
-			if (objects.size() > 5)
-				throw std::runtime_error("Runtime Error: Expecting only 5 arguments.");
-			if (objects[0]->getCurrActive() != ACTIVE_STRING)
-				throw std::runtime_error("Runtime Error: Console title must be a 'jstring'");
+	JDM_DLL int64_t getCurrent(const std::shared_ptr<HigherObject> &obj1);
 
-			for (int i = 1; i < objects.size(); i++)
-				if (objects[i]->getCurrActive() != ACTIVE_INTEGER)
-					throw std::runtime_error("Runtime Error: Console argument " + std::to_string(i+1) +  "must be a 'jint'");
+	const void runConsole(int64_t current, const std::string& title, short Width = 100,
+		short Height = 50, short fontWidth = 5, short fontHeight = 5);
 
-			obj1->objectValue->members["isRunning" ]->booleanValue = true;
-			obj1->objectValue->members["Width"     ]->integerValue = ((objects.size() > 1) ? objects[1]->integerValue : obj1->objectValue->members["Width"     ]->integerValue);
-			obj1->objectValue->members["Height"    ]->integerValue = ((objects.size() > 2) ? objects[2]->integerValue : obj1->objectValue->members["Height"    ]->integerValue);
-			obj1->objectValue->members["FontWidth" ]->integerValue = ((objects.size() > 3) ? objects[3]->integerValue : obj1->objectValue->members["FontWidth" ]->integerValue);
-			obj1->objectValue->members["FontHeight"]->integerValue = ((objects.size() > 4) ? objects[4]->integerValue : obj1->objectValue->members["FontHeight"]->integerValue);
-			this->runConsole(objects[0]->stringValue,
-				obj1->objectValue->members["Width"     ]->integerValue,
-				obj1->objectValue->members["Height"    ]->integerValue,
-				obj1->objectValue->members["FontWidth" ]->integerValue,
-				obj1->objectValue->members["FontHeight"]->integerValue
-			);
-		}
-		else throw std::runtime_error("Runtime Error: This function is not a member of class FILEEE.");
+	const void startUpdateConsole(int64_t current, bool clear);
+	const bool updateConsole(int64_t current);
+	const void clearConsole(std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
+	const void drawConsole (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
+	const void drawBox     (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 
-		return newReturn;
-	}
+	// const void drawConsole     (int64_t current, float x, float y, short character, short color, bool alpha);
+	// const void drawCycle       (int64_t current, float x, float y, short character, short color, bool alpha);
 
-	void runConsole(const std::string& title, short Width = 100, short Height = 50, short fontWidth = 5, short fontHeight = 5) {
-		std::make_shared<Window>(title.c_str(), Width, Height, fontWidth, fontHeight)->Start();
-	}
+	// const void drawCString     (int64_t current, float x, float y, const std::string &character, bool alpha);
+	// const void drawCStringCycle(int64_t current, float x, float y, const std::string &character, bool alpha);
+
+	// const void drawString      (int64_t current, float x, float y, const std::string &character, short color, bool alpha);
+	// const void drawACString    (int64_t current, float x, float y, const std::string &character, short character, short color, bool alpha);
+
+	// const void drawHorizontal  (int64_t current, float x, float y, short character, short color, bool alpha);
+	// const void drawVertical    (int64_t current, float x, float y, short character, short color, bool alpha);
+	// const void drawLine        (int64_t current, float w, float x, float y, float z, short character, short color, bool alpha);
+	// const void drawTriangle    (int64_t current, float u, float v, float w, float x, float y, float z, short character, short color, bool alpha);
+	// const void drawBox         (int64_t current, float x, float y, float w, float h, short character, short color, bool alpha);
+
+	// void Draw(
+	// 	const JDMConsole::Pos2F Position,
+	// 	short Character = JDMConsole::PIXEL_SOLID,
+	// 	short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+	// 	bool  AlphaR    = false);
+	// void DrawCycle       (const JDMConsole::Pos2F Position, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
+	// void DrawCStringCycle(const JDMConsole::Pos2F Position, const std::wstring &str, const bool AlphaR = false);
+	// void DrawString      (const JDMConsole::Pos2F Position, const std::wstring &str, const short Color, const bool AlphaR = false);
+	// void DrawACString    (const JDMConsole::Pos2F Position, const std::wstring &str, const short Character, const short Color);
+	// void DrawCString     (const JDMConsole::Pos2F Position, const std::wstring &str, const bool AlphaR = false);
+	// void DrawHorizontal  (const JDMConsole::Pos2F Position, const int Width, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
+	// void DrawVertical    (const JDMConsole::Pos2F Position, const int Height, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
+	// void DrawLine        (const JDMConsole::Pos4F Position, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
+	// void DrawTriangle    (const JDMConsole::Pos6F Position, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
+	// void DrawBox         (const JDMConsole::SizePosDF SizePosition, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
 };

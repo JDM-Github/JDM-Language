@@ -1,0 +1,29 @@
+$include => Console;
+
+jobject console = Console();
+console.setAutoClear(jtrue);
+
+console.setCreate(() => {
+	jreturn jtrue;
+
+});
+
+jint test = 0;
+console.setUpdate(() => {
+
+	jint pattern1 = 9608;
+	jint pattern2 = 65;
+
+	jif (test % 2 == 0) => {
+		pattern1 = 65;
+		pattern2 = 9608;
+	};
+	test += 1;
+
+	console.drawBox(0, 0, 33, 33, pattern1);
+	console.drawBox(33, 0, 33, 33, pattern2);
+	console.drawBox(66, 0, 33, 33, pattern1);
+	jreturn jtrue;
+});
+
+console.run("TEST", 99, 99);
