@@ -90,7 +90,7 @@ jfunc testReduceFunction( arg1, arg2 ) => jreturn arg1 + arg2;
 jfunc testSortIfFunction( arg1, arg2 ) => jreturn arg1 < arg2;
 jfunc testMapFunction   ( arg )        => jreturn arg ** 2;
 
-jlist testList = [1, 2, 3, 4, 5];
+testList = [1, 2, 3, 4, 5];
 $logn
 	=> "input    : " + jstring(input    ("Test Input: "))
 	=> "split    : " + jstring(split    ("Test-Split", "-"))
@@ -115,7 +115,7 @@ $logn
 ;
 
 |> Testing 
-jlist testList = ["TESDT", 0, 4, "test", 4.56, 2];
+testList = ["TESDT", 0, 4, "test", 4.56, 2];
 jmap  testMap  = {1 => "Hello", 2 => "World", 1 => "TEST"};
 
 $logn => '\n';

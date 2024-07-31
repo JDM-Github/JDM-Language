@@ -6,7 +6,6 @@ public:
 	virtual ~BaseNativeClass(){}
 
 	std::unordered_map<std::string, int> mapFunctions;
-	std::unordered_map<std::string, int> mapVariables;
 
 	virtual std::shared_ptr<HigherObject> constructor(
 		std::shared_ptr<HigherObject> &obj1,
@@ -14,8 +13,10 @@ public:
 	{ return nullptr; }
 
 	virtual std::shared_ptr<HigherObject> manageFunction(
-		int funcType, std::shared_ptr<HigherObject> &obj1,
-		const std::vector<std::shared_ptr<HigherObject>> &objects) {
+		int funcType,
+		std::shared_ptr<HigherObject> &obj1,
+		const std::vector<std::shared_ptr<HigherObject>> &objects)
+	{
 		return nullptr;
 	}
 };

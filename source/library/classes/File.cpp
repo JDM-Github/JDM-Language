@@ -1,4 +1,5 @@
 #include "utils/HigherObject.hpp"
+#include "library/classes/BaseClasses.hpp"
 #include "library/classes/File.hpp"
 
 JDM_DLL

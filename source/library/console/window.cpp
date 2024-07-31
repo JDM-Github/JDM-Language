@@ -1,5 +1,4 @@
 #include "library/console/window.hpp"
-#include <cmath>
 
 Window::Window(const char *Title, short Width, short Height, short fontWidth, short fontHeight)
 	:
@@ -68,28 +67,7 @@ void Window::SetConsoleWindowSize(HANDLE console, short Width, short Height, sho
 	assert(SetConsoleWindowInfo(console, true, &this->screenBufferCorners));
 }
 
-void Window::Draw(
-	const JDMConsole::Pos2F Position,
-	short Character, short Color, bool AlphaR)
-{
-	if (static_cast<int>(Position.X) >= 0 && static_cast<int>(Position.X) < this->GetWidth()
-	 && static_cast<int>(Position.Y) >= 0 && static_cast<int>(Position.Y) < this->GetHeight())
-	{
-		if (AlphaR && Character == JDMConsole::BLANK) return;
-		this->Screen[this->GetWidth() * static_cast<int>(Position.Y) + static_cast<int>(Position.X)].Char.UnicodeChar = Character;
-		this->Screen[this->GetWidth() * static_cast<int>(Position.Y) + static_cast<int>(Position.X)].Attributes       = Color;
-	}
-}
 
-void Window::Clear(short Character, short Color)
-{
-	for (short i = 0; i < this->GetHeight(); i++)
-		for (short j = 0; j < this->GetWidth(); j++)
-		{
-			this->Screen[i * this->GetWidth() + j].Char.UnicodeChar = Character;
-			this->Screen[i * this->GetWidth() + j].Attributes       = Color;
-		}
-}
 
 void Window::Start()
 {
@@ -108,15 +86,13 @@ const void Window::startUpdate(bool autoDelete)
 
 const bool Window::updateGame()
 {
-	this->DrawBox({20, 20, static_cast<float>(this->GetMouseX() - 10), static_cast<float>(this->GetMouseY() - 10)},
-		JDMConsole::PIXEL_SOLID, JDMConsole::FG_RED, true);
 	GetCursorPos(&this->MousePos);
 	ScreenToClient(GetConsoleWindow(), &this->MousePos);
 	this->ExactMousePos.X = this->MousePos.x / this->FontWidth;
 	this->ExactMousePos.Y = this->MousePos.y / this->FontHeight;
 
 	this->keyboard.update();
-	if (keyboard.Keys[JDMConsole::Keys::J_ESC].isReleased)
+	if (this->keyboard.Keys[JDMConsole::Keys::ESC].isReleased)
 		return false;
 
 	wchar_t updater[255];
@@ -126,8 +102,55 @@ const bool Window::updateGame()
 	return true;
 }
 
+void Window::Draw(
+	const JDMConsole::Pos2F Position,
+	const short Character,
+	const short Color,
+	const bool AlphaR)
+{
+	if (static_cast<int>(Position.X) >= 0 && static_cast<int>(Position.X) < this->GetWidth()
+	 && static_cast<int>(Position.Y) >= 0 && static_cast<int>(Position.Y) < this->GetHeight())
+	{
+		if (AlphaR && Character == JDMConsole::BLANK) return;
+		this->Screen[this->GetWidth() * static_cast<int>(Position.Y) + static_cast<int>(Position.X)].Char.UnicodeChar = Character;
+		this->Screen[this->GetWidth() * static_cast<int>(Position.Y) + static_cast<int>(Position.X)].Attributes       = Color;
+	}
+}
 
-void Window::DrawString(const JDMConsole::Pos2F Position, const std::wstring &str, const short Color, const bool AlphaR)
+void Window::DrawCycle(
+	const JDMConsole::Pos2F Position,
+	const short Character,
+	const short color,
+	const bool AlphaR)
+{
+	if (AlphaR && Character == JDMConsole::BLANK) return;
+
+	int posX = static_cast<int>(Position.X);
+	int posY = static_cast<int>(Position.Y);
+	if (posX < 0) posX = this->GetWidth()  - (std::abs(posX) % GetWidth());
+	if (posY < 0) posY = this->GetHeight() - (std::abs(posY) % GetHeight());
+
+	this->Screen[this->GetWidth() * (posY % this->GetHeight()) + (posX % this->GetWidth())].Char.UnicodeChar = Character;
+	this->Screen[this->GetWidth() * (posY % this->GetHeight()) + (posX % this->GetWidth())].Attributes = color;
+}
+
+void Window::Clear(short Character, short Color)
+{
+	for (short i = 0; i < this->GetHeight(); i++)
+		for (short j = 0; j < this->GetWidth(); j++)
+		{
+			this->Screen[i * this->GetWidth() + j].Char.UnicodeChar = Character;
+			this->Screen[i * this->GetWidth() + j].Attributes       = Color;
+		}
+}
+
+
+void Window::DrawString(
+	const JDMConsole::Pos2F Position,
+	const std::wstring &str,
+	const short Color,
+	const bool AlphaR,
+	const bool cycle)
 {
 	short x_adder = 0, y_adder = 0;
 	for (short i = 0; i < str.size(); i++)
@@ -139,12 +162,19 @@ void Window::DrawString(const JDMConsole::Pos2F Position, const std::wstring &st
 			continue;
 		}
 		if (AlphaR && str[i] == JDMConsole::BLANK) continue;
-		this->Draw({Position.X + x_adder, Position.Y + y_adder}, str[i], Color, AlphaR);
+		if (cycle) this->DrawCycle({Position.X + x_adder, Position.Y + y_adder}, str[i], Color, AlphaR);
+		else this->Draw({Position.X + x_adder, Position.Y + y_adder}, str[i], Color, AlphaR);
 		x_adder++;
 	}
 }
 
-void Window::DrawACString(const JDMConsole::Pos2F Position, const std::wstring &str, const short Character, const short Color, const bool AlphaR)
+void Window::DrawStringChar(
+	const JDMConsole::Pos2F Position,
+	const std::wstring &str,
+	const short Character,
+	const short Color,
+	const bool AlphaR,
+	const bool cycle)
 {
 	short x_adder = 0, y_adder = 0;
 	for (short i = 0; i < str.size(); i++)
@@ -156,12 +186,17 @@ void Window::DrawACString(const JDMConsole::Pos2F Position, const std::wstring &
 			continue;
 		}
 		if (AlphaR && str[i] == JDMConsole::BLANK) continue;
-		this->Draw({Position.X + x_adder, Position.Y + y_adder}, Character, Color);
+		if (cycle) this->DrawCycle({Position.X + x_adder, Position.Y + y_adder}, Character, Color);
+		else this->Draw({Position.X + x_adder, Position.Y + y_adder}, Character, Color);
 		x_adder++;
 	}
 }
 
-void Window::DrawCString(const JDMConsole::Pos2F Position, const std::wstring &str, const bool AlphaR)
+void Window::DrawCString(
+	const JDMConsole::Pos2F Position,
+	const std::wstring &str,
+	const bool AlphaR,
+	const bool cycle)
 {
 	short x_adder = 0, y_adder = 0;
 	for (short i = 0; i < str.size(); i++)
@@ -172,13 +207,19 @@ void Window::DrawCString(const JDMConsole::Pos2F Position, const std::wstring &s
 			y_adder++;
 			continue;
 		}
-		x_adder++;
 		if (AlphaR && str[i] == JDMConsole::BLANK) continue;
-		this->Draw({Position.X + x_adder - 1, Position.Y + y_adder}, JDMConsole::PIXEL_SOLID, (this->getColor(str[i]) | JDMConsole::BG_BLACK));
+		if (cycle) this->DrawCycle({Position.X + x_adder, Position.Y + y_adder}, JDMConsole::PIXEL_SOLID, (this->getColor(str[i]) | JDMConsole::BG_BLACK));
+		else this->Draw({Position.X + x_adder, Position.Y + y_adder}, JDMConsole::PIXEL_SOLID, (this->getColor(str[i]) | JDMConsole::BG_BLACK));
+		x_adder++;
 	}
 }
 
-void Window::DrawCStringCycle(const JDMConsole::Pos2F Position, const std::wstring &str, const bool AlphaR)
+void Window::DrawCStringChar(
+	const JDMConsole::Pos2F Position,
+	const std::wstring &str,
+	const short Character,
+	const bool AlphaR,
+	const bool cycle)
 {
 	short x_adder = 0, y_adder = 0;
 	for (short i = 0; i < str.size(); i++)
@@ -189,78 +230,88 @@ void Window::DrawCStringCycle(const JDMConsole::Pos2F Position, const std::wstri
 			y_adder++;
 			continue;
 		}
-		x_adder++;
 		if (AlphaR && str[i] == JDMConsole::BLANK) continue;
-		this->DrawCycle({((Position.X < 0) ? GetWidth() - std::abs(Position.X) : Position.X) + x_adder - 1,
-						  ((Position.Y < 0) ? GetHeight() - std::abs(Position.Y) : Position.Y) + y_adder},
-						  JDMConsole::PIXEL_SOLID, (this->getColor(str[i]) | JDMConsole::BG_BLACK));
+		if (cycle) this->DrawCycle({Position.X + x_adder, Position.Y + y_adder}, Character, (this->getColor(str[i]) | JDMConsole::BG_BLACK));
+		else this->Draw({Position.X + x_adder, Position.Y + y_adder}, Character, (this->getColor(str[i]) | JDMConsole::BG_BLACK));
+		x_adder++;
 	}
 }
 
-// void Window::DrawString(const JDMConsole::Pos2F Position, const wchar_t str[], const short Color, const bool AlphaR)
-// {
-// 	short x_adder = 0, y_adder = 0;
-// 	for (short i = 0; str[i]; i++) {
-// 		if (str[i] == JDMConsole::NEWLINE) {
-// 			x_adder = 0;
-// 			y_adder++;
-// 			continue;
-// 		}
-// 		this->Draw({Position.X + x_adder, Position.Y + y_adder}, str[i], Color, AlphaR);
-// 		x_adder++;
-// 	}
-// }
 
-void Window::DrawHorizontal(const JDMConsole::Pos2F Position, const int Width, const short Character, const short color, const bool AlphaR)
+void Window::DrawHorizontal(
+	const JDMConsole::Pos2F Position,
+	const int Width,
+	const short Character,
+	const short color,
+	const bool AlphaR,
+	const bool cycle)
 {
 	for (int i = static_cast<int>(Position.X); i < Width; i++)
-		this->Draw({Position.X + i, Position.Y}, Character, color, AlphaR);
+		if (cycle) this->DrawCycle({Position.X + i, Position.Y}, Character, color, AlphaR);
+		else this->Draw({Position.X + i, Position.Y}, Character, color, AlphaR);
 }
 
-void Window::DrawVertical(const JDMConsole::Pos2F Position, const int Height, const short Character, const short color, const bool AlphaR)
+void Window::DrawVertical(
+	const JDMConsole::Pos2F Position,
+	const int Height,
+	const short Character,
+	const short color,
+	const bool AlphaR,
+	const bool cycle)
 {
 	for (int i = static_cast<int>(Position.Y); i < Height; i++)
-		this->Draw({Position.X, Position.Y + i}, Character, color, AlphaR);
+		if (cycle) this->DrawCycle({Position.X, Position.Y + i}, Character, color, AlphaR);
+		else this->Draw({Position.X, Position.Y + i}, Character, color, AlphaR);
 }
 
-void Window::DrawLine(const JDMConsole::Pos4F Position, const short Character, const short color, const bool AlphaR)
+void Window::DrawLine(
+	const JDMConsole::Pos4F Position,
+	const short Character,
+	const short color,
+	const bool AlphaR,
+	const bool cycle)
 {
 	float xCurrent = Position.W;
 	float yCurrent = Position.X;
 	float xDistant = (Position.W > Position.Y) ? (Position.W - Position.Y) : (Position.Y - Position.W);
 	float yDistant = (Position.X > Position.Z) ? (Position.X - Position.Z) : (Position.Z - Position.X);
 	float distance = std::sqrt(xDistant * xDistant + yDistant * yDistant);
-	int numberSample = std::max(xDistant, yDistant);
 
-	float samplePX = xDistant / numberSample;
-	float samplePY = yDistant / numberSample;
-	for (int i = 0; i < numberSample; i++) {
-		this->Draw({xCurrent, yCurrent}, Character, color, AlphaR);
+	int numberSamp = std::max(xDistant, yDistant);
+	float samplePX = xDistant / numberSamp;
+	float samplePY = yDistant / numberSamp;
+	for (int i = 0; i < numberSamp; i++)
+	{
+		if (cycle) this->DrawCycle({xCurrent, yCurrent}, Character, color, AlphaR);
+		else this->Draw({xCurrent, yCurrent}, Character, color, AlphaR);
 		xCurrent += (Position.W > Position.Y) ? -samplePX : samplePX;
 		yCurrent += (Position.X > Position.Z) ? -samplePY : samplePY;
 	}
 }
 
-void Window::DrawTriangle(const JDMConsole::Pos6F Position, const short Character, const short color, const bool AlphaR)
+void Window::DrawTriangle(
+	const JDMConsole::Pos6F Position,
+	const short Character,
+	const short color,
+	const bool AlphaR,
+	const bool cycle)
 {
-	this->DrawLine({Position.U, Position.U, Position.W, Position.X}, Character, color, AlphaR);
-	this->DrawLine({Position.W, Position.X, Position.Y, Position.Z}, Character, color, AlphaR);
-	this->DrawLine({Position.Y, Position.Z, Position.U, Position.U}, Character, color, AlphaR);
+	this->DrawLine({Position.U, Position.U, Position.W, Position.X}, Character, color, AlphaR, cycle);
+	this->DrawLine({Position.W, Position.X, Position.Y, Position.Z}, Character, color, AlphaR, cycle);
+	this->DrawLine({Position.Y, Position.Z, Position.U, Position.U}, Character, color, AlphaR, cycle);
 }
 
-void Window::DrawBox(const JDMConsole::SizePosDF SizePosition, const short Character, const short color, const bool AlphaR)
+void Window::DrawBox(
+	const JDMConsole::SizePosDF SizePosition,
+	const short Character,
+	const short color,
+	const bool AlphaR,
+	const bool cycle)
 {
 	for (int i = 0; i < SizePosition.Height; i++)
 		for (int j = 0; j < SizePosition.Width; j++)
-			this->Draw({SizePosition.X + j, SizePosition.Y + i}, Character, color, AlphaR);
-}
-
-void Window::DrawCycle(const JDMConsole::Pos2F Position, const short Character, const short color, const bool AlphaR)
-{
-	if (static_cast<int>(Position.X) >= 0 && static_cast<int>(Position.Y) >= 0)
-	{
-		if (AlphaR && Character == JDMConsole::BLANK) return;
-		this->Screen[this->GetWidth() * (static_cast<int>(Position.Y) % this->GetHeight()) + (static_cast<int>(Position.X) % this->GetWidth())].Char.UnicodeChar = Character;
-		this->Screen[this->GetWidth() * (static_cast<int>(Position.Y) % this->GetHeight()) + (static_cast<int>(Position.X) % this->GetWidth())].Attributes = color;
-	}
+		{
+			if (cycle) this->DrawCycle({SizePosition.X + j, SizePosition.Y + i}, Character, color, AlphaR);
+			else this->Draw({SizePosition.X + j, SizePosition.Y + i}, Character, color, AlphaR);
+		}
 }

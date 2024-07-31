@@ -8,6 +8,13 @@ HigherObject::HigherObject(const std::string &value)
 	: stringValue (value)
 {
 	currActive = ACTIVE_STRING;
+	
+	size_t found  = this->stringValue.find("\\n");
+	while (found != std::string::npos)
+	{
+		this->stringValue.replace(found, 2, "\n");
+		found = this->stringValue.find("\\n", found + 1);
+	}
 }
 
 JDM_DLL

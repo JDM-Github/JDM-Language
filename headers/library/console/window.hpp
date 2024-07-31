@@ -1,5 +1,7 @@
 #pragma once
-#include "Keyboard.hpp"
+#include "JDMConsole.hpp"
+#include "KeyBoard.hpp"
+#include <cmath>
 #include <string>
 #include <chrono>
 #include <cassert>
@@ -7,7 +9,8 @@
 #define HeightMax 680
 #define WidthMax 1340
 
-class Window {
+class Window
+{
 private:
 	short ScreenWidth, ScreenHeight;
 	bool Running = true;
@@ -39,25 +42,88 @@ public:
 
 	void Draw(
 		const JDMConsole::Pos2F Position,
-		short Character = JDMConsole::PIXEL_SOLID,
-		short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
-		bool  AlphaR    = false);
-	void DrawCycle       (const JDMConsole::Pos2F Position, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
-	void DrawString      (const JDMConsole::Pos2F Position, const std::wstring &str, const short Color, const bool AlphaR = false);
-	void DrawACString    (const JDMConsole::Pos2F Position, const std::wstring &str, const short Character, const short Color, const bool AlphaR = false);
-	// void DrawString      (const JDMConsole::Pos2F Position, const wchar_t str[], const short Color, const bool AlphaR = false);
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false);
 
-	void DrawCString     (const JDMConsole::Pos2F Position, const std::wstring &str, const bool AlphaR = false);
-	void DrawCStringCycle(const JDMConsole::Pos2F Position, const std::wstring &str, const bool AlphaR = false);
+	void DrawCycle(
+		const JDMConsole::Pos2F Position,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false);
 
-	void DrawHorizontal  (const JDMConsole::Pos2F Position, const int Width, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
-	void DrawVertical    (const JDMConsole::Pos2F Position, const int Height, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
-	void DrawLine        (const JDMConsole::Pos4F Position, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
-	void DrawTriangle    (const JDMConsole::Pos6F Position, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
-	void DrawBox         (const JDMConsole::SizePosDF SizePosition, const short Character = JDMConsole::PIXEL_SOLID, const short Color = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK), const bool AlphaR = false);
+	void DrawString( 
+		const JDMConsole::Pos2F Position,
+		const std::wstring &str,
+		const short Color,
+		const bool  AlphaR = false,
+		const bool  cycle  = false);
 
-	constexpr int GetMouseX() { return this->MousePos.x / this->FontWidth; }
-	constexpr int GetMouseY() { return this->MousePos.y / this->FontHeight; }
+	void DrawStringChar(
+		const JDMConsole::Pos2F Position,
+		const std::wstring &str,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	void DrawCString(
+		const JDMConsole::Pos2F Position,
+		const std::wstring &str,
+		const bool AlphaR = false,
+		const bool cycle  = false);
+
+	void DrawCStringChar(
+		const JDMConsole::Pos2F Position,
+		const std::wstring &str,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	void DrawHorizontal(
+		const JDMConsole::Pos2F Position,
+		const int Width,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	void DrawVertical(
+		const JDMConsole::Pos2F Position,
+		const int Height,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	void DrawLine(
+		const JDMConsole::Pos4F Position,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	void DrawTriangle(
+		const JDMConsole::Pos6F Position,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	void DrawBox(const JDMConsole::SizePosDF SizePosition,
+		const short Character = JDMConsole::PIXEL_SOLID,
+		const short Color     = (JDMConsole::FG_WHITE | JDMConsole::BG_BLACK),
+		const bool  AlphaR    = false,
+		const bool  cycle     = false);
+
+	constexpr int64_t GetMouseX() { return this->MousePos.x / this->FontWidth; }
+	constexpr int64_t GetMouseY() { return this->MousePos.y / this->FontHeight; }
+	constexpr long double GetElapseTime() { return static_cast<long double>(this->ElapseTime); }
+
+	constexpr bool GetIsHeld    (int64_t keys) { return this->keyboard.Keys[keys].isHeld; }
+	constexpr bool GetIsReleased(int64_t keys) { return this->keyboard.Keys[keys].isReleased; }
+	constexpr bool GetIsPressed (int64_t keys) { return this->keyboard.Keys[keys].isPressed; }
+
 	constexpr JDMConsole::Color getColor(short Index) const
 	{
 		switch (Index) {

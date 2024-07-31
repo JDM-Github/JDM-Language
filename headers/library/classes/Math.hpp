@@ -1,5 +1,4 @@
 #pragma once
-#include "BaseClasses.hpp"
 
 class JDM_DLL MathClass : public BaseNativeClass {
 public:
@@ -46,14 +45,13 @@ public:
 	};
 
 	JDM_DLL MathClass();
-	JDM_DLL std::shared_ptr<HigherObject> constructor(
+	JDM_DLL inline std::shared_ptr<HigherObject> constructor(
 		std::shared_ptr<HigherObject> &obj1,
 		const std::vector<std::shared_ptr<HigherObject>> &objects)
 	{
 		throw std::runtime_error("Runtime Error: The 'Math' object is not callable.");
 	}
-	JDM_DLL std::shared_ptr<HigherObject> manageFunction(int funcType, std::shared_ptr<HigherObject> &obj1,
-		const std::vector<std::shared_ptr<HigherObject>> &objects);
 
+	JDM_DLL std::shared_ptr<HigherObject> manageFunction(int funcType, std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 	JDM_DLL static int64_t factorial(int64_t value);
 };

@@ -1,5 +1,4 @@
 #pragma once
-#include "BaseClasses.hpp"
 
 class JDM_DLL FileClass : public BaseNativeClass
 {
@@ -23,7 +22,5 @@ public:
 	JDM_DLL std::shared_ptr<HigherObject> writeFile     (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 	JDM_DLL std::shared_ptr<HigherObject> appendFile    (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 	JDM_DLL std::shared_ptr<HigherObject> truncateFile  (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
-	JDM_DLL std::shared_ptr<HigherObject> manageFunction(
-		int funcType, std::shared_ptr<HigherObject> &obj1,
-		const std::vector<std::shared_ptr<HigherObject>> &objects);
+	JDM_DLL std::shared_ptr<HigherObject> manageFunction(int funcType, std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 };
