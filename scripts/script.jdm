@@ -1,15 +1,87 @@
-$include => Console;
+jlist board = [
+	[' ', ' ', ' '],
+	[' ', ' ', ' '],
+	[' ', ' ', ' '],
+];
 
-jobject console = Console();
-console.setAutoClear(jtrue);
-console.setCreate(() => { jreturn jtrue; });
-
-jdouble x = 0;
-console.setUpdate(() =>
+jint turn = 0;
+jfunc draw() =>
 {
-	console.drawBoxCycle(x, 0, 20, 20);
-	x += 0.2;
-	jreturn jtrue;
-});
+	$logn => " WELCOME TO TIC TAC TOE\n";
+	jfor r => 3 =>
+	{
+		$log => '    | ';
+		jfor c => 3 =>
+			$log => board[r][c] => ' | ';
 
-console.run("TEST", 100, 100, 10, 10);
+		$log => '\n';
+	}
+	$log => '\n';
+}
+
+jfunc checkTurn() =>
+{
+	jint row = jint(input("Row: ")) - 1;
+	jint col = jint(input("Col: ")) - 1;
+	jif (row < 0 || col < 0 || row >= 3 || col >= 3) =>
+	{
+		$logn => "\nInvalid square.";
+		checkTurn();
+	}
+	jelseif (board[row][col] != ' ') =>
+	{
+		$logn => "\nThis is already occupied.";
+		checkTurn();
+	}
+	jelse =>
+	{
+		jif (turn % 2 == 0)
+			=> board[row][col] = 'X';
+		jelse
+			=> board[row][col] = 'O';
+		turn += 1;
+	}
+}
+
+jfunc checkWinner() =>
+{
+	jfor r => 3 =>
+		jif any((board[r][0] != ' ') && (board[r][0] == board[r][1]) && (board[r][1] == board[r][2]),
+				(board[0][r] != ' ') && (board[0][r] == board[1][r]) && (board[1][r] == board[2][r])
+		) => jreturn jtrue;
+
+	jif any(all((board[0][0] != ' '), (board[0][0] == board[1][1]), (board[1][1] == board[2][2])),
+			all((board[0][2] != ' '), (board[0][2] == board[1][1]), (board[1][1] == board[2][0]))
+	) => jreturn jtrue;
+
+	jreturn jfalse;
+}
+
+jfunc isBoardFull() => {
+	jfor r => 3 => 
+		jfor c => 3 =>
+			jif (board[r][c] == ' ') => jreturn jfalse;
+	jreturn jtrue;
+}
+
+jfunc main() =>
+{
+	jwhile (!checkWinner() && !isBoardFull()) =>
+	{
+		$clear;
+		draw();
+		checkTurn();
+	};
+	$clear;
+	draw();
+
+	jif (checkWinner()) =>
+	{
+		jif (turn % 2 == 0) => 
+			$logn => " Winner is O";
+		jelse => 
+			$logn => " Winner is X";
+	}
+	jelse => $logn => " It's a draw!";
+}
+main();

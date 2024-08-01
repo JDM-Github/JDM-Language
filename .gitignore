@@ -3,6 +3,7 @@ tokens/
 object/
 Assembly/
 logs/
+test.jdm
 test.cpp
 test.exe
 Build/test.exe

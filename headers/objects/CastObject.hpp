@@ -7,13 +7,6 @@ public:
 	std::shared_ptr<Expression> expression;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(datTypeToTurn, expression);
-	}
-
 	CastObjects() = default;
 	inline explicit CastObjects(
 		DataTypeEnum _datTypeToTurn,

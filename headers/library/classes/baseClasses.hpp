@@ -3,7 +3,8 @@
 class BaseNativeClass {
 public:
 	BaseNativeClass() {}
-	virtual ~BaseNativeClass(){}
+	virtual ~BaseNativeClass() {}
+	virtual const void init() {}
 
 	std::unordered_map<std::string, int> mapFunctions;
 

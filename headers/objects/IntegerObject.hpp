@@ -6,12 +6,6 @@ public:
 	int64_t value;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(value);
-	}
 
 	IntegerObjects() = default;
 	inline explicit IntegerObjects(const std::shared_ptr<TokenStruct> &tok)

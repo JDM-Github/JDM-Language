@@ -124,6 +124,25 @@ const std::shared_ptr<HigherObject> Compiler::compile(
 	return nullptr;
 }
 
+JDM_DLL
+const void Compiler::setupVariablePrevious()
+{
+	if (this->__variable->prev != nullptr)
+	{
+		this->__variable = this->__variable->prev;
+		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> tempMap;
+		for (const auto& element : this->__variable->variables)
+		{
+			if (this->__variable->next->variables.count(element.first))
+				tempMap[element.first] = this->__variable->next->variables.at(element.first);
+			else
+				tempMap[element.first] = element.second;
+		}
+		this->__variable->variables = tempMap;
+		this->__variable->next.reset();
+	}
+}
+
 // =================================================================================================
 // EvaluateExpression
 // 
@@ -136,6 +155,7 @@ std::shared_ptr<HigherObject> Compiler::_getHigherObject(
 	if ( !Value )
 		// If Value is nullptr then just return the value of expression
 		return this->_evaluateExpression(Expression);
+	
 	// Get the value from Variable
 	JDM::TokenType type = Value->getToken();
 
@@ -145,7 +165,7 @@ std::shared_ptr<HigherObject> Compiler::_getHigherObject(
 		auto varName = std::dynamic_pointer_cast<VariableObjects>(Value)->returnStringValue();
 
 		// Check if it is a variable and get it's value from pair
-		auto var  = this->__variable->variables.find(varName);
+		auto var = this->__variable->variables.find(varName);
 		if (var != this->__variable->variables.end())
 			return std::make_shared<HigherObject>(var->second.second);
 
@@ -475,25 +495,6 @@ const std::vector<std::shared_ptr<HigherObject>> Compiler::_getVectorHigherObjec
 }
 
 JDM_DLL
-const void Compiler::setupVariablePrevious()
-{
-	if (this->__variable->prev != nullptr)
-	{
-		this->__variable = this->__variable->prev;
-		std::unordered_map<std::string, std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> tempMap;
-		for (const auto& element : this->__variable->variables)
-		{
-			if (this->__variable->next->variables.count(element.first))
-				tempMap[element.first] = this->__variable->next->variables.at(element.first);
-			else
-				tempMap[element.first] = element.second;
-		}
-		this->__variable->variables = tempMap;
-		this->__variable->next = nullptr;
-	}
-}
-
-JDM_DLL
 const std::vector<std::string> Compiler::_getAllVarName(
 	const std::unordered_map<std::string,
 	std::pair<DataTypeEnum, std::shared_ptr<HigherObject>>> &_variables)
@@ -718,11 +719,11 @@ const void Compiler::_doCFunctionInstruction(const std::shared_ptr<Instruction> 
 	{
 		// Since we don't know the class name of variable
 		// My code first treat it as a random variable
-		auto varName   = std::dynamic_pointer_cast<VariableObjects>(
-			cfunction->expression->firstValue)->returnStringValue();
+		auto varName   = std::dynamic_pointer_cast<VariableObjects>(cfunction->expression->firstValue)->returnStringValue();
 		auto className = this->__nativeClassMap.find(varName);
 		if (className != this->__nativeClassMap.end())
 		{
+			className->second->init();
 			auto newClass = std::make_shared<ClassObject>();
 			newClass->className = varName;
 
@@ -1151,6 +1152,124 @@ const std::shared_ptr<HigherObject> Compiler::_manageCallBrackets(
 	return nullptr;
 }
 
+
+// =================================================================================================
+// RecursivelyCall
+// 
+// =================================================================================================
+JDM_DLL
+const std::shared_ptr<HigherObject> Compiler::_recursivelyCall(
+	const std::shared_ptr<CallObjects> &callObj,
+	const std::shared_ptr<Expression> &expressionAssign)
+{
+	auto tok = callObj->currObject->getToken();
+	std::shared_ptr<HigherObject> returnValue = nullptr;
+
+	if (tok == JDM::TokenType::FUNCTIONS)
+	{
+		auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(callObj->currObject);
+		std::shared_ptr<FunctionCall> newFunc = nullptr;
+		auto variables = this->__variable->variables  .find(functionObj->returnStringValue());
+		auto function  = this->__variable->functionMap.find(functionObj->returnStringValue());
+
+		if (function != this->__variable->functionMap.end())
+			newFunc = function->second;
+
+		// Used to run a lambda
+		else if (variables != this->__variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_FUNCTION)
+			newFunc = variables->second.second->funcValue;
+
+		else if (variables != this->__variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_OBJECT)
+		{
+			for (auto &e : this->__allInclude)
+			{
+				if (e.compare(variables->second.second->objectValue->className) == 0)
+				{
+					// Check if the object is callable
+					if (!variables->second.second->objectValue->fromMainSource)
+						throw std::runtime_error("Runtime Error: This object is not callable.");
+
+					auto newObj = std::make_shared<HigherObject>();
+					newObj->castToObject();
+					newObj->objectValue->className = variables->second.second->objectValue->className;
+					newObj->objectValue->members   = variables->second.second->objectValue->members;
+					newObj->objectValue->pMembers  = variables->second.second->objectValue->pMembers;
+					newObj->objectValue->methods   = variables->second.second->objectValue->methods;
+					newObj->objectValue->fromMainSource = false;
+					returnValue = this->__nativeClassMap[e]->constructor(newObj, this->_getVectorHigherObject(functionObj->arguments));
+
+					return this->_manageEndCall(callObj, returnValue, expressionAssign);
+				}
+			}
+			throw std::runtime_error("Runtime Error: No CONSTRUCTOR implemented yet.");
+		}
+		else
+		{
+			auto nativeFunc = NativeFunction::allNativeFunction.find(functionObj->returnStringValue());
+			if (nativeFunc != NativeFunction::allNativeFunction.end())
+			{
+				if (nativeFunc->second == NativeFunction::NativeFunctionEnum::NATIVE_REFERENCE)
+				{
+					if (callObj->prevObject != nullptr)
+						throw std::runtime_error("Runtime Error: Invalid usage of 'ref' inside the expression.");
+
+					if (callObj->nextObject != nullptr)
+						throw std::runtime_error("Runtime Error: Reference can't have recursive call.");
+
+					if (!this->__isAssigning)
+						throw std::runtime_error("Runtime Error: Reference keyword must be only use in Assignment and Declaration");
+
+					if (functionObj->arguments.size() != 1)
+						throw std::runtime_error("Runtime Error: Reference expect L Value not R Value..");
+
+					auto varReferenced = this->_getVariableObject(functionObj->arguments[0]);
+					varReferenced->setIsReferenced(true);
+					return varReferenced;
+				}
+				else
+					returnValue = this->_handleNativeFunction(nativeFunc->second,
+						this->_getVectorHigherObject(functionObj->arguments));
+
+				return this->_manageEndCall( callObj, returnValue, expressionAssign );
+			}
+			else throw std::runtime_error("Runtime Error: Function is not declared.");
+		}
+		if (newFunc == nullptr)
+			throw std::runtime_error("Runtime Error: Invalid Function.");
+
+		returnValue = this->_runFunction(newFunc, this->_getVectorHigherObject(functionObj->arguments));
+	}
+	else if (tok == JDM::TokenType::EXPRESSION)
+	{
+		// Get the expression object
+		auto exprObj = std::dynamic_pointer_cast<ExpressionObjects>(callObj->currObject);
+		auto variables = this->__variable->variables.find(exprObj->returnStringValue());
+		if (variables == this->__variable->variables.end())
+			throw std::runtime_error("Runtime Error: Variable is not declared.");
+
+		auto varList = variables->second.second;
+		if (varList->getCurrActive() == ACTIVE_LIST
+		 || varList->getCurrActive() == ACTIVE_MAP
+		 || varList->getCurrActive() == ACTIVE_STRING)
+			returnValue = this->_manageCallBrackets(callObj, varList, expressionAssign);
+		else
+			throw std::runtime_error("Runtime Error: Variable is not a String, List or a Map.");
+	}
+	else if (tok == JDM::TokenType::VARIABLE)
+	{
+		auto var = std::dynamic_pointer_cast<VariableObjects>(callObj->currObject);
+		auto variables = this->__variable->variables.find(var->returnStringValue());
+		if (variables == this->__variable->variables.end())
+			throw std::runtime_error("Runtime Error: Variable is not declared.");
+
+		returnValue = variables->second.second;
+	}
+	else if (tok == JDM::TokenType::STRING)
+		returnValue = std::make_shared<HigherObject>(callObj->currObject->returnStringValue());
+
+	return this->_manageEndCall(callObj, returnValue, expressionAssign);
+}
+
 // =================================================================================================
 // ManageEndCall
 // 
@@ -1204,16 +1323,23 @@ const std::shared_ptr<HigherObject> Compiler::_manageEndCall(
 	// TO DO
 	else if (returnVal->getCurrActive() == ACTIVE_OBJECT)
 	{
+		this->__isAssigning = true;
 		if (tok == JDM::TokenType::FUNCTIONS)
 		{
 			auto classFunc   = this->__nativeClassMap.find(returnVal->objectValue->className);
+			auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCurrObj);
+
 			if (classFunc != this->__nativeClassMap.end())
 			{
-				auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(newCurrObj);
-
 				// Will never be true, as recursively call, will handle it, but just in case.
 				if (functionObj->returnStringValue() == "(")
+				{
+					if (!returnVal->objectValue->fromMainSource)
+						throw std::runtime_error("Runtime Error: This class '" + returnVal->objectValue->className + "' is already initialize.");
+
+					returnVal->objectValue->fromMainSource = false;
 					newReturn = classFunc->second->constructor(returnVal, this->_getVectorHigherObject(functionObj->arguments));
+				}
 				else
 				{
 					// This still not really cannot do anything.
@@ -1221,7 +1347,6 @@ const std::shared_ptr<HigherObject> Compiler::_manageEndCall(
 					if (func == classFunc->second->mapFunctions.end())
 						throw std::runtime_error("Runtime Error: This method is not a member of class '" + returnVal->objectValue->className + "'.");
 
-					this->__isAssigning = true;
 					if (!returnVal->objectValue->fromMainSource
 						&& func->second == static_cast<int>(ConsoleClass::CONSOLE_RUN)
 						&& classFunc->first == "Console")
@@ -1230,16 +1355,38 @@ const std::shared_ptr<HigherObject> Compiler::_manageEndCall(
 						newReturn = classFunc->second->manageFunction(func->second, returnVal, this->_getVectorHigherObject(functionObj->arguments));
 				}
 			}
+			// TO DO. Create a way to run funciton on normal class
+			else
+			{
+				if (functionObj->returnStringValue() == "(")
+				{
+					if (!returnVal->objectValue->fromMainSource)
+						throw std::runtime_error("Runtime Error: This class '" + returnVal->objectValue->className + "' is already initialize.");
+
+					returnVal->objectValue->fromMainSource = false;
+					auto constructor = returnVal->objectValue->methods.find("constructor");
+					if (constructor != returnVal->objectValue->methods.end())
+						newReturn = this->_runFunction(constructor->second, this->_getVectorHigherObject(functionObj->arguments));
+					else
+						newReturn = returnVal;
+				}
+				else
+				{
+
+				}
+			}
 		}
 		// This will be used when the object next is a variable.
 		// I will get the value of the next obj, and call the manageEnd again.
 		// TO DO
 		else if (tok == JDM::TokenType::VARIABLE)
 		{
-			auto classFunc   = this->__nativeClassMap.find(returnVal->objectValue->className);
-			if (classFunc != this->__nativeClassMap.end())
-			{
-			}
+			auto varObj = std::dynamic_pointer_cast<VariableObjects>(newCurrObj);
+			auto varfield = returnVal->objectValue->members.find(varObj->returnStringValue());
+			if (varfield == returnVal->objectValue->members.end())
+				throw std::runtime_error("Runtime Error: This classfield is not a member of class '" + returnVal->objectValue->className + "'.");
+
+			newReturn = std::make_shared<HigherObject>(std::move(varfield->second));
 		}
 		else
 			throw std::runtime_error("Runtime Error: Invalid end call on 'jobject'");
@@ -1568,9 +1715,9 @@ void Compiler::_handleNewOperatedNumber(
 		firstVal->booleanValue = result;
 		return;
 	}
-	if      (varType == DataTypeEnum::DATA_INTEGER) firstVal->castToInteger ();
-	else if (varType == DataTypeEnum::DATA_BOOLEAN) firstVal->castToBoolean ();
-	else if (varType == DataTypeEnum::DATA_DOUBLE ) firstVal->castToDecimal ();
+	if      (firstVal->isForcedConstraint && varType == DataTypeEnum::DATA_INTEGER) firstVal->castToInteger ();
+	else if (firstVal->isForcedConstraint && varType == DataTypeEnum::DATA_BOOLEAN) firstVal->castToBoolean ();
+	else if (firstVal->isForcedConstraint && varType == DataTypeEnum::DATA_DOUBLE ) firstVal->castToDecimal ();
 }
 
 JDM_DLL
@@ -1589,122 +1736,6 @@ void Compiler::_handleNewOperatedObject(
 	);
 	firstVal->castToBoolean();
 	firstVal->booleanValue = result;
-}
-
-// =================================================================================================
-// RecursivelyCall
-// 
-// =================================================================================================
-JDM_DLL
-const std::shared_ptr<HigherObject> Compiler::_recursivelyCall(
-	const std::shared_ptr<CallObjects> &callObj,
-	const std::shared_ptr<Expression> &expressionAssign)
-{
-	auto tok = callObj->currObject->getToken();
-	std::shared_ptr<HigherObject> returnValue = nullptr;
-
-	if (tok == JDM::TokenType::FUNCTIONS)
-	{
-		auto functionObj = std::dynamic_pointer_cast<FunctionObjects>(callObj->currObject);
-		std::shared_ptr<FunctionCall> newFunc = nullptr;
-		auto variables = this->__variable->variables  .find(functionObj->returnStringValue());
-		auto function  = this->__variable->functionMap.find(functionObj->returnStringValue());
-
-		if (function != this->__variable->functionMap.end())
-			newFunc = function->second;
-
-		// Used to run a lambda
-		else if (variables != this->__variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_FUNCTION)
-			newFunc = variables->second.second->funcValue;
-
-		else if (variables != this->__variable->variables.end() && variables->second.second->getCurrActive() == ACTIVE_OBJECT)
-		{
-			for (auto &e : this->__allInclude)
-			{
-				if (e.compare(variables->second.second->objectValue->className) == 0)
-				{
-					// Check if the object is callable
-					if (!variables->second.second->objectValue->fromMainSource)
-						throw std::runtime_error("Runtime Error: This object is not callable.");
-
-					auto newObj = std::make_shared<HigherObject>();
-					newObj->castToObject();
-					newObj->objectValue->className = variables->second.second->objectValue->className;
-					newObj->objectValue->members   = variables->second.second->objectValue->members;
-					newObj->objectValue->methods   = variables->second.second->objectValue->methods;
-					newObj->objectValue->fromMainSource = false;
-					returnValue = this->__nativeClassMap[e]->constructor(newObj, this->_getVectorHigherObject(functionObj->arguments));
-
-					return this->_manageEndCall(callObj, returnValue, expressionAssign);
-				}
-			}
-			throw std::runtime_error("Runtime Error: No CONSTRUCTOR implemented yet.");
-		}
-		else
-		{
-			auto nativeFunc = NativeFunction::allNativeFunction.find(functionObj->returnStringValue());
-			if (nativeFunc != NativeFunction::allNativeFunction.end())
-			{
-				if (nativeFunc->second == NativeFunction::NativeFunctionEnum::NATIVE_REFERENCE)
-				{
-					if (callObj->prevObject != nullptr)
-						throw std::runtime_error("Runtime Error: Invalid usage of 'ref' inside the expression.");
-
-					if (callObj->nextObject != nullptr)
-						throw std::runtime_error("Runtime Error: Reference can't have recursive call.");
-
-					if (!this->__isAssigning)
-						throw std::runtime_error("Runtime Error: Reference keyword must be only use in Assignment and Declaration");
-
-					if (functionObj->arguments.size() != 1)
-						throw std::runtime_error("Runtime Error: Reference expect L Value not R Value..");
-
-					auto varReferenced = this->_getVariableObject(functionObj->arguments[0]);
-					varReferenced->setIsReferenced(true);
-					return varReferenced;
-				}
-				else
-					returnValue = this->_handleNativeFunction(nativeFunc->second,
-						this->_getVectorHigherObject(functionObj->arguments));
-
-				return this->_manageEndCall( callObj, returnValue, expressionAssign );
-			}
-			else throw std::runtime_error("Runtime Error: Function is not declared.");
-		}
-		if (newFunc == nullptr)
-			throw std::runtime_error("Runtime Error: Invalid Function.");
-
-		returnValue = this->_runFunction(newFunc, this->_getVectorHigherObject(functionObj->arguments));
-	}
-	else if (tok == JDM::TokenType::EXPRESSION)
-	{
-		// Get the expression object
-		auto exprObj = std::dynamic_pointer_cast<ExpressionObjects>(callObj->currObject);
-		auto variables = this->__variable->variables.find(exprObj->returnStringValue());
-		if (variables == this->__variable->variables.end())
-			throw std::runtime_error("Runtime Error: Variable is not declared.");
-
-		auto varList = variables->second.second;
-		if (varList->getCurrActive() == ACTIVE_LIST
-		 || varList->getCurrActive() == ACTIVE_MAP
-		 || varList->getCurrActive() == ACTIVE_STRING)
-			returnValue = this->_manageCallBrackets(callObj, varList, expressionAssign);
-		else
-			throw std::runtime_error("Runtime Error: Variable is not a String, List or a Map.");
-	}
-	else if (tok == JDM::TokenType::VARIABLE)
-	{
-		auto var = std::dynamic_pointer_cast<VariableObjects>(callObj->currObject);
-		auto variables = this->__variable->variables.find(var->returnStringValue());
-		if (variables == this->__variable->variables.end())
-			throw std::runtime_error("Runtime Error: Variable is not declared.");
-
-		returnValue = variables->second.second;
-	}
-	else if (tok == JDM::TokenType::STRING)
-		returnValue = std::make_shared<HigherObject>(callObj->currObject->returnStringValue());
-
-	return this->_manageEndCall(callObj, returnValue, expressionAssign);
 }
 
 // =================================================================================================
@@ -1751,9 +1782,9 @@ const std::shared_ptr<HigherObject> Compiler::_runConsole(
 	std::shared_ptr<HigherObject> &obj,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
-	if (obj->objectValue->members["userCreate"] != nullptr)
+	if (obj->objectValue->pMembers["userCreate"] != nullptr)
 	{
-		auto createResult = this->_runFunction(obj->objectValue->members["userCreate"]->funcValue, {});
+		auto createResult = this->_runFunction(obj->objectValue->pMembers["userCreate"]->funcValue, {});
 		if (createResult != nullptr)
 		{
 			createResult->castToBoolean();
@@ -1763,10 +1794,10 @@ const std::shared_ptr<HigherObject> Compiler::_runConsole(
 	}
 
 	nativeClassFunc->manageFunction(static_cast<int>(ConsoleClass::CONSOLE_RUN), obj, objects);
-	while (obj->objectValue->members["isRunning"]->booleanValue)
+	while (obj->objectValue->members["isRunning"].booleanValue)
 	{
 		nativeClassFunc->manageFunction(static_cast<int>(ConsoleClass::CONSOLE_START_UPDATE), obj, objects);
-		auto userupd = obj->objectValue->members["userUpdate"];
+		auto userupd = obj->objectValue->pMembers["userUpdate"];
 
 		bool updateGame = (userupd == nullptr);
 		if (!updateGame)

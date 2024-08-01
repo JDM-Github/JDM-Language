@@ -6,13 +6,6 @@ public:
 	bool value;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(value);
-	}
-
 	BooleanObjects() = default;
 	inline explicit BooleanObjects(const std::shared_ptr<TokenStruct> &tok)
 	:

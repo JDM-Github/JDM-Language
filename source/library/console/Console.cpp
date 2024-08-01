@@ -5,8 +5,167 @@
 #include "library/console/Drawer.hpp"
 
 JDM_DLL
-ConsoleClass::ConsoleClass()
+ConsoleClass::ConsoleClass() {}
+
+JDM_DLL
+ConsoleClass::~ConsoleClass()
 {
+	delete this->pixelClass;
+	delete this->colorClass;
+	delete this->keyCodeClass;
+}
+
+JDM_DLL
+const void ConsoleClass::init()
+{
+	this->pixelClass = new HigherObject();
+	this->pixelClass->castToObject();
+	this->pixelClass->objectValue->className = "$_Console_Pixel";
+	this->pixelClass->objectValue->members = {
+		{ "NEWLINE"    , static_cast<int64_t>(JDMConsole::NEWLINE     )},
+		{ "BLANK"      , static_cast<int64_t>(JDMConsole::BLANK       )},
+		{ "PIXEL_SOLID", static_cast<int64_t>(JDMConsole::PIXEL_SOLID )},
+		{ "S1"         , static_cast<int64_t>(JDMConsole::S1          )},
+		{ "S2"         , static_cast<int64_t>(JDMConsole::S2          )},
+		{ "S3"         , static_cast<int64_t>(JDMConsole::S3          )},
+		{ "S4"         , static_cast<int64_t>(JDMConsole::S4          )}
+	};
+	this->pixelClass->objectValue->fromMainSource = false;
+
+	this->colorClass = new HigherObject();
+	this->colorClass->castToObject();
+	this->colorClass->objectValue->className = "$_Console_Color";
+	this->colorClass->objectValue->members = {
+		{ "FG_BLACK"     , static_cast<int64_t>(JDMConsole::FG_BLACK      )},
+		{ "FG_BLUE"      , static_cast<int64_t>(JDMConsole::FG_BLUE       )},
+		{ "FG_GREEN"     , static_cast<int64_t>(JDMConsole::FG_GREEN      )},
+		{ "FG_CYAN"      , static_cast<int64_t>(JDMConsole::FG_CYAN       )},
+		{ "FG_RED"       , static_cast<int64_t>(JDMConsole::FG_RED        )},
+		{ "FG_MAGENTA"   , static_cast<int64_t>(JDMConsole::FG_MAGENTA    )},
+		{ "FG_YELLOW"    , static_cast<int64_t>(JDMConsole::FG_YELLOW     )},
+		{ "FG_GRAY"      , static_cast<int64_t>(JDMConsole::FG_GRAY       )},
+		{ "FG_DARK_GRAY" , static_cast<int64_t>(JDMConsole::FG_DARK_GRAY  )},
+		{ "FG_DARK_BLUE" , static_cast<int64_t>(JDMConsole::FG_DARK_BLUE  )},
+		{ "FG_DARK_GREEN", static_cast<int64_t>(JDMConsole::FG_DARK_GREEN )},
+		{ "FG_DARK_CYAN" , static_cast<int64_t>(JDMConsole::FG_DARK_CYAN  )},
+		{ "FG_DARK_RED"  , static_cast<int64_t>(JDMConsole::FG_DARK_RED   )},
+		{ "FG_SKIN"      , static_cast<int64_t>(JDMConsole::FG_SKIN       )},
+		{ "FG_DARK_SKIN" , static_cast<int64_t>(JDMConsole::FG_DARK_SKIN  )},
+		{ "FG_WHITE"     , static_cast<int64_t>(JDMConsole::FG_WHITE      )},
+		{ "BG_BLACK"     , static_cast<int64_t>(JDMConsole::BG_BLACK      )},
+		{ "BG_BLUE"      , static_cast<int64_t>(JDMConsole::BG_BLUE       )},
+		{ "BG_GREEN"     , static_cast<int64_t>(JDMConsole::BG_GREEN      )},
+		{ "BG_CYAN"      , static_cast<int64_t>(JDMConsole::BG_CYAN       )},
+		{ "BG_RED"       , static_cast<int64_t>(JDMConsole::BG_RED        )},
+		{ "BG_MAGENTA"   , static_cast<int64_t>(JDMConsole::BG_MAGENTA    )},
+		{ "BG_YELLOW"    , static_cast<int64_t>(JDMConsole::BG_YELLOW     )},
+		{ "BG_GRAY"      , static_cast<int64_t>(JDMConsole::BG_GRAY       )},
+		{ "BG_DARK_GRAY" , static_cast<int64_t>(JDMConsole::BG_DARK_GRAY  )},
+		{ "BG_DARK_BLUE" , static_cast<int64_t>(JDMConsole::BG_DARK_BLUE  )},
+		{ "BG_DARK_GREEN", static_cast<int64_t>(JDMConsole::BG_DARK_GREEN )},
+		{ "BG_DARK_CYAN" , static_cast<int64_t>(JDMConsole::BG_DARK_CYAN  )},
+		{ "BG_DARK_RED"  , static_cast<int64_t>(JDMConsole::BG_DARK_RED   )},
+		{ "BG_SKIN"      , static_cast<int64_t>(JDMConsole::BG_SKIN       )},
+		{ "BG_DARK_SKIN" , static_cast<int64_t>(JDMConsole::BG_DARK_SKIN  )},
+		{ "BG_WHITE"     , static_cast<int64_t>(JDMConsole::BG_WHITE      )}
+	};
+	this->colorClass->objectValue->fromMainSource = false;
+
+	this->keyCodeClass = new HigherObject();
+	this->keyCodeClass->castToObject();
+	this->keyCodeClass->objectValue->className = "$_Console_Key";
+	this->keyCodeClass->objectValue->members = {
+		{ "MOUSE_LEFT" , static_cast<int64_t>(JDMConsole::Keys::MOUSE_LEFT  )},
+		{ "MOUSE_RIGHT", static_cast<int64_t>(JDMConsole::Keys::MOUSE_RIGHT )},
+		{ "BACKSPACE"  , static_cast<int64_t>(JDMConsole::Keys::BACKSPACE   )},
+		{ "TAB"        , static_cast<int64_t>(JDMConsole::Keys::TAB         )},
+		{ "ENTER"      , static_cast<int64_t>(JDMConsole::Keys::ENTER       )},
+		{ "SHIFT"      , static_cast<int64_t>(JDMConsole::Keys::SHIFT       )},
+		{ "CTRL"       , static_cast<int64_t>(JDMConsole::Keys::CTRL        )},
+		{ "ALT"        , static_cast<int64_t>(JDMConsole::Keys::ALT         )},
+		{ "CAPSLOCK"   , static_cast<int64_t>(JDMConsole::Keys::CAPSLOCK    )},
+		{ "ESC"        , static_cast<int64_t>(JDMConsole::Keys::ESC         )},
+		{ "SPACEBAR"   , static_cast<int64_t>(JDMConsole::Keys::SPACEBAR    )},
+		{ "PAGEUP"     , static_cast<int64_t>(JDMConsole::Keys::PAGEUP      )},
+		{ "PAGEDOWN"   , static_cast<int64_t>(JDMConsole::Keys::PAGEDOWN    )},
+		{ "END"        , static_cast<int64_t>(JDMConsole::Keys::END         )},
+		{ "HOME"       , static_cast<int64_t>(JDMConsole::Keys::HOME        )},
+		{ "LEFTKEY"    , static_cast<int64_t>(JDMConsole::Keys::LEFTKEY     )},
+		{ "UPKEY"      , static_cast<int64_t>(JDMConsole::Keys::UPKEY       )},
+		{ "RIGHTKEY"   , static_cast<int64_t>(JDMConsole::Keys::RIGHTKEY    )},
+		{ "DOWNKEY"    , static_cast<int64_t>(JDMConsole::Keys::DOWNKEY     )},
+		{ "DELETE"     , static_cast<int64_t>(JDMConsole::Keys::DELETEKEY   )},
+		{ "N0"         , static_cast<int64_t>(JDMConsole::Keys::N0KEY       )},
+		{ "N1"         , static_cast<int64_t>(JDMConsole::Keys::N1KEY       )},
+		{ "N2"         , static_cast<int64_t>(JDMConsole::Keys::N2KEY       )},
+		{ "N3"         , static_cast<int64_t>(JDMConsole::Keys::N3KEY       )},
+		{ "N4"         , static_cast<int64_t>(JDMConsole::Keys::N4KEY       )},
+		{ "N5"         , static_cast<int64_t>(JDMConsole::Keys::N5KEY       )},
+		{ "N6"         , static_cast<int64_t>(JDMConsole::Keys::N6KEY       )},
+		{ "N7"         , static_cast<int64_t>(JDMConsole::Keys::N7KEY       )},
+		{ "N8"         , static_cast<int64_t>(JDMConsole::Keys::N8KEY       )},
+		{ "N9"         , static_cast<int64_t>(JDMConsole::Keys::N9KEY       )},
+		{ "A"          , static_cast<int64_t>(JDMConsole::Keys::AKEY        )},
+		{ "B"          , static_cast<int64_t>(JDMConsole::Keys::BKEY        )},
+		{ "C"          , static_cast<int64_t>(JDMConsole::Keys::CKEY        )},
+		{ "D"          , static_cast<int64_t>(JDMConsole::Keys::DKEY        )},
+		{ "E"          , static_cast<int64_t>(JDMConsole::Keys::EKEY        )},
+		{ "F"          , static_cast<int64_t>(JDMConsole::Keys::FKEY        )},
+		{ "G"          , static_cast<int64_t>(JDMConsole::Keys::GKEY        )},
+		{ "H"          , static_cast<int64_t>(JDMConsole::Keys::HKEY        )},
+		{ "I"          , static_cast<int64_t>(JDMConsole::Keys::IKEY        )},
+		{ "J"          , static_cast<int64_t>(JDMConsole::Keys::JKEY        )},
+		{ "K"          , static_cast<int64_t>(JDMConsole::Keys::KKEY        )},
+		{ "L"          , static_cast<int64_t>(JDMConsole::Keys::LKEY        )},
+		{ "M"          , static_cast<int64_t>(JDMConsole::Keys::MKEY        )},
+		{ "N"          , static_cast<int64_t>(JDMConsole::Keys::NKEY        )},
+		{ "O"          , static_cast<int64_t>(JDMConsole::Keys::OKEY        )},
+		{ "P"          , static_cast<int64_t>(JDMConsole::Keys::PKEY        )},
+		{ "Q"          , static_cast<int64_t>(JDMConsole::Keys::QKEY        )},
+		{ "R"          , static_cast<int64_t>(JDMConsole::Keys::RKEY        )},
+		{ "S"          , static_cast<int64_t>(JDMConsole::Keys::SKEY        )},
+		{ "T"          , static_cast<int64_t>(JDMConsole::Keys::TKEY        )},
+		{ "U"          , static_cast<int64_t>(JDMConsole::Keys::UKEY        )},
+		{ "V"          , static_cast<int64_t>(JDMConsole::Keys::VKEY        )},
+		{ "W"          , static_cast<int64_t>(JDMConsole::Keys::WKEY        )},
+		{ "X"          , static_cast<int64_t>(JDMConsole::Keys::XKEY        )},
+		{ "Y"          , static_cast<int64_t>(JDMConsole::Keys::YKEY        )},
+		{ "Z"          , static_cast<int64_t>(JDMConsole::Keys::ZKEY        )},
+		{ "WIN"        , static_cast<int64_t>(JDMConsole::Keys::WIN         )},
+		{ "NOTE"       , static_cast<int64_t>(JDMConsole::Keys::NOTE        )},
+		{ "F1"         , static_cast<int64_t>(JDMConsole::Keys::F1          )},
+		{ "F2"         , static_cast<int64_t>(JDMConsole::Keys::F2          )},
+		{ "F3"         , static_cast<int64_t>(JDMConsole::Keys::F3          )},
+		{ "F4"         , static_cast<int64_t>(JDMConsole::Keys::F4          )},
+		{ "F5"         , static_cast<int64_t>(JDMConsole::Keys::F5          )},
+		{ "F6"         , static_cast<int64_t>(JDMConsole::Keys::F6          )},
+		{ "F7"         , static_cast<int64_t>(JDMConsole::Keys::F7          )},
+		{ "F8"         , static_cast<int64_t>(JDMConsole::Keys::F8          )},
+		{ "F9"         , static_cast<int64_t>(JDMConsole::Keys::F9          )},
+		{ "F10"        , static_cast<int64_t>(JDMConsole::Keys::F10         )},
+		{ "F11"        , static_cast<int64_t>(JDMConsole::Keys::F11         )},
+		{ "F12"        , static_cast<int64_t>(JDMConsole::Keys::F12         )},
+		{ "LSHIFT"     , static_cast<int64_t>(JDMConsole::Keys::LSHIFT      )},
+		{ "RSHIFT"     , static_cast<int64_t>(JDMConsole::Keys::RSHIFT      )},
+		{ "LCTRL"      , static_cast<int64_t>(JDMConsole::Keys::LCTRL       )},
+		{ "RCTRL"      , static_cast<int64_t>(JDMConsole::Keys::RCTRL       )},
+		{ "LALT"       , static_cast<int64_t>(JDMConsole::Keys::LALT        )},
+		{ "RALT"       , static_cast<int64_t>(JDMConsole::Keys::RALT        )},
+		{ "SEMICOLON"  , static_cast<int64_t>(JDMConsole::Keys::SIMICOLONKEY)},
+		{ "ADD"        , static_cast<int64_t>(JDMConsole::Keys::ADD         )},
+		{ "COMMA"      , static_cast<int64_t>(JDMConsole::Keys::COMMA       )},
+		{ "MINUS"      , static_cast<int64_t>(JDMConsole::Keys::MINUS       )},
+		{ "DOT"        , static_cast<int64_t>(JDMConsole::Keys::DOT         )},
+		{ "BSLASH"     , static_cast<int64_t>(JDMConsole::Keys::BSLASH      )},
+		{ "DQUOTE"     , static_cast<int64_t>(JDMConsole::Keys::DQOUTEKEY   )},
+		{ "OBRACKET"   , static_cast<int64_t>(JDMConsole::Keys::OBRACKET    )},
+		{ "FSLASH"     , static_cast<int64_t>(JDMConsole::Keys::FSLASH      )},
+		{ "CBRACKET"   , static_cast<int64_t>(JDMConsole::Keys::CBRACKET    )},
+		{ "QUOTE"      , static_cast<int64_t>(JDMConsole::Keys::QOUTEKEY    )},
+		{ "PRTSC"      , static_cast<int64_t>(JDMConsole::Keys::PRTSC       )}
+	};
+	this->keyCodeClass->objectValue->fromMainSource = false;
+
 	this->initializeVariable();
 	this->initializeFunction();
 }
@@ -14,36 +173,44 @@ ConsoleClass::ConsoleClass()
 JDM_DLL
 const void ConsoleClass::initializeFunction()
 {
-	this->mapFunctions["run"       ] = ConsoleEnum::CONSOLE_RUN;
-	this->mapFunctions["setUpdate" ] = ConsoleEnum::CONSOLE_SET_UPDATE;
-	this->mapFunctions["setCreate" ] = ConsoleEnum::CONSOLE_SET_CREATE;
+	this->mapFunctions["run"                       ] = ConsoleEnum::CONSOLE_RUN;
+	this->mapFunctions["setUpdate"                 ] = ConsoleEnum::CONSOLE_SET_UPDATE;
+	this->mapFunctions["setCreate"                 ] = ConsoleEnum::CONSOLE_SET_CREATE;
 
-	this->mapFunctions["clear"        ] = ConsoleEnum::CONSOLE_CLEAR;
-	this->mapFunctions["setAutoClear" ] = ConsoleEnum::CONSOLE_AUTO_CLEAR;
+	this->mapFunctions["clear"                     ] = ConsoleEnum::CONSOLE_CLEAR;
+	this->mapFunctions["setAutoClear"              ] = ConsoleEnum::CONSOLE_AUTO_CLEAR;
 
-	this->mapFunctions["getMouseX"    ] = ConsoleEnum::CONSOLE_GET_MOUSE_X;
-	this->mapFunctions["getMouseY"    ] = ConsoleEnum::CONSOLE_GET_MOUSE_Y;
-	this->mapFunctions["getMouse"     ] = ConsoleEnum::CONSOLE_GET_MOUSE;
-	this->mapFunctions["getElapseTime"] = ConsoleEnum::CONSOLE_GET_ELAPSETIME;
+	this->mapFunctions["getMouseX"                 ] = ConsoleEnum::CONSOLE_GET_MOUSE_X;
+	this->mapFunctions["getMouseY"                 ] = ConsoleEnum::CONSOLE_GET_MOUSE_Y;
+	this->mapFunctions["getMouse"                  ] = ConsoleEnum::CONSOLE_GET_MOUSE;
+	this->mapFunctions["getElapseTime"             ] = ConsoleEnum::CONSOLE_GET_ELAPSETIME;
 
-	this->mapFunctions["draw"          ] = ConsoleEnum::CONSOLE_DRAW;
-	this->mapFunctions["drawString"    ] = ConsoleEnum::CONSOLE_DRAW_STRING;
-	this->mapFunctions["drawStringChar"] = ConsoleEnum::CONSOLE_DRAW_STRING_CHAR;
-	this->mapFunctions["drawBox"       ] = ConsoleEnum::CONSOLE_DRAW_BOX;
+	this->mapFunctions["draw"                      ] = ConsoleEnum::CONSOLE_DRAW;
+	this->mapFunctions["drawString"                ] = ConsoleEnum::CONSOLE_DRAW_STRING;
+	this->mapFunctions["drawStringChar"            ] = ConsoleEnum::CONSOLE_DRAW_STRING_CHAR;
+	this->mapFunctions["drawBox"                   ] = ConsoleEnum::CONSOLE_DRAW_BOX;
+	this->mapFunctions["drawHorizontal"            ] = ConsoleEnum::CONSOLE_DRAW_HORIZONTAL;
+	this->mapFunctions["drawVertical"              ] = ConsoleEnum::CONSOLE_DRAW_VERTICAL;
+	this->mapFunctions["drawLine"                  ] = ConsoleEnum::CONSOLE_DRAW_LINE;
+	this->mapFunctions["drawTriangle"              ] = ConsoleEnum::CONSOLE_DRAW_TRIANGLE;
 
-	this->mapFunctions["drawCycle"          ] = ConsoleEnum::CONSOLE_DRAW_CYCLE;
-	this->mapFunctions["drawStringCycle"    ] = ConsoleEnum::CONSOLE_DRAW_STRING_CYCLE;
-	this->mapFunctions["drawStringCharCycle"] = ConsoleEnum::CONSOLE_DRAW_STRING_CHAR_CYCLE;
-	this->mapFunctions["drawBoxCycle"       ] = ConsoleEnum::CONSOLE_DRAW_BOX_CYCLE;
+	this->mapFunctions["drawCycle"                 ] = ConsoleEnum::CONSOLE_DRAW_CYCLE;
+	this->mapFunctions["drawStringCycle"           ] = ConsoleEnum::CONSOLE_DRAW_STRING_CYCLE;
+	this->mapFunctions["drawStringCharCycle"       ] = ConsoleEnum::CONSOLE_DRAW_STRING_CHAR_CYCLE;
+	this->mapFunctions["drawBoxCycle"              ] = ConsoleEnum::CONSOLE_DRAW_BOX_CYCLE;
+	this->mapFunctions["drawHorizontalCycle"       ] = ConsoleEnum::CONSOLE_DRAW_HORIZONTAL_CYCLE;
+	this->mapFunctions["drawVerticalCycle"         ] = ConsoleEnum::CONSOLE_DRAW_VERTICAL_CYCLE;
+	this->mapFunctions["drawLineCycle"             ] = ConsoleEnum::CONSOLE_DRAW_LINE_CYCLE;
+	this->mapFunctions["drawTriangleCycle"         ] = ConsoleEnum::CONSOLE_DRAW_TRIANGLE_CYCLE;
 
 	this->mapFunctions["drawColoredString"         ] = ConsoleEnum::CONSOLE_DRAW_COLORED_STRING;
 	this->mapFunctions["drawColoredStringCycle"    ] = ConsoleEnum::CONSOLE_DRAW_COLORED_STRING_CYCLE;
 	this->mapFunctions["drawColoredStringChar"     ] = ConsoleEnum::CONSOLE_DRAW_COLORED_STRING_CHAR;
 	this->mapFunctions["drawColoredStringCharCycle"] = ConsoleEnum::CONSOLE_DRAW_COLORED_STRING_CHAR_CYCLE;
 
-	this->mapFunctions["isHeld"    ] = ConsoleEnum::CONSOLE_IS_HELD;
-	this->mapFunctions["isReleased"] = ConsoleEnum::CONSOLE_IS_RELEASED;
-	this->mapFunctions["isPressed" ] = ConsoleEnum::CONSOLE_IS_PRESSED;
+	this->mapFunctions["isHeld"                    ] = ConsoleEnum::CONSOLE_IS_HELD;
+	this->mapFunctions["isReleased"                ] = ConsoleEnum::CONSOLE_IS_RELEASED;
+	this->mapFunctions["isPressed"                 ] = ConsoleEnum::CONSOLE_IS_PRESSED;
 }
 
 JDM_DLL
@@ -57,78 +224,36 @@ std::shared_ptr<HigherObject> ConsoleClass::constructor(
 	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
-	obj1->objectValue->members["class"     ] = std::make_shared<HigherObject>("Console");
-	obj1->objectValue->members["isRunning" ] = std::make_shared<HigherObject>(false);
-	obj1->objectValue->members["Width"     ] = std::make_shared<HigherObject>(static_cast<int64_t>(50));
-	obj1->objectValue->members["Height"    ] = std::make_shared<HigherObject>(static_cast<int64_t>(50));
-	obj1->objectValue->members["FontWidth" ] = std::make_shared<HigherObject>(static_cast<int64_t>(5 ));
-	obj1->objectValue->members["FontHeight"] = std::make_shared<HigherObject>(static_cast<int64_t>(5 ));
+	obj1->objectValue->pMembers["userUpdate"] = nullptr;
+	obj1->objectValue->pMembers["userCreate"] = nullptr;
 
-	obj1->objectValue->members["userUpdate"] = nullptr;
-	obj1->objectValue->members["userCreate"] = nullptr;
-	obj1->objectValue->members["autoClear" ] = std::make_shared<HigherObject>(false);
+	obj1->objectValue->members["current"   ] = this->index++;
+	obj1->objectValue->members["isRunning" ] = false;
+	obj1->objectValue->members["Width"     ] = static_cast<int64_t>(50);
+	obj1->objectValue->members["Height"    ] = static_cast<int64_t>(50);
+	obj1->objectValue->members["FontWidth" ] = static_cast<int64_t>(5 );
+	obj1->objectValue->members["FontHeight"] = static_cast<int64_t>(5 );	
+	obj1->objectValue->members["autoClear" ] = false;
 
-	obj1->objectValue->members["current"] = std::make_shared<HigherObject>(this->index++);
+	obj1->objectValue->members["PIXEL"     ] = *this->pixelClass;
+	obj1->objectValue->members["COLOR"     ] = *this->colorClass;
+	obj1->objectValue->members["KEY"       ] = *this->keyCodeClass;
+
 	windows.push_back(nullptr);
 	return obj1;
 }
 
-// JDM_DLL
-// std::shared_ptr<HigherObject> ConsoleClass::manageVariable(
-// 	int varType,
-// 	std::shared_ptr<HigherObject> &obj1)
-// {
-// 	ConsoleEnumVariable newVarType = static_cast<ConsoleEnumVariable>(varType);
-// 	switch (newVarType)
-// 	{
-// 	case ConsoleEnumVariable::FG_BLACK:
-// 		return 
-// 	default:
-// 		throw std::runtime_error("Runtime Error: This classfield is not a member of class 'Console'.");
-// 	}
-// }
-
 JDM_DLL
 std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
-	int funcType, std::shared_ptr<HigherObject> &obj1,
+	int funcType,
+	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
 	ConsoleEnum newfuncType = static_cast<ConsoleEnum>(funcType);
 
 	if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_RUN)
-	{
-		if (obj1->objectValue->fromMainSource)
-			throw std::runtime_error("Runtime Error: The 'run' method is not static.");
-		if (obj1->objectValue->members["isRunning"]->booleanValue)
-			throw std::runtime_error("Runtime Error: The Console is already running.");
-		if (objects.empty())
-			throw std::runtime_error("Runtime Error: Expecting atleast 1 argument.");
-		if (objects.size() > 5)
-			throw std::runtime_error("Runtime Error: Expecting only 5 arguments.");
-		if (objects[0]->getCurrActive() != ACTIVE_STRING)
-			throw std::runtime_error("Runtime Error: Console title must be a 'jstring'");
+		this->runConsole(obj1, objects);
 
-		for (int i = 1; i < objects.size(); i++)
-		{
-			if (objects[i]->getCurrActive() != ACTIVE_INTEGER)
-				throw std::runtime_error("Runtime Error: Console argument "
-					+ std::to_string(i+1) +  "must be a 'jint'");
-		}
-
-		obj1->objectValue->members["isRunning" ]->booleanValue = true;
-		obj1->objectValue->members["Width"     ]->integerValue = ((objects.size() > 1) ? objects[1]->integerValue : obj1->objectValue->members["Width"     ]->integerValue);
-		obj1->objectValue->members["Height"    ]->integerValue = ((objects.size() > 2) ? objects[2]->integerValue : obj1->objectValue->members["Height"    ]->integerValue);
-		obj1->objectValue->members["FontWidth" ]->integerValue = ((objects.size() > 3) ? objects[3]->integerValue : obj1->objectValue->members["FontWidth" ]->integerValue);
-		obj1->objectValue->members["FontHeight"]->integerValue = ((objects.size() > 4) ? objects[4]->integerValue : obj1->objectValue->members["FontHeight"]->integerValue);
-		this->runConsole(
-			this->getCurrent(obj1),
-			objects[0]->stringValue,
-			obj1->objectValue->members["Width"     ]->integerValue,
-			obj1->objectValue->members["Height"    ]->integerValue,
-			obj1->objectValue->members["FontWidth" ]->integerValue,
-			obj1->objectValue->members["FontHeight"]->integerValue
-		);
-	}
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_SET_UPDATE)
 	{
 		if (obj1->objectValue->fromMainSource)
@@ -140,7 +265,7 @@ std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
 		if (objects[0]->getCurrActive() != ACTIVE_FUNCTION)
 			throw std::runtime_error("Runtime Error: 'Console.setUpdate' argument must be a 'jfunc' or 'jlambda'");
 
-		obj1->objectValue->members["userUpdate"] = std::make_shared<HigherObject>(objects[0]->funcValue);
+		obj1->objectValue->pMembers["userUpdate"] = std::make_shared<HigherObject>(objects[0]->funcValue);
 	}
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_SET_CREATE)
 	{
@@ -153,15 +278,14 @@ std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
 		if (objects[0]->getCurrActive() != ACTIVE_FUNCTION)
 			throw std::runtime_error("Runtime Error: 'Console.setCreate' argument must be a 'jfunc' or 'jlambda'");
 
-		obj1->objectValue->members["userCreate"] = std::make_shared<HigherObject>(objects[0]->funcValue);
+		obj1->objectValue->pMembers["userCreate"] = std::make_shared<HigherObject>(objects[0]->funcValue);
 	}
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_START_UPDATE)
 	{
 		if (obj1->objectValue->fromMainSource)
 			throw std::runtime_error("Runtime Error: The 'run' method is not static.");
 
-		this->startUpdateConsole(this->getCurrent(obj1),
-			obj1->objectValue->members["autoClear"]->booleanValue);
+		this->startUpdateConsole(this->getCurrent(obj1), obj1->objectValue->members["autoClear"].booleanValue);
 	}
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_UPDATE)
 	{
@@ -182,7 +306,7 @@ std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
 		if (objects[0]->getCurrActive() != ACTIVE_FUNCTION)
 			throw std::runtime_error("Runtime Error: 'Console.setUpdate' argument must be a 'jfunc' or 'jlambda'");
 
-		obj1->objectValue->members["userUpdate"] = std::make_shared<HigherObject>(objects[0]->funcValue);
+		obj1->objectValue->pMembers["userUpdate"] = std::make_shared<HigherObject>(objects[0]->funcValue);
 	}
 
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_CLEAR)
@@ -197,7 +321,7 @@ std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
 		if (objects.size() != 1)
 			throw std::runtime_error("Runtime Error: 'Console.setUpdate' Expecting one argument.");
 
-		obj1->objectValue->members["autoClear"]->booleanValue = true;
+		obj1->objectValue->members["autoClear"].booleanValue = true;
 	}
 
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_GET_ELAPSETIME)
@@ -238,6 +362,24 @@ std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_BOX_CYCLE)
 		this->drawBox(obj1, objects, true);
 
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_HORIZONTAL)
+		this->drawHorizontal(obj1, objects);
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_HORIZONTAL_CYCLE)
+		this->drawHorizontal(obj1, objects, true);
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_VERTICAL)
+		this->drawVertical(obj1, objects);
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_VERTICAL_CYCLE)
+		this->drawVertical(obj1, objects, true);
+
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_LINE)
+		this->drawLine(obj1, objects);
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_LINE_CYCLE)
+		this->drawLine(obj1, objects, true);
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_TRIANGLE)
+		this->drawTriangle(obj1, objects);
+	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_DRAW_TRIANGLE_CYCLE)
+		this->drawTriangle(obj1, objects, true);
+
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_IS_HELD)
 		return std::make_shared<HigherObject>(this->isHeld(obj1, objects));
 	else if (newfuncType == ConsoleClass::ConsoleEnum::CONSOLE_IS_RELEASED)
@@ -253,16 +395,50 @@ std::shared_ptr<HigherObject> ConsoleClass::manageFunction(
 JDM_DLL
 int64_t ConsoleClass::getCurrent(const std::shared_ptr<HigherObject> &obj1)
 {
-	return obj1->objectValue->members["current"]->integerValue;
+	return obj1->objectValue->members["current"].integerValue;
 }
 
 JDM_DLL
 const void ConsoleClass::runConsole(
-	int64_t current, const std::string& title, short Width,
-	short Height, short fontWidth, short fontHeight)
+	const std::shared_ptr<HigherObject> &obj1,
+	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
+	if (obj1->objectValue->fromMainSource)
+		throw std::runtime_error("Runtime Error: The 'Console.run' method is not static.");
+
+	if (obj1->objectValue->members["isRunning"].booleanValue)
+		throw std::runtime_error("Runtime Error: The Console is already running.");
+
+	if (objects.empty())
+		throw std::runtime_error("Runtime Error: 'Console.run' expecting atleast 1 argument.");
+
+	if (objects.size() > 5)
+		throw std::runtime_error("Runtime Error: Expecting only 5 arguments.");
+
+	if (objects[0]->getCurrActive() != ACTIVE_STRING)
+		throw std::runtime_error("Runtime Error: Console title must be a 'jstring'");
+
+	for (int i = 1; i < objects.size(); i++)
+	{
+		if (objects[i]->getCurrActive() != ACTIVE_INTEGER)
+			throw std::runtime_error("Runtime Error: Console argument " + std::to_string(i+1) +  "must be a 'jint'");
+	}
+
+	obj1->objectValue->members["isRunning" ].booleanValue = true;
+	obj1->objectValue->members["Width"     ].integerValue = ((objects.size() > 1) ? objects[1]->integerValue : obj1->objectValue->members["Width"     ].integerValue);
+	obj1->objectValue->members["Height"    ].integerValue = ((objects.size() > 2) ? objects[2]->integerValue : obj1->objectValue->members["Height"    ].integerValue);
+	obj1->objectValue->members["FontWidth" ].integerValue = ((objects.size() > 3) ? objects[3]->integerValue : obj1->objectValue->members["FontWidth" ].integerValue);
+	obj1->objectValue->members["FontHeight"].integerValue = ((objects.size() > 4) ? objects[4]->integerValue : obj1->objectValue->members["FontHeight"].integerValue);
+
+	int64_t current = this->getCurrent(obj1);
 	if (this->windows[current] == nullptr)
-		this->windows[current] = std::make_shared<Window>(title.c_str(), Width, Height, fontWidth, fontHeight);
+		this->windows[current] = std::make_shared<Window>(
+			objects[0]->stringValue.c_str(),
+			static_cast<short>(obj1->objectValue->members["Width"     ].integerValue),
+			static_cast<short>(obj1->objectValue->members["Height"    ].integerValue),
+			static_cast<short>(obj1->objectValue->members["FontWidth" ].integerValue),
+			static_cast<short>(obj1->objectValue->members["FontHeight"].integerValue)
+		);
 
 	this->windows[current]->Start();
 }
@@ -585,41 +761,6 @@ const void ConsoleClass::drawCStringChar(
 	this->windows[this->getCurrent(obj1)]->DrawCStringChar({x, y}, textToDisplay, character, alpha, cycle);
 }
 
-// const void drawCString     (int64_t current, float x, float y, const std::string &character, bool alpha)
-// {
-
-// }
-// const void drawCStringCycle(int64_t current, float x, float y, const std::string &character, bool alpha)
-// {
-
-// }
-
-// const void drawString      (int64_t current, float x, float y, const std::string &character, short color, bool alpha)
-// {
-
-// }
-// const void drawACString    (int64_t current, float x, float y, const std::string &character, short character, short color, bool alpha)
-// {
-
-// }
-
-// const void drawHorizontal  (int64_t current, float x, float y, short character, short color, bool alpha)
-// {
-
-// }
-// const void drawVertical    (int64_t current, float x, float y, short character, short color, bool alpha)
-// {
-
-// }
-// const void drawLine        (int64_t current, float w, float x, float y, float z, short character, short color, bool alpha)
-// {
-
-// }
-// const void drawTriangle    (int64_t current, float u, float v, float w, float x, float y, float z, short character, short color, bool alpha)
-// {
-
-// }
-
 JDM_DLL
 const void ConsoleClass::drawBox(
 	const std::shared_ptr<HigherObject> &obj1,
@@ -638,6 +779,86 @@ const void ConsoleClass::drawBox(
 
 	this->checkLastArguments({objects.begin() + 4, objects.end()}, 5, character, color, alpha, strFunc);
 	this->windows[this->getCurrent(obj1)]->DrawBox({static_cast<int>(w), static_cast<int>(h), x, y}, character, color, alpha, cycle);
+}
+
+JDM_DLL
+const void ConsoleClass::drawHorizontal(
+	const std::shared_ptr<HigherObject> &obj1,
+	const std::vector<std::shared_ptr<HigherObject>> &objects,
+	const bool cycle)
+{
+	std::string strFunc = "Console.drawHorizontal";
+	if (cycle) strFunc += "Cycle";
+
+	float x, y, w;
+	this->setFirstArgs(obj1, objects, 3, 6, strFunc, &x, &y, &w);
+
+	short character = JDMConsole::PIXEL::PIXEL_SOLID;
+	short color     = JDMConsole::FG_WHITE | JDMConsole::BG_BLACK;
+	bool  alpha     = false;
+
+	this->checkLastArguments({objects.begin() + 3, objects.end()}, 4, character, color, alpha, strFunc);
+	this->windows[this->getCurrent(obj1)]->DrawHorizontal({x, y}, static_cast<int>(w), character, color, alpha, cycle);
+}
+
+JDM_DLL
+const void ConsoleClass::drawVertical(
+	const std::shared_ptr<HigherObject> &obj1,
+	const std::vector<std::shared_ptr<HigherObject>> &objects,
+	const bool cycle)
+{
+	std::string strFunc = "Console.drawVertical";
+	if (cycle) strFunc += "Cycle";
+
+	float x, y, h;
+	this->setFirstArgs(obj1, objects, 3, 6, strFunc, &x, &y, &h);
+
+	short character = JDMConsole::PIXEL::PIXEL_SOLID;
+	short color     = JDMConsole::FG_WHITE | JDMConsole::BG_BLACK;
+	bool  alpha     = false;
+
+	this->checkLastArguments({objects.begin() + 3, objects.end()}, 4, character, color, alpha, strFunc);
+	this->windows[this->getCurrent(obj1)]->DrawVertical({x, y}, static_cast<int>(h), character, color, alpha, cycle);
+}
+
+JDM_DLL
+const void ConsoleClass::drawLine(
+	const std::shared_ptr<HigherObject> &obj1,
+	const std::vector<std::shared_ptr<HigherObject>> &objects,
+	const bool cycle)
+{
+	std::string strFunc = "Console.drawLine";
+	if (cycle) strFunc += "Cycle";
+
+	float w, x, y, z;
+	this->setFirstArgs(obj1, objects, 4, 7, strFunc, &w, &x, &y, &z);
+
+	short character = JDMConsole::PIXEL::PIXEL_SOLID;
+	short color     = JDMConsole::FG_WHITE | JDMConsole::BG_BLACK;
+	bool  alpha     = false;
+
+	this->checkLastArguments({objects.begin() + 4, objects.end()}, 5, character, color, alpha, strFunc);
+	this->windows[this->getCurrent(obj1)]->DrawLine({w, x, y, z}, character, color, alpha, cycle);
+}
+
+JDM_DLL
+const void ConsoleClass::drawTriangle(
+	const std::shared_ptr<HigherObject> &obj1,
+	const std::vector<std::shared_ptr<HigherObject>> &objects,
+	const bool cycle)
+{
+	std::string strFunc = "Console.drawTriangle";
+	if (cycle) strFunc += "Cycle";
+
+	float u, v, w, x, y, z;
+	this->setFirstArgs(obj1, objects, 6, 9, strFunc, &u, &v, &w, &x, &y, &z);
+
+	short character = JDMConsole::PIXEL::PIXEL_SOLID;
+	short color     = JDMConsole::FG_WHITE | JDMConsole::BG_BLACK;
+	bool  alpha     = false;
+
+	this->checkLastArguments({objects.begin() + 6, objects.end()}, 7, character, color, alpha, strFunc);
+	this->windows[this->getCurrent(obj1)]->DrawTriangle({u, v, w, x, y, z}, character, color, alpha, cycle);
 }
 
 

@@ -15,35 +15,35 @@ const void Parser::saveBlock(
 	const std::string& filename,
 	const bool autoOverwrite)
 {
-	if (filename == "")
-		return this->saveBlock(StaticFunction::createNewFilename(".jdms"));
-	if (std::filesystem::exists(filename))
-		return this->saveBlock(StaticFunction::handleFileExists(filename, ".jdms", autoOverwrite));
+	// if (filename == "")
+	// 	return this->saveBlock(StaticFunction::createNewFilename(".jdms"));
+	// if (std::filesystem::exists(filename))
+	// 	return this->saveBlock(StaticFunction::handleFileExists(filename, ".jdms", autoOverwrite));
 
-	std::ofstream os(filename, std::ios::binary);
-	if (!os.is_open())
-		throw std::runtime_error("Failed to open file for writing: " + filename);
+	// std::ofstream os(filename, std::ios::binary);
+	// if (!os.is_open())
+	// 	throw std::runtime_error("Failed to open file for writing: " + filename);
 
-	// cereal::BinaryOutputArchive archive(os);
-	cereal::JSONOutputArchive archive(os);
-	archive(this->__mainBlock);
-	Log << "Parsing completed successfully and ast saved to " << filename << std::endl;	
+	// // cereal::BinaryOutputArchive archive(os);
+	// cereal::JSONOutputArchive archive(os);
+	// archive(this->__mainBlock);
+	// Log << "Parsing completed successfully and ast saved to " << filename << std::endl;	
 }
 
 JDM_DLL
 const void Parser::loadBlock(
 	const std::string& filename)
 {
-	if (!std::filesystem::exists(filename))
-		throw std::runtime_error("File not found: " + filename);
+	// if (!std::filesystem::exists(filename))
+	// 	throw std::runtime_error("File not found: " + filename);
 
-	std::ifstream is(filename, std::ios::binary);
-	if (!is.is_open())
-		throw std::runtime_error("Failed to open file for reading: " + filename);
+	// std::ifstream is(filename, std::ios::binary);
+	// if (!is.is_open())
+	// 	throw std::runtime_error("Failed to open file for reading: " + filename);
 
-	// cereal::BinaryInputArchive archive(is);
-	cereal::JSONInputArchive archive(is);
-	archive(this->__mainBlock);
+	// // cereal::BinaryInputArchive archive(is);
+	// cereal::JSONInputArchive archive(is);
+	// archive(this->__mainBlock);
 }
 
 JDM_DLL

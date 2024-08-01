@@ -18,7 +18,7 @@ Icon "icon.ico"
 ;-----------------------------------------
 ;Pages
 	!insertmacro MUI_PAGE_WELCOME
-	!insertmacro MUI_PAGE_LICENSE "..\LICENSE"
+	!insertmacro MUI_PAGE_LICENSE "..\LICENSE.txt"
 	;!insertmacro MUI_PAGE_COMPONENTS
 	!insertmacro MUI_PAGE_DIRECTORY
 	!insertmacro MUI_PAGE_INSTFILES
@@ -45,12 +45,12 @@ Icon "icon.ico"
 		File "..\Build\*.dll"
 		File "..\Build\*.exe"
 
-		SetOutPath "$INSTDIR\bin\scripts"
-		File "..\Build\scripts\*.jdm"
-
 		SetOutPath "$INSTDIR"
 		File "..\*.bat"
 		File "..\*.md"
+		File "..\*.jdm"
+		CreateDirectory "$INSTDIR\logs"
+
 		CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}"
 		WriteUninstaller "$INSTDIR\uninstall.exe"
 	SectionEnd
@@ -64,9 +64,9 @@ Icon "icon.ico"
 	Section "Uninstall"
 		Delete "$INSTDIR\bin\*.dll"
 		Delete "$INSTDIR\bin\*.exe"
-		Delete "$INSTDIR\bin\scripts\*.jdm"
 		Delete "$INSTDIR\*.bat"
 		Delete "$INSTDIR\*.md"
+		Delete "$INSTDIR\*.jdm"
 		Delete "$INSTDIR\uninstall.exe"
 		RMDir "$INSTDIR"
 	SectionEnd

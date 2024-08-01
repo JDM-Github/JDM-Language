@@ -4,7 +4,7 @@ jlist board = [
 	[' ', ' ', ' '],
 ];
 
-jforce jint turn = 0;
+jint turn = 0;
 jfunc draw() =>
 {
 	$logn => " WELCOME TO TIC TAC TOE\n";
@@ -21,8 +21,8 @@ jfunc draw() =>
 
 jfunc checkTurn() =>
 {
-	jforce jint row = jint(input("Row: ")) - 1;
-	jforce jint col = jint(input("Col: ")) - 1;
+	jint row = jint(input("Row: ")) - 1;
+	jint col = jint(input("Col: ")) - 1;
 	jif (row < 0 || col < 0 || row >= 3 || col >= 3) =>
 	{
 		$logn => "\nInvalid square.";

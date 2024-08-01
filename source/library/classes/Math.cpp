@@ -3,7 +3,10 @@
 #include "library/classes/Math.hpp"
 
 JDM_DLL
-MathClass::MathClass()
+MathClass::MathClass() {}
+
+JDM_DLL
+const void MathClass::init()
 {
 	this->mapFunctions["add"      ] = MathEnum::MATH_ADD;
 	this->mapFunctions["subtract" ] = MathEnum::MATH_SUBTRACT;

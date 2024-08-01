@@ -45,6 +45,8 @@ public:
 	};
 
 	JDM_DLL MathClass();
+	JDM_DLL const void init();
+
 	JDM_DLL inline std::shared_ptr<HigherObject> constructor(
 		std::shared_ptr<HigherObject> &obj1,
 		const std::vector<std::shared_ptr<HigherObject>> &objects)

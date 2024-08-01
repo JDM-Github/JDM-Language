@@ -9,13 +9,6 @@ public:
 	std::shared_ptr<Expression > expression;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<Instruction>(this));
-		archive(isAssigning, operation, callObj, expression);
-	}
-
 	inline Call(
 		bool _isAssigning = false,
 		const std::shared_ptr<CallObjects> &_callObj    = nullptr,

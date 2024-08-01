@@ -1,0 +1,90 @@
+$include => Console;
+
+jobject console = Console();
+jobject color = console.COLOR;
+jobject pixel = console.PIXEL;
+jobject key   = console.KEY;
+
+console.setAutoClear(jtrue);
+
+jstring apple = 
+	  "0440\n"
+	+ "4444\n"
+	+ "4444\n"
+	+ "0440";
+jint appleX = randint(0, 14) * 4;
+jint appleY = randint(0, 14) * 4;
+
+jconst jdouble cspeed = 0.05;
+jdouble speed = cspeed;
+jboolean isMove = jfalse;
+
+jint score = 0;
+jdouble x = 0;
+jdouble y = 0;
+jint tempX = 0;
+jint tempY = 0;
+jint snakeOldX = 0;
+jint snakeOldY = 0;
+jlist snakeTails = [[0, 0], [0, 0]];
+
+jint moving = 1;
+
+console.setUpdate(() =>
+{
+	jdouble elapseTime = console.getElapseTime();
+
+	console.drawColoredString(appleX, appleY, apple);
+	console.drawBox(tempX, tempY, 4, 4, pixel.S1, color.FG_GREEN);
+	jforeach index, tail => snakeTails =>
+		console.drawBox(tail[0], tail[1], 4, 4, pixel.S1, color.FG_DARK_GREEN);
+	console.drawString(0, 0, "SCORE: " + score);
+
+	jif     (isMove && moving != 3 && console.isPressed(key.W)) => { moving = 4; isMove = jfalse; };
+	jelseif (isMove && moving != 4 && console.isPressed(key.S)) => { moving = 3; isMove = jfalse; };
+	jelseif (isMove && moving != 1 && console.isPressed(key.A)) => { moving = 2; isMove = jfalse; };
+	jelseif (isMove && moving != 2 && console.isPressed(key.D)) => { moving = 1; isMove = jfalse; };
+
+	jif (speed <= 0) => {
+		isMove = jtrue;
+		speed = cspeed;
+
+		snakeOldX = tempX;
+		snakeOldY = tempY;
+
+		jif     (moving == 1) => x += 1;
+		jelseif (moving == 2) => x -= 1;
+		jelseif (moving == 3) => y += 1;
+		jelse                 => y -= 1;
+
+		tempX = jint(x) * 4;
+		tempY = jint(y) * 4;
+		jif tempX < 0 || tempX >= 60 || tempY < 0 || tempY >= 60 => {
+			jreturn jfalse;
+		};
+
+		jint newOldX = snakeOldX;
+		jint newOldY = snakeOldY;
+
+		jforeach index, tail => snakeTails => {
+			jif newOldX == tempX && newOldY == tempY => {
+				jreturn jfalse;
+			};
+			snakeTails[index] = [ newOldX, newOldY ];
+			newOldX = tail[0];
+			newOldY = tail[1];
+		};
+
+		jif appleX == tempX && appleY == tempY => {
+			score += 1;
+			appleX = randint(0, 14) * 4;
+			appleY = randint(0, 14) * 4;
+			snakeTails.push_back([newOldX, newOldY]);
+		};
+	};
+	speed -= elapseTime;
+
+	jreturn jtrue;
+});
+
+console.run("TEST", 60, 60, 10, 10);

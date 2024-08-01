@@ -10,10 +10,4 @@ struct ExpressionToken
 	:
 		expression(exp), token(tok)
 	{}
-
-	template<class Archive>
-	void serialize(Archive & archive)
-	{
-		archive(expression, token);
-	}
 };

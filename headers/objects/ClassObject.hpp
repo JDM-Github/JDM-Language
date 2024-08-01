@@ -6,13 +6,6 @@ public:
 	std::string name;
 
 public:
-	// template<class Archive>
-	// inline void serialize(Archive & archive)
-	// {
-	// 	archive(cereal::base_class<VarObjects>(this));
-	// 	archive(name);
-	// }
-
 	ClassObjects() = default;
 	inline explicit ClassObjects(const std::shared_ptr<TokenStruct> &tok)
 	:

@@ -22,13 +22,3 @@
 #include <exception>
 #include <stdexcept>
 #include <future>
-
-#include "cereal/cereal.hpp"
-// #include "cereal/archives/binary.hpp"
-#include "cereal/archives/json.hpp"
-
-#include "cereal/types/memory.hpp"
-// #include "cereal/types/string.hpp"
-#include "cereal/types/tuple.hpp"
-#include "cereal/types/vector.hpp"
-#include "cereal/types/polymorphic.hpp"

@@ -6,12 +6,6 @@ public:
 	std::vector<std::shared_ptr<Expression>> list;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(list);
-	}
 
 	inline ListObject(const std::vector<std::shared_ptr<Expression>> &_list = {})
 	:

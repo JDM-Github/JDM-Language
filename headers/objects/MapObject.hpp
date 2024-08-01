@@ -6,13 +6,6 @@ public:
 	std::vector<std::shared_ptr<MapStruct>> map;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(map);
-	}
-
 	inline MapObject(const std::vector<std::shared_ptr<MapStruct>> &_map = {})
 	:
 		map(_map),

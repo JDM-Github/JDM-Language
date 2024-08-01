@@ -9,13 +9,6 @@ public:
 	std::string operation = "";
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(currObject, prevObject, nextObject, operation);
-	}
-
 	inline CallObjects(
 		const std::shared_ptr<VarObjects > &_currObject = nullptr,
 		const std::shared_ptr<CallObjects> &_prevObject = nullptr

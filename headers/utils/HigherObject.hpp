@@ -14,7 +14,8 @@ struct FunctionCall
 struct ClassObject
 {
 	StringStd className;
-	std::unordered_map<StringStd, SharedHigherObject> members;
+	std::unordered_map<StringStd, HigherObject> members;
+	std::unordered_map<StringStd, SharedHigherObject> pMembers;
 	std::unordered_map<StringStd, std::shared_ptr<FunctionCall>> methods;
 	bool fromMainSource = true;
 };

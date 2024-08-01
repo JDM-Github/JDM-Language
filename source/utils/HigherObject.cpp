@@ -1,7 +1,9 @@
 #include "utils/HigherObject.hpp"
 
 JDM_DLL
-HigherObject::HigherObject() {}
+HigherObject::HigherObject()
+{
+}
 
 JDM_DLL
 HigherObject::HigherObject(const std::string &value)
@@ -206,7 +208,10 @@ const std::string HigherObject::_getStringValue()
 		if (this->objectValue == nullptr)
 			oss << "Class: Invalid.";
 		else
-			oss << "Class: " << objectValue;
+		{
+			auto className = (this->objectValue->className == "" ? "Anonymous Class" : this->objectValue->className);
+			oss << "Class '" << className << "': " <<  objectValue;
+		}
 	}
 	else if (this->currActive == ACTIVE_LIST)
 	{

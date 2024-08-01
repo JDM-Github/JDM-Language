@@ -10,12 +10,6 @@ public:
 	std::shared_ptr<Expression     > expression;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<Instruction>(this));
-		archive(isConst, isForce, dataType, varName, expression);
-	}
 
 	inline Declaration(
 		const std::shared_ptr<TokenStruct    > &_dataType   = nullptr,

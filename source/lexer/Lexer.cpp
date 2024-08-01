@@ -48,33 +48,33 @@ CVoid Tokenizer::saveTokens(
 	FileStream &filename,
 	const bool autoOverwrite)
 {
-	if (filename == "")
-		return this->saveTokens(StaticFunction::createNewFilename(".jdmt"));
-	if (std::filesystem::exists(filename))
-		return this->saveTokens(StaticFunction::handleFileExists(filename, ".jdmt", autoOverwrite));
+	// if (filename == "")
+	// 	return this->saveTokens(StaticFunction::createNewFilename(".jdmt"));
+	// if (std::filesystem::exists(filename))
+	// 	return this->saveTokens(StaticFunction::handleFileExists(filename, ".jdmt", autoOverwrite));
 
-	std::ofstream os(filename, std::ios::binary);
-	if (!os.is_open())
-		throw std::runtime_error("Failed to open file for writing: " + filename);
+	// std::ofstream os(filename, std::ios::binary);
+	// if (!os.is_open())
+	// 	throw std::runtime_error("Failed to open file for writing: " + filename);
 
-	cereal::JSONOutputArchive archive(os);
-	archive(this->__allTokens);
-	Log << "Lexing completed successfully and tokens saved to " << filename << std::endl;
+	// cereal::JSONOutputArchive archive(os);
+	// archive(this->__allTokens);
+	// Log << "Lexing completed successfully and tokens saved to " << filename << std::endl;
 }
 
 JDM_DLL
 CVoid Tokenizer::loadTokens(
 	FileStream &filename)
 {
-	if (!std::filesystem::exists(filename))
-		throw std::runtime_error("File not found: " + filename);
+	// if (!std::filesystem::exists(filename))
+	// 	throw std::runtime_error("File not found: " + filename);
 
-	std::ifstream is(filename, std::ios::binary);
-	if (!is.is_open())
-		throw std::runtime_error("Failed to open file for reading: " + filename);
+	// std::ifstream is(filename, std::ios::binary);
+	// if (!is.is_open())
+	// 	throw std::runtime_error("Failed to open file for reading: " + filename);
 
-	cereal::JSONInputArchive archive(is);
-	archive(this->__allTokens);
+	// cereal::JSONInputArchive archive(is);
+	// archive(this->__allTokens);
 }
 
 JDM_DLL

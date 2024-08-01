@@ -8,11 +8,6 @@ public:
 	std::shared_ptr<Expression     > expression;
 
 public:
-	template<class Archive>
-	void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<Instruction>(this), varName, operation, expression);
-	}
 
 	Assignment() = default;
 	inline Assignment(

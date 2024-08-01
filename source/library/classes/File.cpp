@@ -3,7 +3,10 @@
 #include "library/classes/File.hpp"
 
 JDM_DLL
-FileClass::FileClass()
+FileClass::FileClass() { }
+
+JDM_DLL
+const void FileClass::init()
 {
 	this->mapFunctions["open"    ] = FileEnum::FFILE_OPEN; 
 	this->mapFunctions["close"   ] = FileEnum::FFILE_CLOSE;
@@ -22,11 +25,9 @@ std::shared_ptr<HigherObject> FileClass::constructor(
 	if (objects.size() > 1)
 		throw std::runtime_error("Runtime Error: 'File' expects only one argument (file path).");
 
-	obj1->objectValue->members["class" ] = std::make_shared<HigherObject>("File");
-	obj1->objectValue->members["file"  ] = std::make_shared<HigherObject>("");
-	obj1->objectValue->members["opened"] = std::make_shared<HigherObject>(false);
-	if (objects.size() == 1)
-		return this->openFile(obj1, objects, true);
+	obj1->objectValue->pMembers["file"  ] = std::make_shared<HigherObject>("");
+	obj1->objectValue->pMembers["opened"] = std::make_shared<HigherObject>(false);
+	if (objects.size() == 1) return this->openFile(obj1, objects, true);
 
 	return obj1;
 }
@@ -72,13 +73,13 @@ std::shared_ptr<HigherObject> FileClass::openFile(
 		fileStream.close();
 	}
 
-	if (obj1->objectValue->members["opened"]->booleanValue)
+	if (obj1->objectValue->pMembers["opened"]->booleanValue)
 		throw std::runtime_error("Runtime Error: 'File' already opened '"
-			+ obj1->objectValue->members["file"  ]->stringValue
+			+ obj1->objectValue->pMembers["file"  ]->stringValue
 			+ "'. Close the file first.");
 
-	obj1->objectValue->members["file"  ]->stringValue  = filePath;
-	obj1->objectValue->members["opened"]->booleanValue = true;
+	obj1->objectValue->pMembers["file"  ]->stringValue  = filePath;
+	obj1->objectValue->pMembers["opened"]->booleanValue = true;
 	return obj1;
 }
 
@@ -93,10 +94,10 @@ std::shared_ptr<HigherObject> FileClass::closeFile(
 	if (objects.size() != 0)
 		throw std::runtime_error("Runtime Error: 'File.close' expects no arguments for closing.");
 
-	if (!obj1->objectValue->members["opened"]->booleanValue)
+	if (!obj1->objectValue->pMembers["opened"]->booleanValue)
 		return std::make_shared<HigherObject>(false);
 
-	obj1->objectValue->members["opened"]->booleanValue = false;
+	obj1->objectValue->pMembers["opened"]->booleanValue = false;
 	return std::make_shared<HigherObject>(true);
 }
 
@@ -126,17 +127,17 @@ std::shared_ptr<HigherObject> FileClass::removeFile(
 	if (objects.size() != 0)
 		throw std::runtime_error("Runtime Error: 'File.remove' expects no arguments for removing the current file.");
 
-	if (!obj1->objectValue->members["opened"]->booleanValue)
+	if (!obj1->objectValue->pMembers["opened"]->booleanValue)
 		throw std::runtime_error("Runtime Error: No file is currently open to remove.");
 
-	std::string filePath = obj1->objectValue->members["file"]->stringValue;
+	std::string filePath = obj1->objectValue->pMembers["file"]->stringValue;
 	if (!std::filesystem::exists(filePath))
 		return std::make_shared<HigherObject>(false);
 
 	if (std::remove(filePath.c_str()) != 0) 
 		throw std::runtime_error("Runtime Error: Failed to remove file: " + filePath);
 
-	obj1->objectValue->members["opened"]->booleanValue = false;
+	obj1->objectValue->pMembers["opened"]->booleanValue = false;
 	return std::make_shared<HigherObject>(true);
 }
 
@@ -145,13 +146,13 @@ std::shared_ptr<HigherObject> FileClass::readFile(
 	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
-	if (!obj1->objectValue->members["opened"]->booleanValue)
+	if (!obj1->objectValue->pMembers["opened"]->booleanValue)
 		throw std::runtime_error("Runtime Error: No file is currently open to read.");
 
 	if (objects.size() > 1)
         throw std::runtime_error("Runtime Error: 'File.read' expects at least one argument (optional seek position).");
 
-	std::string filePath = obj1->objectValue->members["file"]->stringValue;
+	std::string filePath = obj1->objectValue->pMembers["file"]->stringValue;
 	if (!std::filesystem::exists(filePath))
 		throw std::runtime_error("Runtime Error: 'File.read' cannot read a file that does not exists.");
 
@@ -182,13 +183,13 @@ std::shared_ptr<HigherObject> FileClass::writeFile(
 	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
-	if (!obj1->objectValue->members["opened"]->booleanValue)
+	if (!obj1->objectValue->pMembers["opened"]->booleanValue)
 		throw std::runtime_error("Runtime Error: No file is currently open to write.");
 
 	if (objects.size() != 1)
 		throw std::runtime_error("Runtime Error: 'File.write' expects one argument (data to write).");
 
-	std::string filePath = obj1->objectValue->members["file"]->stringValue;
+	std::string filePath = obj1->objectValue->pMembers["file"]->stringValue;
 	std::ofstream outFile(filePath, std::ios::out | std::ios::trunc);
 	if (!outFile.is_open())
 		throw std::runtime_error("Runtime Error: Failed to open file for writing: " + filePath);
@@ -204,13 +205,13 @@ std::shared_ptr<HigherObject> FileClass::appendFile(
 	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
-	if (!obj1->objectValue->members["opened"]->booleanValue)
+	if (!obj1->objectValue->pMembers["opened"]->booleanValue)
 		throw std::runtime_error("Runtime Error: No file is currently open to write.");
 
 	if (objects.size() < 1 || objects.size() > 2)
 		throw std::runtime_error("Runtime Error: 'File.append' expects one or two arguments (data to append, optional seek position).");
 
-	std::string filePath = obj1->objectValue->members["file"]->stringValue;
+	std::string filePath = obj1->objectValue->pMembers["file"]->stringValue;
 	if (!std::filesystem::exists(filePath))
 		throw std::runtime_error("Runtime Error: 'File.append' cannot append a file that does not exists.");
 
@@ -250,13 +251,13 @@ std::shared_ptr<HigherObject> FileClass::truncateFile(
 	std::shared_ptr<HigherObject> &obj1,
 	const std::vector<std::shared_ptr<HigherObject>> &objects)
 {
-	if (!obj1->objectValue->members["opened"]->booleanValue)
+	if (!obj1->objectValue->pMembers["opened"]->booleanValue)
 		throw std::runtime_error("Runtime Error: No file is currently open to truncate.");
 
 	if (objects.size() > 1)
 		throw std::runtime_error("Runtime Error: 'File.truncate' expects at least one argument (size to truncate).");
 
-	std::string filePath = obj1->objectValue->members["file"]->stringValue;
+	std::string filePath = obj1->objectValue->pMembers["file"]->stringValue;
 	if (!std::filesystem::exists(filePath))
 		throw std::runtime_error("Runtime Error: File '" + filePath + "' does not exist.");
 

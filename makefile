@@ -16,14 +16,9 @@ OBJ_DIR    = object
 BIN_DIR    = Build
 DLL_DIR    = Build
 
-SRC_DIRS   = $(SRC_DIR)/register \
-			 $(SRC_DIR)/utils 
+SRC_DIRS   = $(SRC_DIR)/utils 
 SOURCES    = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.cpp))
 OBJECTS    = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
-
-# REGISTER_SRC    = $(SRC_DIR)/register
-# REGISTER_SOURCE =  $(foreach dir, $(REGISTER_SRC), $(wildcard $(dir)/*.cpp))
-# REGISTER_OBJECT = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(REGISTER_SOURCE))
 
 LEXER_SRC    = $(SRC_DIR)/lexer
 LEXER_SOURCE =  $(foreach dir, $(LEXER_SRC), $(wildcard $(dir)/*.cpp))
@@ -132,7 +127,6 @@ $(OBJ_DIR):
 	@echo - [INFO] Making Necessary Directories
 	@mkdir $(OBJ_DIR)\library\console
 	@mkdir $(OBJ_DIR)\library\classes
-	@mkdir $(OBJ_DIR)\register
 	@mkdir $(OBJ_DIR)\utils
 	@mkdir $(OBJ_DIR)\compiler
 	@mkdir $(OBJ_DIR)\lexer

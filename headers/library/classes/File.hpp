@@ -14,6 +14,8 @@ public:
 		FFILE_REMOVE
 	};
 	JDM_DLL FileClass();
+	JDM_DLL const void init();
+
 	JDM_DLL std::shared_ptr<HigherObject> constructor   (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);
 	JDM_DLL std::shared_ptr<HigherObject> openFile      (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects, bool fromConstructor = false);
 	JDM_DLL std::shared_ptr<HigherObject> closeFile     (std::shared_ptr<HigherObject> &obj1, const std::vector<std::shared_ptr<HigherObject>> &objects);

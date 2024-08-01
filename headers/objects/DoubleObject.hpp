@@ -6,13 +6,6 @@ public:
 	long double value;
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<VarObjects>(this));
-		archive(value);
-	}
-
 	DoubleObjects() = default;
 	inline explicit DoubleObjects(const std::shared_ptr<TokenStruct> &tok)
 	:

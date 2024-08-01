@@ -10,13 +10,6 @@ public:
 	std::shared_ptr<Expression     > step;  // Must be a INTEGER
 
 public:
-	template<class Archive>
-	inline void serialize(Archive & archive)
-	{
-		archive(cereal::base_class<Instruction>(this));
-		archive(blockWillRun, variable, start, stop, step);
-	}
-
 	inline ForLoopStatement(
 		const std::shared_ptr<Block          > &_blockWillRun = nullptr,
 		const std::shared_ptr<VariableObjects> &_variable     = nullptr,
